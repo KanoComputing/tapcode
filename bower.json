@@ -1,0 +1,23 @@
+{
+  "name": "tapcode",
+  "homepage": "https://github.com/mikegreer/tapcode",
+  "authors": [
+    ">"
+  ],
+  "description": "",
+  "main": "",
+  "license": "MIT",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "iron-demo-helpers": "^2.0.0",
+    "polymer": "Polymer/polymer#^2.0.0",
+    "iron-flex-layout": "PolymerElements/iron-flex-layout#^2.0.0"
+  }
+}

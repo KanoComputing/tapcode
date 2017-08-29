@@ -1,0 +1,76 @@
+<link rel="import" href="../../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../../bower_components/polymer/lib/mixins/gesture-event-listeners.html">
+<link rel="import" href="../../style/kano-mobile-shared-styles.html">
+
+<dom-module id="km-toolbox">
+
+  <template>
+
+    <style is="custom-style" include="demo-pages-shared-styles kano-mobile-shared-styles">
+
+      :host {
+          display: block;
+          padding: 10px;
+          overflow: auto;
+          background-color: #999;
+      }
+
+      .tapinput {
+          display: inline-block;
+          background-color: #333;
+          border-radius: 3px;
+          color: #fff;
+          cursor: pointer;
+          font-family: monospace;
+          font-weight: bold;
+          margin: 8px 8px 0 0;
+          padding: 8px 12px;
+      }
+
+    </style>
+    
+    <!-- shadow DOM-->
+    <div class="toolbox">
+        <template is="dom-repeat" items="{{items}}">
+            <div class="tapinput" product-id="[[item.label]]" on-tap="onItemTapped">{{item.label}}</div>
+        </template>
+    </div>
+    
+    
+  </template>
+
+  <script>
+  class KmToolbox extends Polymer.GestureEventListeners(Polymer.Element) {
+      static get is() {
+        return 'km-toolbox';
+      }
+      static get properties() {
+        return {
+          items: {
+              type: Array,
+              value: () => []
+          }
+        }
+      }
+
+      constructor() {
+        super();
+      }
+
+      onItemTapped (e) {
+          this.dispatchEvent(
+              new CustomEvent('item-tapped', {
+                      bubbles: true,
+                      composed: true,
+                      detail: e.model.item
+              })
+          );
+      }
+
+    }
+
+    customElements.define(KmToolbox.is, KmToolbox);
+  </script>
+
+</dom-module>
+

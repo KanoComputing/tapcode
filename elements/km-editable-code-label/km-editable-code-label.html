@@ -1,0 +1,116 @@
+<link rel="import" href="../../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../../bower_components/polymer/lib/mixins/gesture-event-listeners.html">
+<link rel="import" href="../../style/kano-mobile-shared-styles.html">
+
+<dom-module id="km-editable-code-label">
+
+  <template>
+
+      <style is="custom-style" include="kano-mobile-shared-styles">
+
+        :host {
+            display: flex;
+            flex-direction: row;
+        }
+
+        :host([active]) .selected{
+            color: #000; 
+            background-color: #fff;
+        }
+
+        [hidden] {
+            display: none !important;
+        }
+
+
+      </style>
+      <!-- shadow DOM-->
+      <div class="label" on-tap="_selectToReplace">[[block.label]]</div>
+      <span>(</span>
+      <template is="dom-repeat" items="{{block.parameters}}">
+          <div class$="[[_computeParamClass(selectedParamIndex, index)]]" on-tap="_selectParamToEdit">[[item.value]]</div>
+          <span hidden$="[[_isLastParameter(index, item)]]">,</span>
+     </template>
+     <span>)</span>
+  </template>
+
+  <script>
+  class KmEditableCodeLabel extends Polymer.GestureEventListeners(Polymer.Element) {
+      static get is() {
+        return 'km-editable-code-label';
+      }
+
+      static get properties() {
+        return {
+          block: {
+              type: Array,
+              value: () => []
+          },
+          selectedParamIndex: {
+              type: Number,
+              notify: true
+          },
+          active: {
+              type: Boolean,
+              reflectToAttribute: true,
+              value: false
+          }
+        }
+      }
+
+      constructor() {
+          super();
+      }
+
+      connectedCallback () {
+          console.log('connected')
+      }
+
+
+      _computeParamClass (selectedParamIndex, index) {
+          if (selectedParamIndex === index) {
+              return 'selected';
+          }
+      }
+
+      _executeEdit (newValue) {
+        this.selectedParamIndex = 0;
+        this.set(`block.parameters.${this.selectedParamIndex}.value`, newValue);
+      }
+
+      _isLastParameter (index) {
+          return (index === (this.block.parameters.length - 1));
+      }
+
+      _selectToReplace (e) {
+
+      }
+
+      _selectParamToEdit (e) {
+        // Read the editable parameter value and data type
+        let item = e.model && e.model.item,
+            value = item && item.value,
+            type = item && item.type;
+
+        // Store the edited parameter index
+        this.selectedParamIndex = e.model && e.model.index;
+        this.dispatchEvent(
+            new CustomEvent('edit-request', {
+                bubbles: true,
+                composed: true,
+                detail: {
+                    value: value,
+                    type: type
+                }
+
+            })
+        );
+      }
+
+    }
+
+    customElements.define(KmEditableCodeLabel.is, KmEditableCodeLabel);
+  </script>
+
+</dom-module>
+

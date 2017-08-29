@@ -1,0 +1,25 @@
+# OSX
+**.DS_Store
+
+#Editor specific
+.vscode
+
+# Node.js
+node_modules
+npm-debug.log
+yarn.lock
+
+# App
+bower_components
+.tmp
+www
+www-doc
+assets.tar.gz
+**.swp
+tmp/**
+app/po/**/*.pot
+
+dump.rdb
+
+test-results
+coverage

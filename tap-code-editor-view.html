@@ -1,0 +1,448 @@
+<link rel="import" href="bower_components/polymer/polymer-element.html">
+<link rel="import" href="bower_components/iron-flex-layout/iron-flex-layout-classes.html">
+<link rel="import" href="elements/km-editable-code-label/km-editable-code-label.html">
+<link rel="import" href="elements/km-toolbox/km-toolbox.html">
+<link rel="import" href="elements/km-keypad/km-keypad.html">
+
+<dom-module id="tap-code-editor-view">
+
+  <template>
+
+    <style is="custom-style" include="iron-flex iron-flex-alignment">
+
+      :host {
+          display: block;
+          height: 100%;
+          background-color: #999;
+          width: 100%;
+          box-sizing: border-box;
+          font-family: monospace;
+          font-weight: bold;
+      }
+      .code-and-canvas {
+          height: 60vh;
+          position: relative;
+          top: 0;
+          left: 0;
+      }
+      #code {
+          display: block;
+          position: absolute;
+          color: #fff;
+          font-size: 16px;
+          overflow: scroll;
+          box-sizing: border-box;
+          padding: 20px;
+      }
+      .code-line {
+          min-height: 26px;
+      }
+      #canvas {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+      }
+      #toolbox {
+          height: 35vh;
+      }
+      #number-input {
+          height: 35vh;
+      }
+      #toolbox {
+          padding: 8px;
+          overflow: scroll;
+          box-sizing: border-box;
+          position: relative;
+      }
+      .toolbox-bar {
+          width: 100%;
+          height: 5vh;
+          background-color: #333;
+          padding: 0 4px;
+      }
+      .toolbox-tab {
+          display: inline-block;
+          line-height: 40px;
+          vertical-align: middle;
+          padding: 0 0 0 10px;
+          color: #ffffff;
+          font-family: monospace;
+      }
+      .toolbox-tab.selected {
+          text-decoration: underline;
+      }
+      .menu-selected {
+          text-decoration: underline;
+      }
+      .highlight {
+          color: #000;
+          background-color: #fff;
+      }
+      .editing {
+          color: #000;
+          background-color: #fff;
+      }
+      .param {
+          cursor: pointer;
+      }
+      .tapinput {
+          background-color: #333;
+          color: #fff;
+          border-radius: 3px;
+          font-family: monospace;
+          font-weight: bold;
+          cursor: pointer;
+          padding: 8px 12px;
+          margin: 0 8px 8px 0;
+      }
+      .codeblock {
+          display: block;
+          padding-right: 6px;
+          min-height: 26px;
+      }
+      .codeblock .label {
+          min-height: 26px;
+      }
+      .codeblock .codeblock {
+          padding-left: 30px;
+      }
+      #carat {
+          width: 14px;
+          height: 18px;
+          margin-bottom: -5px;
+          display: inline-block;
+          background-color: #fff;
+      }
+      [hidden] {
+          display: none !important;
+      }
+
+    </style>
+    
+    <!-- shadow DOM goes here -->
+    <div class="code-and-canvas">
+        <canvas id="canvas"></canvas>
+        <div id="code">
+            <template is="dom-repeat" items="{{statementsUsed}}">
+                <km-editable-code-label class="code-line" block="[[item]]" active="[[_isLineActive(index, lineIndex, running)]]" on-edit-request="_onEditRequest" selected-param-index="{{paramIndex}}"></km-editable-code-label>
+            </template>
+        </div>
+    </div>
+    <div class="toolbox-bar layout horizontal">
+        <div class$="[[_computeTabClass(activeTab, 'drawing')]]" data-value="drawing" on-tap="_selectMenuTab">drawing</div>
+        <div class$="[[_computeTabClass(activeTab, 'style')]]" data-value="style" on-tap="_selectMenuTab">style</div>
+        <div class$="[[_computeTabClass(activeTab, 'control')]]" data-value="control" on-tap="_selectMenuTab">control</div>
+    </div>
+    <km-keypad id="number-input" hidden$="[[!_isEqual(selectedToolbox, 'number-input')]]" on-pad-tapped="_processInput"></km-keypad>
+    <km-keypad id="number-input" hidden$="[[!_isEqual(selectedToolbox, 'number-input')]]" on-pad-tapped="_processInput"></km-keypad>
+    <div id="toolbox" class="layout horizontal start start-aligned wrap" hidden$="[[!_isEqual(selectedToolbox, 'toolbox')]]">
+        <template id="menu-item-repeater" is="dom-repeat" items="{{statements}}" filter="_filterMenuItem">
+            <km-editable-code-label class="tapinput" block="[[item]]" on-tap="_addStatement"></km-editable-code-label>
+        </template>
+    </div>
+    
+  </template>
+
+  <script>
+    class TapCodeEditorView extends Polymer.GestureEventListeners(Polymer.Element) {
+      static get is() { 
+        return 'tap-code-editor-view';
+      }
+
+      static get properties() {
+        return {
+          x: {
+              type: Number,
+              value: 0
+          },
+          y: {
+              type: Number,
+              value: 0
+          },
+          lineIndex: {
+              type: Number
+          },
+          statements: {
+            type: Array,
+            value: () => [
+                {
+                    label: "fillColor",
+                    type: "style",
+                    parameters: [
+                        {
+                            type: "color",
+                            value: "color"
+                        }
+                    ],
+                    code: function (c) {
+                        this.ctx.fillStyle = c;
+                    }
+                },
+                {
+                    label: "lineTo",
+                    type: "drawing",
+                    parameters: [
+                        {
+                            type: "number",
+                            value: "startX"
+                        },
+                        {
+                            type: "number",
+                            value: "startY"
+                        },
+                        {
+                            type: "number",
+                            value: "endX"
+                        },
+                        {
+                            type: "number",
+                            value: "endY"
+                        }
+                    ],
+                    code: function (x1, y1, x2, y2) {
+                        this.ctx.beginPath();
+                        this.ctx.moveTo(x1, y1);
+                        this.ctx.lineTo(x2, y2);
+                        this.ctx.stroke();
+                    }
+                },
+                {
+                    label: "moveTo",
+                    type: "drawing",
+                    parameters: [
+                        {
+                          type: "number",
+                          value: "x"
+                        }, {
+                          type: "number",
+                          value: "y"
+                        }
+                    ],
+                    code: function (x, y) {
+                        this.x = x;
+                        this.y = y;
+                    } 
+                },
+                {
+                    label: "moveBy",
+                    type: "drawing",
+                    parameters: [
+                        {
+                          type: "number",
+                          value: "x"
+                        }, {
+                          type: "number",
+                          value: "y"
+                        }
+                    ],
+                    code: function (x, y) {
+                        this.x += x;
+                        this.z += y;
+                    } 
+                },
+                {
+                    label: "circle",
+                    type: "drawing",
+                    parameters: [
+                        {
+                            type: "number",
+                            value: 'radius'
+                        }
+                    ],
+                    code: function (r) {
+                        let ctx = this.ctx;
+                        ctx.beginPath();
+                        ctx.arc(this.x, this.y, r, 0, 2 * Math.PI, false);
+                        ctx.fill();
+                        ctx.stroke();
+                    }
+                },
+                {
+                    label: "square",
+                    type: "drawing",
+                    parameters: [
+                        {
+                            "type": "number",
+                            "value": "size"
+                        }
+                    ],
+                    code: function (s) {
+                        let ctx = this.ctx;
+                        ctx.fillRect(this.x, this.y, s, s);
+                        ctx.strokeRect(this.x, this.y, s, s);
+                    }
+                }
+            ]
+          },
+          statementsUsed: {
+              type: Array,
+              value: () => []
+          },
+          selectedToolbox: {
+              type: String,
+              value: 'toolbox'
+          },
+          paramIndex: {
+              type: Number,
+              observer: '_onSelectedParamChanged'
+          },
+          running: {
+              type: Boolean,
+              value: false
+          },
+          activeTab: {
+              type: String,
+              value: 'drawing'
+          }
+        }
+      }
+
+      constructor () {
+        super();
+      }
+
+      ready() {
+          super.ready();
+          Polymer.RenderStatus.afterNextRender(this, function() {
+              this.ctx = this.$.canvas.getContext("2d");
+              this.$.canvas.style.width = '100%';
+              this.$.canvas.style.height = '100%';
+              this.resetCanvas();
+          });
+      }  
+
+      _checkAndExecuteCode () {
+          this.statementsUsed.forEach((statement, lineIndex) => {
+              statement.parameters.forEach((p, paramIndex) => {
+                  try {
+                      this._convertAndCheckParam(p, lineIndex, paramIndex);
+                  } catch (err) {
+                      console.error(err);
+                  }
+              });
+              statement.code.apply(this, statement.parameters.map(v => v.value));
+          });
+          this.running = true;
+          this.selectedToolbox = 'toolbox';
+      }
+
+      _isLineActive (lineIndex, index) {
+          return !this.running && (lineIndex === index);
+      }
+
+      _onEditRequest (e) {
+          this.lineIndex = e.model.index;
+          this.selectedToolbox = `${e.detail.type}-input`;
+          this.running = false;
+      }
+
+      _onSelectedParamChanged (i) {
+          this.paramBeingEdited = false;
+      }
+
+      _addStatement (e) {
+          this.push('statementsUsed', this.statements[e.model.index]);
+      }
+
+      _processInput (e) {
+          if (e.detail === 'done') {
+              this._checkAndExecuteCode();
+          } else if (e.currentTarget.id === 'number-input') {
+              this._addNumber(e.detail);
+          } else if (e.currentTarget.id === 'color-input') {
+              
+          }
+      }
+
+      _addNumber (val) {
+          if (this.paramBeingEdited) {
+              // Add to current value as string
+              val = this._getCurrentParamValue().toString() + val.toString();
+          } else if (val === '.') {
+              // If first value is a dot, prepend with 0
+              val = '0.';
+          }
+          this._setParameter(this.lineIndex, this.paramIndex, val);
+          this.paramBeingEdited = true;
+      }
+
+      _getCurrentParamValue () {
+          return this.get(this._getParamValuePath()) || '';
+      }
+
+      _selectMenuTab (e) {
+          this.activeTab = e.currentTarget.getAttribute('data-value');
+          this.$['menu-item-repeater'].render();
+      }
+
+      _filterMenuItem (item) {
+          return item.type === this.activeTab;
+      }
+
+      _setParameter (lineIndex, paramIndex, value) {
+          this.set(this._getParamValuePath(), value);
+      }
+
+      _getParamValuePath () {
+          return `statementsUsed.${this.lineIndex}.parameters.${this.paramIndex}.value`;
+      }
+
+      _isEqual (selected, instance) {
+          return selected === instance;
+      }
+
+      _convertAndCheckParam (p, lineIndex, paramIndex) {
+          if (p.type === 'number') {
+              let parsedVal = parseFloat(p.value);
+              if (isNaN(parsedVal)) {
+                  throw(`Parameter not valid at line ${this.lineIndex}`);
+              } else {
+                  this.set(`statementsUsed.${lineIndex}.parameters.${paramIndex}.value`, parsedVal);
+              }
+          }
+      }
+
+      clearCanvas() {
+          let ctx = this.ctx;
+          var fillSave = ctx.fillStyle;
+          ctx.clearRect(0, 0, this.$.canvas.width, this.$.canvas.height);
+          ctx.fillStyle = "#000000";
+          ctx.fillRect(0, 0, this.$.canvas.width, this.$.canvas.height);
+          ctx.fillStyle = fillSave;
+      }
+
+      _computeTabClass (activeTab, instance) {
+          return activeTab === instance ? 'toolbox-tab selected' : 'toolbox-tab';
+      }
+
+      resetCanvas() {
+          let ctx = this.ctx;
+          this.x = 0;
+          this.y = 0;
+          ctx.clearRect(0, 0, this.$.canvas.width, this.$.canvas.height);
+          ctx.fillStyle = "#000000";
+          ctx.fillRect(0, 0, this.$.canvas.width, this.$.canvas.height);
+          ctx.fillStyle = "#ff00ff";
+          ctx.strokeStyle = "#00ffff";
+          ctx.lineWidth = 2;
+          ctx.globalAlpha = 1;
+      }
+
+      opacity(value){
+          this.ctx.globalAlpha = value;
+      }
+
+      stroke(thickness, color){
+          this.ctx.strokeStyle = color;
+          this.ctx.lineWidth = thickness;
+      }
+
+    }
+
+    customElements.define(TapCodeEditorView.is, TapCodeEditorView);
+  </script>
+
+</dom-module>
+

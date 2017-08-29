@@ -1,0 +1,95 @@
+<link rel="import" href="../../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../../bower_components/polymer/lib/mixins/gesture-event-listeners.html">
+<link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
+<link rel="import" href="../../style/kano-mobile-shared-styles.html">
+
+<dom-module id="km-keypad">
+
+  <template>
+
+      <style is="custom-style" include="kano-mobile-shared-styles iron-flex iron-flex-alignment">
+
+        :host {
+            display: block;
+        }
+
+        .numpad {
+            height: 100%;
+        }
+
+        :host([active]) .selected{
+            color: #000; 
+            background-color: #fff;
+        }
+
+        .numgrid, .colorgrid{
+            min-width: 32%;
+            font-family: monospace;
+            border: 1px solid #eee;
+            cursor: pointer;
+        }
+
+
+      </style>
+      <!-- shadow DOM-->
+      <div class="numpad layout horizontal justified wrap">
+          <template is="dom-repeat" items="{{items}}">
+              <div class="numgrid flex layout vertical center-center"
+                   on-tap="_padTapped">[[item]]</div>
+          </template>
+      </div>
+  </template>
+
+  <script>
+  class KmKeypad extends Polymer.GestureEventListeners(Polymer.Element) {
+      static get is() {
+        return 'km-keypad';
+      }
+
+      static get properties() {
+        return {
+          items: {
+              type: Array,
+              value: () => [1,2,3,4,5,6,7,8,9, '.', 0, 'done']
+          },
+          selectedParamIndex: {
+              type: Number
+          },
+          active: {
+              type: Boolean,
+              reflectToAttribute: true,
+              value: false
+          }
+        }
+      }
+
+      constructor() {
+        super();
+        // setTimeout(() => {
+        //     this._executeEdit(2);
+        // }, 200);
+      }
+
+      _padTapped (e) {
+        this.dispatchEvent(
+            new CustomEvent('pad-tapped', {
+                bubbles: true,
+                composed: true,
+                detail: e.model.item
+            })
+        );
+      }
+
+
+      _isLastParameter (index) {
+          return index === (this.block.parameters.length - 1);
+      }
+
+
+    }
+
+    customElements.define(KmKeypad.is, KmKeypad);
+  </script>
+
+</dom-module>
+
