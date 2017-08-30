@@ -1,6 +1,7 @@
 <link rel="import" href="bower_components/polymer/polymer-element.html">
 <link rel="import" href="bower_components/iron-flex-layout/iron-flex-layout-classes.html">
 <link rel="import" href="elements/km-editable-code-label/km-editable-code-label.html">
+<link rel="import" href="elements/km-code-block/km-code-block.html">
 <link rel="import" href="elements/km-toolbox/km-toolbox.html">
 <link rel="import" href="elements/km-keypad/km-keypad.html">
 
@@ -13,7 +14,6 @@
       :host {
           display: block;
           height: 100%;
-          background-color: #999;
           width: 100%;
           box-sizing: border-box;
           font-family: monospace;
@@ -25,7 +25,7 @@
           top: 0;
           left: 0;
       }
-      #code {
+      #editor {
           display: block;
           position: absolute;
           color: #fff;
@@ -124,11 +124,7 @@
     <!-- shadow DOM goes here -->
     <div class="code-and-canvas">
         <canvas id="canvas"></canvas>
-        <div id="code">
-            <template is="dom-repeat" items="{{statementsUsed}}">
-                <km-editable-code-label class="code-line" block="[[item]]" active="[[_isLineActive(index, lineIndex, running)]]" on-edit-request="_onEditRequest" selected-param-index="{{paramIndex}}"></km-editable-code-label>
-            </template>
-        </div>
+        <km-code-block id="editor" on-edit-request="_onEditRequest"></km-code-block>
     </div>
     <div class="toolbox-bar layout horizontal">
         <div class$="[[_computeTabClass(activeTab, 'drawing')]]" data-value="drawing" on-tap="_selectMenuTab">drawing</div>
@@ -139,7 +135,7 @@
     <km-keypad id="number-input" hidden$="[[!_isEqual(selectedToolbox, 'number-input')]]" on-pad-tapped="_processInput"></km-keypad>
     <div id="toolbox" class="layout horizontal start start-aligned wrap" hidden$="[[!_isEqual(selectedToolbox, 'toolbox')]]">
         <template id="menu-item-repeater" is="dom-repeat" items="{{statements}}" filter="_filterMenuItem">
-            <km-editable-code-label class="tapinput" block="[[item]]" on-tap="_addStatement"></km-editable-code-label>
+            <km-editable-code-label class="tapinput" statement="[[item]]" on-tap="_addStatement"></km-editable-code-label>
         </template>
     </div>
     
@@ -168,112 +164,227 @@
             type: Array,
             value: () => [
                 {
-                    label: "fillColor",
-                    type: "style",
-                    parameters: [
+                    label: "function",
+                    type: "control",
+                    lines: [
                         {
-                            type: "color",
-                            value: "color"
-                        }
+                            segments: [
+                                {
+                                    value: 'function',
+                                    type: 'keyword',
+                                    editable: false
+                                },
+                                {
+                                    value: '{',
+                                    type: 'keyword',
+                                    editable: false
+                                },
+                            ]
+                        },
+                        {
+                            segments: [
+                                {
+                                    value: '}',
+                                    type: 'keyword',
+                                    editable: false
+                                }
+                            ]
+                        },
+
                     ],
-                    code: function (c) {
-                        this.ctx.fillStyle = c;
-                    }
-                },
-                {
-                    label: "lineTo",
-                    type: "drawing",
-                    parameters: [
-                        {
-                            type: "number",
-                            value: "startX"
-                        },
-                        {
-                            type: "number",
-                            value: "startY"
-                        },
-                        {
-                            type: "number",
-                            value: "endX"
-                        },
-                        {
-                            type: "number",
-                            value: "endY"
-                        }
-                    ],
-                    code: function (x1, y1, x2, y2) {
-                        this.ctx.beginPath();
-                        this.ctx.moveTo(x1, y1);
-                        this.ctx.lineTo(x2, y2);
-                        this.ctx.stroke();
-                    }
+                    code: ['function (x1, y1, x2, y2) {',
+                        'this.ctx.beginPath(\');',
+                        'this.ctx.moveTo(x1, y1);',
+                        'this.ctx.lineTo(x2, y2);',
+                        'this.ctx.stroke();',
+                        '}'
+                    ]
                 },
                 {
                     label: "moveTo",
                     type: "drawing",
-                    parameters: [
+                    lines: [
                         {
-                          type: "number",
-                          value: "x"
-                        }, {
-                          type: "number",
-                          value: "y"
+                            segments: [
+                                {
+                                    value: 'moveTo',
+                                    type: 'statement',
+                                    editable: false
+                                },
+                                {
+                                    value: '(',
+                                    type: 'token',
+                                    editable: false
+                                },
+                                {
+                                    value: 'x',
+                                    type: 'parameter',
+                                    editable: true
+                                },
+                                {
+                                    value: 'y',
+                                    type: 'parameter',
+                                    editable: true
+                                },
+                                {
+                                    value: ')',
+                                    type: 'token',
+                                    editable: false
+                                },
+                            ]
                         }
                     ],
-                    code: function (x, y) {
-                        this.x = x;
-                        this.y = y;
-                    } 
-                },
-                {
-                    label: "moveBy",
-                    type: "drawing",
-                    parameters: [
-                        {
-                          type: "number",
-                          value: "x"
-                        }, {
-                          type: "number",
-                          value: "y"
-                        }
-                    ],
-                    code: function (x, y) {
-                        this.x += x;
-                        this.z += y;
-                    } 
-                },
-                {
-                    label: "circle",
-                    type: "drawing",
-                    parameters: [
-                        {
-                            type: "number",
-                            value: 'radius'
-                        }
-                    ],
-                    code: function (r) {
-                        let ctx = this.ctx;
-                        ctx.beginPath();
-                        ctx.arc(this.x, this.y, r, 0, 2 * Math.PI, false);
-                        ctx.fill();
-                        ctx.stroke();
-                    }
-                },
-                {
-                    label: "square",
-                    type: "drawing",
-                    parameters: [
-                        {
-                            "type": "number",
-                            "value": "size"
-                        }
-                    ],
-                    code: function (s) {
-                        let ctx = this.ctx;
-                        ctx.fillRect(this.x, this.y, s, s);
-                        ctx.strokeRect(this.x, this.y, s, s);
-                    }
+                    code: ['function (x1, y1, x2, y2) {',
+                        'this.ctx.beginPath(\');',
+                        'this.ctx.moveTo(x1, y1);',
+                        'this.ctx.lineTo(x2, y2);',
+                        'this.ctx.stroke();',
+                        '}'
+                    ]
                 }
+                // {
+                //     label: "fillColor",
+                //     type: "style",
+                //     lines: [
+                //         {
+                //             segments: [
+                //                 {
+                //                     label: 'color',
+                //                     type: 'keyword',
+                //                     editable: false
+                //                 },
+                //                 {
+                //                     label: 'x',
+                //                     type: 'parameter',
+                //                     editable: true
+                //                 },
+                //                 {
+                //                     label: 'y',
+                //                     type: 'parameter',
+                //                     editable: true
+                //                 }
+                //             ]
+                //         }
+                //     ],
+                //     code: function (c) {
+                //         this.ctx.fillStyle = c;
+                //     }
+                // },
+                // {
+                //     label: "lineTo",
+                //     type: "drawing",
+                //     lines: [
+                //         {
+                //             segments: [
+                //                 {
+                //                     label: 'color',
+                //                     type: 'keyword',
+                //                     editable: false
+                //                 },
+                //                 {
+                //                     label: 'x',
+                //                     type: 'parameter',
+                //                     editable: true
+                //                 },
+                //                 {
+                //                     label: 'y',
+                //                     type: 'parameter',
+                //                     editable: true
+                //                 }
+                //             ]
+                //         }
+                //     ],
+                //     parameters: [
+                //         {
+                //             type: "number",
+                //             value: "startX"
+                //         },
+                //         {
+                //             type: "number",
+                //             value: "startY"
+                //         },
+                //         {
+                //             type: "number",
+                //             value: "endX"
+                //         },
+                //         {
+                //             type: "number",
+                //             value: "endY"
+                //         }
+                //     ],
+                //     code: function (x1, y1, x2, y2) {
+                //         this.ctx.beginPath();
+                //         this.ctx.moveTo(x1, y1);
+                //         this.ctx.lineTo(x2, y2);
+                //         this.ctx.stroke();
+                //     }
+                // },
+                // {
+                //     label: "moveTo",
+                //     type: "drawing",
+                //     parameters: [
+                //         {
+                //           type: "number",
+                //           value: "x"
+                //         }, {
+                //           type: "number",
+                //           value: "y"
+                //         }
+                //     ],
+                //     code: function (x, y) {
+                //         this.x = x;
+                //         this.y = y;
+                //     } 
+                // },
+                // {
+                //     label: "moveBy",
+                //     type: "drawing",
+                //     parameters: [
+                //         {
+                //           type: "number",
+                //           value: "x"
+                //         }, {
+                //           type: "number",
+                //           value: "y"
+                //         }
+                //     ],
+                //     code: function (x, y) {
+                //         this.x += x;
+                //         this.z += y;
+                //     } 
+                // },
+                // {
+                //     label: "circle",
+                //     type: "drawing",
+                //     parameters: [
+                //         {
+                //             type: "number",
+                //             value: 'radius'
+                //         }
+                //     ],
+                //     code: function (r) {
+                //         let ctx = this.ctx;
+                //         ctx.beginPath();
+                //         ctx.arc(this.x, this.y, r, 0, 2 * Math.PI, false);
+                //         ctx.fill();
+                //         ctx.stroke();
+                //     }
+                // },
+                // {
+                //     label: "square",
+                //     type: "drawing",
+                //     parameters: [
+                //         {
+                //             "type": "number",
+                //             "value": "size"
+                //         }
+                //     ],
+                //     code: function (s) {
+                //         let ctx = this.ctx;
+                //         ctx.fillRect(this.x, this.y, s, s);
+                //         ctx.strokeRect(this.x, this.y, s, s);
+                //     }
+                // }
             ]
           },
           statementsUsed: {
@@ -343,7 +454,7 @@
       }
 
       _addStatement (e) {
-          this.push('statementsUsed', this.statements[e.model.index]);
+          this.$.editor.addCode(e.model.item);
       }
 
       _processInput (e) {
@@ -378,7 +489,8 @@
       }
 
       _filterMenuItem (item) {
-          return item.type === this.activeTab;
+          // return item.type === this.activeTab;
+          return true;
       }
 
       _setParameter (lineIndex, paramIndex, value) {

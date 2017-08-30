@@ -1,0 +1,289 @@
+<link rel="import" href="../../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../../bower_components/polymer/lib/mixins/gesture-event-listeners.html">
+<link rel="import" href="../../style/kano-mobile-shared-styles.html">
+<link rel="import" href="../km-editable-code-label/km-editable-code-label.html">
+
+<dom-module id="km-code-block">
+
+  <template>
+
+      <style is="custom-style" include="kano-mobile-shared-styles">
+
+        :host {
+            display: block;
+            background-color: #000;
+            color: #fff;
+            font-size: 16px;
+            overflow: auto;
+            padding: 8px 0 0 8px;
+        }
+
+        #line-repeater {
+            display: block;
+        }
+
+        #segment-repeater {
+            display: flex;
+            flex-direction: row;
+        }
+
+        .line {
+            margin-bottom: 4px;
+            display: flex;
+            flex-direction: row;
+        }
+
+        .line-number {
+            width: 16px;
+            text-align: right;
+            margin-right: 4px;
+        }
+
+        .keyword {
+            color: pink;
+        }
+
+        .indentation:before {
+            content: '  ';
+        }
+
+        .parameter {
+            color: purple;
+        }
+
+        .segment {
+            margin: 0 4px;
+        }
+
+        .highlight {
+          background: #999;
+        }
+
+        [hidden] {
+            display: none !important;
+        }
+
+
+      </style>
+      <!-- shadow DOM-->
+      <template id="line-repeater" is="dom-repeat" items="{{lines}}" as="line" index-as="line_no">
+          <div class="line">
+              <span class="line-number">[[_getLineIndex(line_no)]]</span>
+              <template id="segment-repeater" is="dom-repeat" items="{{line.segments}}" as="segment" index-as="segment_no">
+                  <div id$="[[computeEditableId(line_no, segment_no)]]"
+                       class$="[[calculateSegmentClass(segment.type, currentLine, currentSegment, line_no, segment_no)]]"
+                       on-tap="_selectParamToEdit">[[segment.value]]</div>
+              </template>
+          </div>
+      </template>
+  </template>
+
+  <script>
+  class KmCodeBlock extends Polymer.GestureEventListeners(Polymer.Element) {
+      static get is() {
+        return 'km-code-block';
+      }
+
+      static get properties() {
+        return {
+          lines: {
+              type: Array,
+              value: () => []
+          },
+          selectedParamIndex: {
+              type: Number,
+              notify: true
+          },
+          active: {
+              type: Boolean,
+              reflectToAttribute: true,
+              value: false
+          },
+          test: {
+              type: String,
+              value: 'faf'
+          },
+          currentLine: {
+              type: Number,
+              value: 0
+          },
+          currentSegment: {
+              type: Number,
+              value: 0
+          }
+        }
+      }
+
+      constructor() {
+          super();
+          Polymer.RenderStatus.afterNextRender(this, function() {
+              // this.processCode(this.block.code);
+              // let template = document.createElement('template');
+              // template.innerHTML = "<h2>[[test]]</h2>";
+              
+              // let TemplateClass = Polymer.Templatize.templatize(template, this, {
+              //     parentModel: true
+              // });
+              // let instance = new TemplateClass({test: ''});
+              // this.shadowRoot.appendChild(instance.root);
+              // instance.test = 'new value';
+          });
+
+      }
+
+      addCode (code) {
+          // console.log('before adding currentLine + index', this.currentLine, this.currentSegment)
+          // let prevLineIndent = this._getIndentCount();
+          let indented = this._isPreviousLineKeyword();
+
+          code.lines.forEach((line, index, lines) => {
+              if (indented) {
+                  line.segments.unshift( {type: 'indentation'} );
+              }
+              this.splice('lines', this.currentLine, 0, line);
+              if (lines.length === 1 || index !== lines.length - 1) {
+                  this.currentLine++;
+              }
+          });
+          this.updateHighlight();
+      }
+
+      _getIndentCount () {
+          let prevLineSegments = this.get(`lines.${this.currentLine - 1}.segments`),
+              segmentTypes,
+              indentCount;
+          if (!prevLineSegments) {
+              return 0;
+          }
+          console.log(prevLineSegments);
+          segmentTypes = prevLineSegments.map(segment => segment.type);
+          indentCount = segmentTypes.reduce((occurence, type) => {
+              return (occurence + (type === 'indentation'));
+          }, 0);
+          return indentCount;
+      }
+
+      addToBlock (code) {
+          //splice code in with indentation
+          code.lines.forEach(line => {
+              //add indentation block
+              line.segments.unshift( {type: 'indentation'} );
+              this.splice('lines', (this.currentLine - 1), 0, line);
+          });
+          this.currentLine++;
+      }
+
+      _isPreviousLineKeyword () {
+          let prevLineSegments = this.get(`lines.${this.currentLine - 1}.segments`),
+              segmentTypes;
+          if (!prevLineSegments) {
+              return;
+          }
+          segmentTypes = prevLineSegments.map(segment => segment.type);
+          return (segmentTypes.indexOf('keyword') !== -1);
+      }
+
+      getCurrentStatement () {
+          return this.get(`lines.${this.currentLine}.segments.${this.currentSegment}`);
+      }
+
+
+      moveCursor (direction) {
+          direction === 'forward' ? this.currentSegment++ : this.currentSegment--;
+          if (!this.lines[this.currentLine] || !this.lines[this.currentLine].segments || !this.lines[this.currentLine].segments[this.currentSegment]) {
+              this._moveLine(direction);
+              this.currentSegment = 0;
+          }
+      }
+
+      _moveLine (direction) {
+          do {
+              direction === 'forward' ? this.currentLine++ : this.currentLine--;
+              console.log('currentLine', this.currentLine);
+          }
+          while (this.lines[this.currentLine] && !this.lines[this.currentLine].segments);
+      }
+
+
+      changeLine () {
+          this.currentLine++;
+          this.currentSegment = 0;
+      }
+
+      updateHighlight () {
+          while (this.getCurrentStatement().type === 'indentation') {
+              this.moveCursor('forward');
+          }
+      }
+
+      processCode (code) {
+          // this.$['code-container'].innerHTML = "<h2>[[test]]</h2>";
+      }
+
+      calculateSegmentClass (type, currentLine, currentSegment, line_no, segment_no) {
+          if (currentLine === line_no && currentSegment === segment_no) {
+              return `segment ${type} highlight`;
+          }
+          return `segment ${type}`;
+      }
+
+      computeEditableId (line_no, segment_no) {
+          return `l-${line_no}-s${segment_no}`
+      }
+
+      _getLineIndex (index) {
+          return (index + 1);
+      }
+
+      connectedCallback () {
+          
+      }
+
+
+      _computeParamClass (selectedParamIndex, index) {
+          if (selectedParamIndex === index) {
+              return 'selected';
+          }
+      }
+
+      _executeEdit (newValue) {
+        this.selectedParamIndex = 0;
+        this.set(`block.parameters.${this.selectedParamIndex}.value`, newValue);
+      }
+
+      _isLastParameter (index) {
+          return (index === (this.block.parameters.length - 1));
+      }
+
+      _selectToReplace (e) {
+
+      }
+
+      _selectParamToEdit (e) {
+        // Read the editable parameter value and data type
+        let item = e.model && e.model.item,
+            value = item && item.value,
+            type = item && item.type;
+
+        // Store the edited parameter index
+        this.selectedParamIndex = e.model && e.model.index;
+        this.dispatchEvent(
+            new CustomEvent('edit-request', {
+                bubbles: true,
+                composed: true,
+                detail: {
+                    value: value,
+                    type: type
+                }
+
+            })
+        );
+      }
+
+    }
+
+    customElements.define(KmCodeBlock.is, KmCodeBlock);
+  </script>
+
+</dom-module>
+
