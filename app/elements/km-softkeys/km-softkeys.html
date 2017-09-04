@@ -1,0 +1,74 @@
+<link rel="import" href="../../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../../bower_components/polymer/lib/mixins/gesture-event-listeners.html">
+<link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
+<link rel="import" href="../../style/kano-mobile-shared-styles.html">
+
+<dom-module id="km-softkeys">
+
+    <template>
+
+        <style is="custom-style" include="kano-mobile-shared-styles iron-flex iron-flex-alignment">
+
+          :host {
+              display: block;
+              background-color: #33393d;
+              color: #fff;
+          }
+
+          .numpad {
+              height: 100%;
+          }
+
+          .numgrid {
+              min-width: 32%;
+              font-family: monospace;
+              background-color: #2b3035;
+              cursor: pointer;
+              margin: 2px;
+          }
+
+        </style>
+
+        <div class="numpad layout horizontal justified wrap">
+            <template is="dom-repeat" items="{{buttons}}">
+                <div class="numgrid flex layout vertical center-center"
+                     on-tap="_padTapped">[[item]]</div>
+            </template>
+        </div>
+    </template>
+
+    <script>
+    class KmSoftkeys extends Polymer.GestureEventListeners(Polymer.Element) {
+        static get is() {
+            return 'km-softkeys';
+        }
+
+        static get properties() {
+          return {
+            buttons: {
+                type: Array,
+                value: () => ['1','2','3','4','5','6','7','8','9', '.', '0', 'done']
+            }
+          }
+        }
+
+        constructor() {
+            super();
+        }
+
+        _padTapped (e) {
+            this.dispatchEvent(
+                new CustomEvent('pad-tapped', {
+                    bubbles: true,
+                    composed: true,
+                    detail: e.model.item
+                })
+            );
+        }
+      }
+
+      customElements.define(KmSoftkeys.is, KmSoftkeys);
+    </script>
+
+</dom-module>
+

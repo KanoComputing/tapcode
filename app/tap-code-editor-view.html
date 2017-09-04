@@ -1,0 +1,758 @@
+<link rel="import" href="bower_components/polymer/polymer-element.html">
+<link rel="import" href="bower_components/iron-flex-layout/iron-flex-layout-classes.html">
+<link rel="import" href="elements/km-code-editor/km-code-editor.html">
+<link rel="import" href="elements/km-softkeys/km-softkeys.html">
+
+<script>
+    function moveBy (x, y) {
+        this.x += x;
+        this.y += y;
+    }
+
+</script>
+
+<dom-module id="tap-code-editor-view">
+
+    <template>
+  
+      <style is="custom-style" include="iron-flex iron-flex-alignment">
+  
+        :host {
+            display: block;
+            height: 100%;
+            width: 100%;
+            box-sizing: border-box;
+            background-color: #33393d;
+            color: #fff;
+            font-family: monospace;
+            font-weight: bold;
+        }
+
+        .topbar {
+            height: 40px;
+            background-color: #33393d;
+            padding: 0 14px;
+        }
+
+        #kano-logo {
+            height: 18px;
+            padding: 11px 0;
+        }
+
+        .editor-and-canvas {
+            height: 60vh;
+            position: relative;
+            top: 0;
+            left: 0;
+        }
+
+        #editor {
+            display: block;
+            width: 100%;
+            position: absolute;
+            color: #fff;
+            font-size: 16px;
+            overflow: scroll;
+            box-sizing: border-box;
+            padding: 20px;
+        }
+
+        #canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .clear-and-refresh {
+            position: absolute;
+            top: 32px;
+            right: 32px;
+        }
+
+        .clear-and-refresh>div {
+            display: inline-block;
+            cursor: pointer;
+            opacity: 0.5;
+            transition: opacity 0.3s ease-in;
+        }
+
+        .clear-and-refresh>div:first-of-type {
+            margin-right: 8px;
+        }
+
+        .clear-and-refresh>div:hover {
+            opacity: 1;
+        }
+
+        .left-and-right-arrow {
+            position: absolute;
+            bottom: 32px;
+            right: 32px;
+            height: 40px;
+            width: 100px;
+        }
+
+        .arrow {
+            display: inline-block;
+            cursor: pointer;
+            background-color: #33393d;
+            padding: 10px 14px;
+        }
+
+        .arrow > img {
+            width: 12px;
+            margin: 0;
+        }
+
+        #left-arrow {
+            transform: rotate(180deg);
+        }
+  
+        .code-line {
+            min-height: 26px;
+        }
+
+        #number-input, #color-input, #toolbox {
+            height: calc(35vh - 40px);
+        }
+
+        #toolbox {
+            padding: 16px;
+            overflow: scroll;
+            box-sizing: border-box;
+            position: relative;
+        }
+
+        .toolbox-bar {
+            width: 100%;
+            height: 5vh;
+            background-color: #33393d;
+            border-bottom: 1px solid #2b3035;
+            padding: 0 16px;
+        }
+
+        .toolbox-tab {
+            display: inline-block;
+            line-height: 40px;
+            vertical-align: middle;
+            color: #ffffff;
+            margin-right: 16px;
+            font-family: monospace;
+        }
+
+        .toolbox-tab.selected {
+            text-decoration: underline;
+        }
+
+        .menu-selected {
+            text-decoration: underline;
+        }
+
+        .toolbox-item {
+            background-color: #23272b;
+            color: #fff;
+            border-radius: 3px;
+            font-family: monospace;
+            font-weight: bold;
+            cursor: pointer;
+            padding: 8px 12px;
+            margin: 0 8px 8px 0;
+        }
+        .toolbox-item>div {
+            display: flex;
+            flex-direction: row;
+        }
+
+        [hidden] {
+            display: none !important;
+        }
+  
+      </style>
+      
+      <div class="topbar">
+          <img id="kano-logo" src="assets/kano.svg">
+      </div>
+      <div class="editor-and-canvas">
+          <canvas id="canvas"></canvas>
+          <km-code-editor id="editor" on-edit-request="_onEditRequest"></km-code-editor>
+  
+          <div class="clear-and-refresh">
+              <div on-tap="clearEditor">clear</div>
+              <div>refresh</div>
+          </div>
+          <div class="left-and-right-arrow">
+              <div class="arrow" on-tap="_moveLeft">
+                  <img id="left-arrow" src="assets/arrow.svg"></img>
+              </div>
+              <div class="arrow" on-tap="_moveRight">
+                  <img src="assets/arrow.svg"></img>
+              </div>
+          </div>
+  
+      </div>
+      <div class="toolbox-bar layout horizontal">
+          <div class$="[[_computeTabClass(activeTab, 'drawing')]]" data-value="drawing" on-tap="_selectMenuTab">drawing</div>
+          <div class$="[[_computeTabClass(activeTab, 'style')]]" data-value="style" on-tap="_selectMenuTab">style</div>
+          <div class$="[[_computeTabClass(activeTab, 'control')]]" data-value="control" on-tap="_selectMenuTab">control</div>
+      </div>
+      <km-softkeys id="number-input" hidden$="[[!_isEqual(selectedToolbox, 'number-input')]]" on-pad-tapped="_processInput"></km-softkeys>
+      <km-softkeys id="color-input" buttons="[[colorButtons]]" hidden$="[[!_isEqual(selectedToolbox, 'color-input')]]" on-pad-tapped="_processInput"></km-softkeys>
+      <div id="toolbox" class="layout horizontal start start-aligned wrap" hidden$="[[!_isEqual(selectedToolbox, 'toolbox')]]">
+          <template id="menu-item-repeater" is="dom-repeat" items="{{statements}}" as="statement" filter="_filterMenuItem">
+              <div class="toolbox-item" on-tap="_addStatement">
+                  <template id="line-repeater" is="dom-repeat" items="{{statement.lines}}" as="line">
+                      <div>
+                          <template id="segment-repeater" is="dom-repeat" items="{{line.segments}}" as="segment">
+                              <div>[[segment.value]]</div>
+                          </template>
+                      </div>
+                  </template>
+              </div>
+          </template>
+      </div>
+  
+    </template>
+
+    <script>
+      class TapCodeEditorView extends Polymer.GestureEventListeners(Polymer.Element) {
+        static get is() { 
+            return 'tap-code-editor-view';
+        }
+  
+        static get properties() {
+            return {
+               x: {
+                   type: Number,
+                   value: 0
+               },
+               y: {
+                   type: Number,
+                   value: 0
+               },
+               selectedToolbox: {
+                   type: String,
+                   value: 'toolbox'
+               },
+               running: {
+                   type: Boolean,
+                   value: false
+               },
+               activeTab: {
+                   type: String,
+                   value: 'drawing'
+               },
+               colorButtons: {
+                  type: Array,
+                  value: () => ['#ff0000','#00ff00','#0000ff','#ffff00','#00ffff','#ff00ff','#ffffff','#000000','#7f7f7f']
+               },
+               statements: {
+                   type: Array,
+                   value: () => [
+                       {
+                           label: "moveTo",
+                           type: "drawing",
+                           lines: [
+                               {
+                                   segments: [
+                                       {
+                                           value: 'moveTo',
+                                           type: 'statement',
+                                           handler: true,
+                                           editable: true
+                                       },
+                                       {
+                                           value: '(',
+                                           type: 'token'
+                                       },
+                                       {
+                                           value: 'x',
+                                           type: 'parameter',
+                                           dataType: 'number',
+                                           editable: true
+                                       },
+                                       {
+                                           value: ',',
+                                           type: 'comma'
+                                       },
+                                       {
+                                           value: 'y',
+                                           type: 'parameter',
+                                           dataType: 'number',
+                                           editable: true
+                                       },
+                                       {
+                                           value: ')',
+                                           type: 'token'
+                                       },
+                                       {
+                                           value: ';',
+                                           type: 'token'
+                                       },
+                                   ]
+                               }
+                           ]
+                       },
+                       {
+                           label: "moveBy",
+                           type: "drawing",
+                           lines: [
+                               {
+                                   segments: [
+                                       {
+                                           value: 'moveBy',
+                                           type: 'statement',
+                                           handler: true,
+                                           editable: true
+                                       },
+                                       {
+                                           value: '(',
+                                           type: 'token'
+                                       },
+                                       {
+                                           value: 'x',
+                                           type: 'parameter',
+                                           dataType: 'number',
+                                           editable: true
+                                       },
+                                       {
+                                           value: ',',
+                                           type: 'comma'
+                                       },
+                                       {
+                                           value: 'y',
+                                           type: 'parameter',
+                                           dataType: 'number',
+                                           editable: true
+                                       },
+                                       {
+                                           value: ')',
+                                           type: 'token'
+                                       },
+                                       {
+                                           value: ';',
+                                           type: 'token'
+                                       }
+                                   ]
+                               }
+                           ]
+                       },
+                       {
+                           label: "circle",
+                           type: "drawing",
+                           lines: [
+                               {
+                                   segments: [
+                                       {
+                                           value: 'circle',
+                                           type: 'statement',
+                                           handler: true,
+                                           editable: true
+                                       },
+                                       {
+                                           value: '(',
+                                           type: 'token'
+                                       },
+                                       {
+                                           value: 'radius',
+                                           type: 'parameter',
+                                           dataType: 'number',
+                                           editable: true
+                                       },
+                                       {
+                                           value: ')',
+                                           type: 'token'
+                                       },
+                                       {
+                                           value: ';',
+                                           type: 'token'
+                                       }
+                                   ]
+                               }
+                           ]
+                       },
+                       {
+                           label: "square",
+                           type: "drawing",
+                           lines: [
+                               {
+                                   segments: [
+                                       {
+                                           value: 'square',
+                                           type: 'statement',
+                                           handler: true,
+                                           editable: true
+                                       },
+                                       {
+                                           value: '(',
+                                           type: 'token'
+                                       },
+                                       {
+                                           value: 'size',
+                                           type: 'parameter',
+                                           dataType: 'number',
+                                           editable: true
+                                       },
+                                       {
+                                           value: ')',
+                                           type: 'token'
+                                       },
+                                       {
+                                           value: ';',
+                                           type: 'token'
+                                       }
+                                   ]
+                               }
+                           ]
+                       },
+                       {
+                           label: "background",
+                           type: "drawing",
+                           lines: [
+                               {
+                                   segments: [
+                                       {
+                                           value: 'background',
+                                           type: 'statement',
+                                           handler: true,
+                                           editable: true
+                                       },
+                                       {
+                                           value: '(',
+                                           type: 'token'
+                                       },
+                                       {
+                                           value: 'color',
+                                           type: 'parameter',
+                                           dataType: 'color',
+                                           editable: true
+                                       },
+                                       {
+                                           value: ')',
+                                           type: 'token'
+                                       },
+                                       {
+                                           value: ';',
+                                           type: 'token'
+                                       }
+                                   ]
+                               }
+                           ]
+                       },
+                       {
+                           label: "lineTo",
+                           type: "drawing",
+                           lines: [
+                               {
+                                   segments: [
+                                       {
+                                           value: 'lineTo',
+                                           type: 'statement',
+                                           handler: true,
+                                           editable: true
+                                       },
+                                       {
+                                           value: '(',
+                                           type: 'token'
+                                       },
+                                       {
+                                           value: 'startX',
+                                           type: 'parameter',
+                                           dataType: 'number',
+                                           editable: true
+                                       },
+                                       {
+                                           value: ',',
+                                           type: 'comma'
+                                       },
+                                       {
+                                           value: 'startY',
+                                           type: 'parameter',
+                                           dataType: 'number',
+                                           editable: true
+                                       },
+                                       {
+                                           value: ',',
+                                           type: 'comma'
+                                       },
+                                       {
+                                           value: 'endX',
+                                           type: 'parameter',
+                                           dataType: 'number',
+                                           editable: true
+                                       },
+                                       {
+                                           value: ',',
+                                           type: 'comma'
+                                       },
+                                       {
+                                           value: 'endY',
+                                           type: 'parameter',
+                                           dataType: 'number',
+                                           editable: true
+                                       },
+                                       {
+                                           value: ')',
+                                           type: 'token'
+                                       },
+                                       {
+                                           value: ';',
+                                           type: 'token'
+                                       }
+                                   ]
+                               }
+                           ]
+                       },
+                       {
+                           label: "fillColor",
+                           type: "style",
+                           lines: [
+                               {
+                                   segments: [
+                                       {
+                                           value: 'fillColor',
+                                           type: 'statement',
+                                           handler: true,
+                                           editable: true
+                                       },
+                                       {
+                                           value: '(',
+                                           type: 'token'
+                                       },
+                                       {
+                                           value: 'color',
+                                           type: 'parameter',
+                                           dataType: 'color',
+                                           editable: true
+                                       },
+                                       {
+                                           value: ')',
+                                           type: 'token'
+                                       },
+                                       {
+                                           value: ';',
+                                           type: 'token'
+                                       }
+                                   ]
+                               }
+                           ]
+                       },
+                       {
+                           label: "opacity",
+                           type: "style",
+                           lines: [
+                               {
+                                   segments: [
+                                       {
+                                           value: 'opacity',
+                                           type: 'statement',
+                                           handler: true,
+                                           editable: true
+                                       },
+                                       {
+                                           value: '(',
+                                           type: 'token'
+                                       },
+                                       {
+                                           value: 'opacity',
+                                           type: 'parameter',
+                                           dataType: 'number',
+                                           editable: true
+                                       },
+                                       {
+                                           value: ')',
+                                           type: 'token'
+                                       },
+                                       {
+                                           value: ';',
+                                           type: 'token'
+                                       }
+                                   ]
+                               }
+                           ]
+                       },
+                       {
+                           label: "stroke",
+                           type: "style",
+                           lines: [
+                               {
+                                   segments: [
+                                       {
+                                           value: 'stroke',
+                                           type: 'statement',
+                                           handler: true,
+                                           editable: true
+                                       },
+                                       {
+                                           value: '(',
+                                           type: 'token'
+                                       },
+                                       {
+                                           value: 'thickness',
+                                           type: 'parameter',
+                                           dataType: 'number',
+                                           editable: true
+                                       },
+                                       {
+                                           value: ',',
+                                           type: 'comma'
+                                       },
+                                       {
+                                           value: 'color',
+                                           type: 'parameter',
+                                           dataType: 'color',
+                                           editable: true
+                                       },
+                                       {
+                                           value: ')',
+                                           type: 'token'
+                                       },
+                                       {
+                                           value: ';',
+                                           type: 'token'
+                                       }
+                                   ]
+                               }
+                           ]
+                       },
+                       {
+                           label: "function",
+                           type: "control",
+                           lines: [
+                               {
+                                   segments: [
+                                       {
+                                           value: 'function',
+                                           type: 'statement',
+                                           handler: true,
+                                           editable: true
+                                       },
+                                       {
+                                           type: 'whitespace'
+                                       },
+                                       {
+                                           value: '{',
+                                           type: 'token'
+                                       },
+                                   ]
+                               },
+                               {
+                                   segments: [
+                                       {
+                                           type: 'indentation'
+                                       },
+                                       {
+                                           type: 'whitespace',
+                                           editable: true
+                                       }
+                                   ]
+                               },
+                               {
+                                   segments: [
+                                       {
+                                           value: '}',
+                                           type: 'token'
+                                       }
+                                   ]
+                               },
+                       
+                           ]
+                       }
+                    ]
+                }
+            }
+        }
+  
+        constructor () {
+          super();
+        }
+  
+        ready() {
+            super.ready();
+            Polymer.RenderStatus.afterNextRender(this, function() {
+                this.ctx = this.$.canvas.getContext("2d");
+                this.$.canvas.style.width = '100%';
+                this.$.canvas.style.height = '100%';
+                this.resetCanvas();
+            });
+        }  
+  
+        _onEditRequest (e) {
+            this.selectedToolbox = this.$[`${e.detail.dataType}-input`] ? `${e.detail.dataType}-input` : 'toolbox';
+            this.running = false;
+        }
+  
+        _addStatement (e) {
+            this.$.editor.addCode(e.model.statement);
+        }
+  
+        _processInput (e) {
+            if (e.detail === 'done') {
+                this._checkAndExecuteCode();
+            } else {
+                this.$.editor.processInput(e.detail);
+            }
+        }
+  
+        _selectMenuTab (e) {
+            this.activeTab = e.currentTarget.getAttribute('data-value');
+            this.$['menu-item-repeater'].render();
+        }
+  
+        _filterMenuItem (item) {
+            return item.type === this.activeTab;
+        }
+  
+        _isEqual (selected, instance) {
+            return selected === instance;
+        }
+  
+        _moveLeft () {
+            this.$.editor.moveCursor(-1);
+        }
+  
+        _moveRight () {
+            this.$.editor.moveCursor(1);
+        }
+  
+        clearEditor () {
+            this.$.editor.reset();
+        }
+  
+        clearCanvas() {
+            let ctx = this.ctx;
+            var fillSave = ctx.fillStyle;
+            ctx.clearRect(0, 0, this.$.canvas.width, this.$.canvas.height);
+            ctx.fillStyle = '#2b3035';
+            ctx.fillRect(0, 0, this.$.canvas.width, this.$.canvas.height);
+            ctx.fillStyle = fillSave;
+        }
+  
+        _computeTabClass (activeTab, instance) {
+            return activeTab === instance ? 'toolbox-tab selected' : 'toolbox-tab';
+        }
+  
+        resetCanvas() {
+            let ctx = this.ctx;
+            this.x = 0;
+            this.y = 0;
+            ctx.clearRect(0, 0, this.$.canvas.width, this.$.canvas.height);
+            ctx.fillStyle = '#2b3035'
+            ctx.fillRect(0, 0, this.$.canvas.width, this.$.canvas.height);
+            ctx.fillStyle = "#ff00ff";
+            ctx.strokeStyle = "#00ffff";
+            ctx.lineWidth = 2;
+            ctx.globalAlpha = 1;
+        }
+  
+        evalCode (code) {
+            eval(code);
+        }
+
+      }
+      customElements.define(TapCodeEditorView.is, TapCodeEditorView);
+    </script>
+
+</dom-module>
+

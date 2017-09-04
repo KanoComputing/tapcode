@@ -1,0 +1,34 @@
+<link rel="import" href="/bower_components/polymer/polymer-element.html">
+<link rel="import" href="/tap-code-editor-view.html">
+
+<dom-module id="tap-code-app">
+
+    <template>
+
+      <style>
+          :host {
+            display: block;
+            height: 100%;
+          }  
+      </style>
+
+      <tap-code-editor-view></tap-code-editor-view>
+      
+    </template>
+
+    <script>
+      class TapCodeApp extends Polymer.Element {
+          static get is() { 
+              return 'tap-code-app';
+          }
+
+          constructor () {
+              super();
+          }
+      }
+
+      customElements.define(TapCodeApp.is, TapCodeApp);
+    </script>
+
+</dom-module>
+

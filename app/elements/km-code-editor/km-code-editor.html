@@ -1,0 +1,326 @@
+<link rel="import" href="../../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../../bower_components/polymer/lib/mixins/gesture-event-listeners.html">
+
+<dom-module id="km-code-editor">
+
+  <template>
+
+      <style is="custom-style">
+
+        :host {
+            display: block;
+            background-color: #2b3035;
+            color: #fff;
+            font-family: monospace;
+            font-size: 16px;
+            overflow: auto;
+        }
+
+        #line-repeater {
+            display: block;
+        }
+
+        #segment-repeater {
+            display: flex;
+            flex-direction: row;
+        }
+        .line, .line-segments {
+            display: flex;
+            flex-direction: row;
+        }
+        .line {
+            padding-bottom: 4px;
+        }
+
+        .line-number {
+            width: 16px;
+            text-align: right;
+            margin-right: 24px;
+        }
+
+        .whitespace:before {
+            content: '\00a0';
+        }
+
+        .indentation:before {
+            /*four-space indentation*/
+            content: '\00a0\00a0\00a0\00a0';
+        }
+
+        .parameter {
+            color: #7dc6ba;
+        }
+
+        .token {
+            color: #e0915a;
+        }
+
+        .comma:after {
+            content: '\00a0';
+        }
+
+        .segment {
+        }
+
+        .highlight {
+          background: #999;
+        }
+
+        [hidden] {
+            display: none !important;
+        }
+
+      </style>
+      <!-- shadow DOM-->
+      <template id="line-repeater" is="dom-repeat" items="{{lines}}" as="line" index-as="lineIndex">
+          <div class="line" on-tap="_selectLine">
+              <span class="line-number">[[_getLineIndex(lineIndex)]]</span>
+              <div class="line-segments">
+                  <template id="segment-repeater" is="dom-repeat" items="{{line.segments}}" as="segment" index-as="segmentNo">
+                      <div id$="[[_computeEditableId(lineIndex, segmentNo)]]"
+                           class$="[[_calculateSegmentClass(segment.type, currentLine, currentSegment, lineIndex, segmentNo)]]"
+                           on-tap="_selectParam">[[segment.value]]</div>
+                  </template>
+              </div>
+          </div>
+      </template>
+  </template>
+
+  <script>
+  class KmCodeEditor extends Polymer.GestureEventListeners(Polymer.Element) {
+      static get is() {
+        return 'km-code-editor';
+      }
+
+      static get properties() {
+        return {
+          lines: {
+              type: Array,
+              value: () => []
+          },
+          currentLine: {
+              type: Number,
+              value: 0
+          },
+          currentSegment: {
+              type: Number,
+              value: 0
+          },
+          instanceTracker: {
+              type: Object,
+              value: () => {
+                  return {};
+              }
+          }
+        }
+      }
+
+      static get observers() {
+          return [
+              '_onSegmentSelectionChanged(currentSegment, currentLine)'
+          ]
+      }
+
+      constructor() {
+          super();
+          Polymer.RenderStatus.afterNextRender(this, function() {
+              this.reset();
+          });
+      }
+
+      addCode (code) {
+          let currentSegment = this._getCurrentSegment(),
+              newLinesNeeded = 0,
+              scopeId;
+
+          if (!currentSegment) {
+              return;
+          }
+
+          if (currentSegment.type === 'whitespace') {
+              newLinesNeeded = code.lines.length;
+          }
+
+          if (currentSegment.handler) {
+              this._deleteScope(currentSegment.scopeId);
+              newLinesNeeded = code.lines.length - 1;
+          }
+
+          for (var i = 0; i < newLinesNeeded; i++) {
+              this._duplicateLine(this.lines[this.currentLine]);
+          }
+          scopeId = this._computeScopeId(code.label);
+
+          code.lines.forEach((line, index) => {
+              // Clone the line object
+              line = JSON.parse(JSON.stringify(line));
+              line.segments.forEach(segment => {
+                  segment.scope = currentSegment.scope.concat(scopeId);
+                  if (segment.handler) {
+                      segment.scopeId = scopeId;
+                  }
+              });  
+              this.splice(`lines.${this.currentLine + index}.segments`, this.currentSegment, 1, ...line.segments);
+          });
+          this.moveCursor();
+      }
+
+      reset () {
+          this.set('lines', [{ segments: [{ type: 'whitespace', scope: ['global'], editable: true }] }]);
+          this.moveCursor();
+      }
+
+      _computeScopeId (label) {
+          this.instanceTracker[label] = this.instanceTracker[label] || 0;
+          this.instanceTracker[label]++;
+          return `${label}-${this.instanceTracker[label]}`;
+      }
+
+      _duplicateLine (line) {
+          line = JSON.parse(JSON.stringify(line));
+          this.splice(`lines`, this.currentLine + 1, 0, line);
+      }
+
+      /**
+      * Deletes code of given scope starting from the currentLine
+      */
+
+      _deleteScope (scope) {
+          let scopeArray,
+            lineSegments;
+
+          for (var i = this.currentLine; i < this.lines.length; i++) {
+              lineSegments = this._getLineSegments(i);
+              if (!lineSegments) {
+                  break;
+              }
+
+              // Create an array of all scope values
+              scopeArray = lineSegments.map(segment => segment.scope);
+              scopeArray = [].concat.apply([], scopeArray);
+
+              // Stop deleting if line is not in scope
+              if (scopeArray.indexOf(scope) === -1) {
+                  break;
+              }
+
+              // Delete segments with the given scope value starting from the end of a line
+              for (var j = lineSegments.length - 1; j >= 0; j--) {
+                  if (lineSegments[j].scope.indexOf(scope) !== -1) {
+                      this.splice(`lines.${i}.segments`, j, 1);
+                  }
+              }
+              // Reinsert a whitespace
+              this.push(`lines.${i}.segments`, this._getWhitespace());
+          }
+      }
+
+      _getLineSegments (lineIndex=this.currentLine) {
+          return this.get(`lines.${lineIndex}.segments`);
+      }
+
+      _getWhitespace () {
+          return { type: 'whitespace', scope: ['global'], editable: true };
+      }
+
+      _getCurrentSegment () {
+          const lineSegments = this._getLineSegments();
+          if (!lineSegments) {
+              return;
+          }
+          return lineSegments[this.currentSegment];
+      }
+
+      /**
+      * Updates the currentSegment if there is a segment in that direction,
+      * otherwise moves line if there is a line with segments in that direction
+      */
+      moveCursor (direction=1) {
+          do {
+              if (this._getLineSegments() && this._getLineSegments()[this.currentSegment + direction]) {
+                  this.currentSegment = this.currentSegment + direction;
+              } else {
+                  this._moveLine(direction);
+              }
+          } while (!this._getCurrentSegment().editable);
+      }
+
+      /**
+      * Keeps moving the cursor until the segment is editable
+      */
+      _moveCursorToEditable (direction=1) {
+          while (!this._getCurrentSegment().editable) {
+              this.moveCursor(direction);
+          }
+      }
+
+      _moveLine (direction=1) {
+          if (this._getLineSegments(this.currentLine + direction)) {
+              this.currentLine = this.currentLine + direction;
+              this.currentSegment = (direction > 0) ? 0 : (this._getLineSegments().length - 1);
+          } else {
+              this.currentLine = direction === 1 ? 0 : this.lines.length - 1;
+              this.currentSegment = 0;
+          }
+      }
+
+      _calculateSegmentClass (type, currentLine, currentSegment, lineIndex, segmentNo) {
+          if (currentLine === lineIndex && currentSegment === segmentNo) {
+              return `segment ${type} highlight`;
+          } else {
+              return `segment ${type}`;
+          }
+      }
+
+      _computeEditableId (lineIndex, segmentNo) {
+          return `l${lineIndex}-s${segmentNo}`
+      }
+
+      _getLineIndex (index) {
+          return index + 1;
+      }
+
+      _onSegmentSelectionChanged () {
+        const selected = this._getCurrentSegment();
+        this.editingStarted = false;
+        if (!selected || !selected.editable) {
+            return;
+        }
+        this.dispatchEvent(
+            new CustomEvent('edit-request', {
+                bubbles: true,
+                composed: true,
+                detail: selected
+            })
+        );
+      }
+
+      processInput (newValue) {
+          const currentValue = this.get(`lines.${this.currentLine}.segments.${this.currentSegment}.value`);
+          this.set(`lines.${this.currentLine}.segments.${this.currentSegment}.value`,
+                  this.editingStarted ? currentValue + newValue : newValue);
+          this.editingStarted = true;
+      }
+
+      _selectParam (e) {
+          // Update current selection
+          e.currentTarget.id.replace(/(l)(\d*)(-s)(\d*)/, (match, p1, lineIndex, p2, segmentIndex) => {
+              this.currentLine = parseInt(lineIndex);
+              this.currentSegment = parseInt(segmentIndex);
+          });
+          this.moveCursor();
+      }
+
+      _selectLine (e) {
+          this.currentLine = e.model.lineIndex;
+          this.currentSegment = 0;
+          while (!this._getCurrentSegment().editable) {
+              this.moveCursor();
+          }
+      }
+
+    }
+
+    customElements.define(KmCodeEditor.is, KmCodeEditor);
+  </script>
+</dom-module>
