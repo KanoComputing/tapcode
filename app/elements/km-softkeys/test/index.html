@@ -1,0 +1,84 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <script src="../../../bower_components/webcomponentsjs/webcomponents-lite.js"></script>
+        <script src="../../../bower_components/web-component-tester/browser.js"></script>
+        <link rel="import" href="../km-softkeys.html">
+    </head>
+    <body>
+        <test-fixture id="default">
+            <template>
+                <km-softkeys></km-softkeys>
+            </template>
+        </test-fixture>
+        <script>
+
+            function listenOnce (el, event, cb) {
+                let onEvent = function (e) {
+                    el.removeEventListener(event, onEvent);
+                    cb(e);
+                }
+                el.addEventListener(event, onEvent);
+            }
+
+            function dispatchEvent(node, name, detail) {
+                detail = detail || {};
+                var event = new Event(name, { bubbles: true });
+                Object.assign(event, detail);
+                node.dispatchEvent(event);
+            }
+
+            /* globals suite, test, assert, setup, fixture */
+            suite('<km-softkeys>', () => {
+                let element;
+                setup(done => {
+                    element = fixture('default');
+                    listenOnce(element, 'dom-change', () => {
+                        done();
+                    });
+                });
+
+                test('Clicking on a key dispatches a \'key-tapped\' event', done => {
+                    let keys = Polymer.dom(element.root).querySelectorAll('.key'),
+                        rnd = Math.floor(Math.random() * keys.length),
+                        key = keys[rnd],
+                        template = Polymer.dom(element.root).querySelector('template[is="dom-repeat"]'),
+                        clickDetected;
+
+                    listenOnce(element, 'key-tapped', e => {
+                        assert.equal(e.detail, key.innerHTML);
+                        done();
+                    });
+
+                    dispatchEvent(key, 'click');
+                });
+
+                test('When having four keys, the first three keys are positioned on the same line', () => {
+                    element.set('keys', [1,2,3,4]);
+                    flush(() => {
+                        keys = element.shadowRoot.querySelectorAll('.key');
+                        let first = keys[0].getBoundingClientRect();
+                        let second = keys[1].getBoundingClientRect();
+                        let third = keys[2].getBoundingClientRect();
+                        assert.isTrue(first.height * 3 === first.height + second.height + third.height
+                                && first.width * 3 === first.width + second.width + third.width);
+                    });
+                });
+
+                test('When having four keys, the fourth key is three times wider than the first', () => {
+                    element.set('keys', [1,2,3,4]);
+                    flush(function() {
+                        keys = element.shadowRoot.querySelectorAll('.key');
+                        let firstWidth = parseFloat(window.getComputedStyle(keys[0]).width);
+                        let firstMargin = parseFloat(window.getComputedStyle(keys[0]).margin);
+                        let fourthWidth = parseFloat(window.getComputedStyle(keys[3]).width);
+                        let fourthMargin = parseFloat(window.getComputedStyle(keys[3]).margin);
+                        assert.isTrue(3 * firstWidth + 6 * firstMargin === fourthWidth + 2 * fourthMargin);
+                    });
+                });
+
+            });
+        </script>
+    </body>
+</html>

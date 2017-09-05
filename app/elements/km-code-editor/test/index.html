@@ -1,0 +1,198 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <script src="../../../bower_components/webcomponentsjs/webcomponents-lite.js"></script>
+        <script src="../../../bower_components/web-component-tester/browser.js"></script>
+        <link rel="import" href="../km-code-editor.html">
+    </head>
+    <body>
+        <test-fixture id="default">
+            <template>
+                <km-code-editor></km-code-editor>
+            </template>
+        </test-fixture>
+        <script>
+
+            function listenOnce (el, event, cb) {
+                let onEvent = function (e) {
+                    el.removeEventListener(event, onEvent);
+                    cb(e);
+                }
+                el.addEventListener(event, onEvent);
+            }
+
+            var testCode = {
+                label: "moveTo",
+                type: "drawing",
+                lines: [
+                    {
+                        segments: [
+                            {
+                                value: 'moveTo',
+                                type: 'statement',
+                                handler: true,
+                                editable: true
+                            },
+                            {
+                                value: '(',
+                                type: 'token'
+                            },
+                            {
+                                value: 'x',
+                                type: 'parameter',
+                                dataType: 'number',
+                                editable: true
+                            },
+                            {
+                                value: ',',
+                                type: 'comma'
+                            },
+                            {
+                                value: 'y',
+                                type: 'parameter',
+                                dataType: 'number',
+                                editable: true
+                            },
+                            {
+                                value: ')',
+                                type: 'token'
+                            },
+                            {
+                                value: ';',
+                                type: 'token'
+                            }
+                        ]
+                    }
+                ]
+            };
+
+            /* globals suite, test, assert, setup, fixture */
+            suite('<km-code-editor>', () => {
+                let editor;
+                setup(done => {
+                    editor = fixture('default');
+                    listenOnce(editor, 'dom-change', () => {
+                        // Sync up with the element's constructor callback, which has deferred code
+                        Polymer.RenderStatus.afterNextRender(this, function() {
+                            done();
+                        });
+                    })
+                });
+
+                test('Lines property is an array', () => {
+                    assert.typeOf(editor.lines, 'array')
+                });
+
+                test('Whitespace is present on load', () => {
+                    assert.equal(editor.lines[0].segments[0].type, 'whitespace');
+                });
+
+                test('When adding code, the editor creates the right number of new lines', () => {
+                    editor.addCode(testCode);
+                    assert.equal(editor.lines.length, testCode.lines.length + 1);
+                });
+
+                test('When adding code, the new lines keep the current indentation', () => {
+                    // Manually insert indentation and move currentSegment to whitespace
+                    editor.unshift('lines.0.segments', { type: 'indentation', scope: ['global'] });
+                    editor.set('currentSegment', 1);
+
+                    //Insert code
+                    editor.addCode(testCode);
+                    assert.equal(editor.lines[0].segments[0].type, 'indentation');
+                });
+
+                test('When adding code, a scope is given to all new segments', () => {
+                    let bugCount = 0;
+                    editor.addCode(testCode);
+                    let segments = [].concat.apply([], editor.lines.map(line => line.segments));
+                    for (var i = 0; i < segments.length; i++) {
+                        if (segments[i].type === 'whitespace') {
+                            continue;
+                        }
+                        // Count elements that don't have the scope
+                        if (segments[i].scope.indexOf('moveTo-1') === -1) {
+                            bugCount++;
+                        } 
+                    }
+                    assert.equal(bugCount, 0);
+                });
+
+                test('When adding code, the segments inherit the current scope', () => {
+                    let bugCount = 0;
+                    editor.addCode(testCode);
+                    let segments = [].concat.apply([], editor.lines.map(line => line.segments));
+                    for (var i = 0; i < segments.length; i++) {
+                        if (segments[i].type === 'whitespace') {
+                            continue;
+                        }
+                        // Count elements that didn't inherit the global scope
+                        if (segments[i].scope.indexOf('global') === -1) {
+                            bugCount++;
+                        } 
+                    }
+                    assert.equal(bugCount, 0);
+                });
+
+                test('When adding code, a scopeId is assigned to the handler', () => {
+                    let handlerSegment;
+                    editor.addCode(testCode);
+                    let segments = [].concat.apply([], editor.lines.map(line => line.segments));
+                    for (var i = 0; i < segments.length; i++) {
+                        if (segments[i].handler) {
+                            handlerSegment = segments[i];
+                            break;
+                        }
+                    }
+                    assert.equal(handlerSegment.scopeId, 'moveTo-1');
+                });
+
+                test('After adding code, last line is a whitespace', () => {
+                    editor.addCode(testCode);
+                    assert.equal(editor.lines[editor.lines.length - 1].segments[0].type, 'whitespace');
+                });
+
+                test('After adding code, currentSegment is editable', () => {
+                    editor.addCode(testCode);
+                    assert.isTrue(editor._getCurrentSegment().editable);
+                });
+
+                test('When current segment is a handler, adding code replaces the handler\'s scope', () => {
+                    let bugCount = 0;
+                    editor.addCode(testCode);
+                    editor.set('currentLine', 0);
+                    editor.set('currentSegment', 0);
+                    editor.addCode(testCode);
+                    let segments = [].concat.apply([], editor.lines.map(line => line.segments));
+                    for (var i = 0; i < segments.length; i++) {
+                        if (segments[i].type === 'whitespace') {
+                            continue;
+                        }
+                        // Count elements that didn't inherit the global scope
+                        if (segments[i].scope.indexOf('moveTo-2') === -1) {
+                            bugCount++;
+                        } 
+                    }
+                    assert.equal(bugCount, 0);
+                });
+
+                test('Using the processInput method updates the value of the currentSegment', () => {
+                    let bugCount = 0;
+                    editor.addCode(testCode);
+                    editor.processInput('1');
+                    assert.equal(editor._getCurrentSegment().value, '1');
+                });
+
+                test('Using the processInput method repeatedly keeps on adding to the value of the currentSegment', () => {
+                    let bugCount = 0;
+                    editor.addCode(testCode);
+                    editor.processInput('1');
+                    editor.processInput('2');
+                    assert.equal(editor._getCurrentSegment().value, '12');
+                });
+
+            });
+        </script>
+    </body>
+</html>

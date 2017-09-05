@@ -1,13 +1,12 @@
 <link rel="import" href="../../bower_components/polymer/polymer-element.html">
 <link rel="import" href="../../bower_components/polymer/lib/mixins/gesture-event-listeners.html">
 <link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
-<link rel="import" href="../../style/kano-mobile-shared-styles.html">
 
 <dom-module id="km-softkeys">
 
     <template>
 
-        <style is="custom-style" include="kano-mobile-shared-styles iron-flex iron-flex-alignment">
+        <style is="custom-style" include="iron-flex iron-flex-alignment">
 
           :host {
               display: block;
@@ -15,24 +14,25 @@
               color: #fff;
           }
 
-          .numpad {
+          .keypad {
               height: 100%;
           }
 
-          .numgrid {
+          .key {
               min-width: 32%;
-              font-family: monospace;
               background-color: #2b3035;
+              font-family: monospace;
+              font-size: 16px;
               cursor: pointer;
               margin: 2px;
           }
 
         </style>
 
-        <div class="numpad layout horizontal justified wrap">
-            <template is="dom-repeat" items="{{buttons}}">
-                <div class="numgrid flex layout vertical center-center"
-                     on-tap="_padTapped">[[item]]</div>
+        <div class="keypad layout horizontal justified wrap">
+            <template is="dom-repeat" items="{{keys}}">
+                <div class="key flex layout vertical center-center"
+                     on-tap="_keyTapped">[[item]]</div>
             </template>
         </div>
     </template>
@@ -44,21 +44,21 @@
         }
 
         static get properties() {
-          return {
-            buttons: {
-                type: Array,
-                value: () => ['1','2','3','4','5','6','7','8','9', '.', '0', 'done']
+            return {
+              keys: {
+                  type: Array,
+                  value: () => ['1','2','3','4','5','6','7','8','9', '.', '0', 'done']
+              }
             }
-          }
         }
 
         constructor() {
             super();
         }
 
-        _padTapped (e) {
+        _keyTapped (e) {
             this.dispatchEvent(
-                new CustomEvent('pad-tapped', {
+                new CustomEvent('key-tapped', {
                     bubbles: true,
                     composed: true,
                     detail: e.model.item

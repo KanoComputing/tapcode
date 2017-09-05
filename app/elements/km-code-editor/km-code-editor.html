@@ -1,11 +1,12 @@
 <link rel="import" href="../../bower_components/polymer/polymer-element.html">
 <link rel="import" href="../../bower_components/polymer/lib/mixins/gesture-event-listeners.html">
+<link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
 
 <dom-module id="km-code-editor">
 
   <template>
 
-      <style is="custom-style">
+      <style is="custom-style" include="iron-flex iron-flex-alignment">
 
         :host {
             display: block;
@@ -16,18 +17,6 @@
             overflow: auto;
         }
 
-        #line-repeater {
-            display: block;
-        }
-
-        #segment-repeater {
-            display: flex;
-            flex-direction: row;
-        }
-        .line, .line-segments {
-            display: flex;
-            flex-direction: row;
-        }
         .line {
             padding-bottom: 4px;
         }
@@ -43,7 +32,6 @@
         }
 
         .indentation:before {
-            /*four-space indentation*/
             content: '\00a0\00a0\00a0\00a0';
         }
 
@@ -59,9 +47,6 @@
             content: '\00a0';
         }
 
-        .segment {
-        }
-
         .highlight {
           background: #999;
         }
@@ -72,10 +57,10 @@
 
       </style>
       <!-- shadow DOM-->
-      <template id="line-repeater" is="dom-repeat" items="{{lines}}" as="line" index-as="lineIndex">
-          <div class="line" on-tap="_selectLine">
+      <template is="dom-repeat" items="{{lines}}" as="line" index-as="lineIndex">
+          <div class="line horizontal layout" on-tap="_selectLine">
               <span class="line-number">[[_getLineIndex(lineIndex)]]</span>
-              <div class="line-segments">
+              <div class="line-segments horizontal layout">
                   <template id="segment-repeater" is="dom-repeat" items="{{line.segments}}" as="segment" index-as="segmentNo">
                       <div id$="[[_computeEditableId(lineIndex, segmentNo)]]"
                            class$="[[_calculateSegmentClass(segment.type, currentLine, currentSegment, lineIndex, segmentNo)]]"
@@ -142,12 +127,12 @@
           }
 
           if (currentSegment.handler) {
-              this._deleteScope(currentSegment.scopeId);
+              this.deleteScope(currentSegment.scopeId);
               newLinesNeeded = code.lines.length - 1;
           }
 
           for (var i = 0; i < newLinesNeeded; i++) {
-              this._duplicateLine(this.lines[this.currentLine]);
+              this.duplicateLine(this.lines[this.currentLine]);
           }
           scopeId = this._computeScopeId(code.label);
 
@@ -170,22 +155,50 @@
           this.moveCursor();
       }
 
-      _computeScopeId (label) {
-          this.instanceTracker[label] = this.instanceTracker[label] || 0;
-          this.instanceTracker[label]++;
-          return `${label}-${this.instanceTracker[label]}`;
+      /**
+      * Moves cursor backwards or forwards by changing the segment selection or moving line
+      */
+      moveCursor (direction=1) {
+          do {
+              if (this._getLineSegments() && this._getLineSegments()[this.currentSegment + direction]) {
+                  this.currentSegment = this.currentSegment + direction;
+              } else {
+                  this.moveLine(direction);
+              }
+          } while (!this._getCurrentSegment().editable);
       }
 
-      _duplicateLine (line) {
+      /**
+      * Moves line backwards or forwards with the ability of jumping between first and last lines
+      */
+
+      moveLine (direction=1) {
+          if (this._getLineSegments(this.currentLine + direction)) {
+              this.currentLine = this.currentLine + direction;
+              this.currentSegment = (direction > 0) ? 0 : (this._getLineSegments().length - 1);
+          } else {
+              this.currentLine = direction === 1 ? 0 : this.lines.length - 1;
+              this.currentSegment = 0;
+          }
+      }
+
+      duplicateLine (line) {
           line = JSON.parse(JSON.stringify(line));
           this.splice(`lines`, this.currentLine + 1, 0, line);
       }
 
+      processInput (newValue) {
+          const currentValue = this.get(`lines.${this.currentLine}.segments.${this.currentSegment}.value`);
+          this.set(`lines.${this.currentLine}.segments.${this.currentSegment}.value`,
+                  this.editingStarted ? currentValue + newValue : newValue);
+          this.editingStarted = true;
+      }
+
       /**
-      * Deletes code of given scope starting from the currentLine
+      * Deletes code of a given scope starting from currentLine
       */
 
-      _deleteScope (scope) {
+      deleteScope (scope) {
           let scopeArray,
             lineSegments;
 
@@ -215,69 +228,25 @@
           }
       }
 
-      _getLineSegments (lineIndex=this.currentLine) {
-          return this.get(`lines.${lineIndex}.segments`);
+      /*****************************
+      * Event and observer callbacks
+      ******************************/
+
+      _selectParam (e) {
+          // Update current selection
+          e.currentTarget.id.replace(/(l)(\d*)(-s)(\d*)/, (match, p1, lineIndex, p2, segmentIndex) => {
+              this.currentLine = parseInt(lineIndex);
+              this.currentSegment = parseInt(segmentIndex);
+          });
+          this.moveCursor();
       }
 
-      _getWhitespace () {
-          return { type: 'whitespace', scope: ['global'], editable: true };
-      }
-
-      _getCurrentSegment () {
-          const lineSegments = this._getLineSegments();
-          if (!lineSegments) {
-              return;
-          }
-          return lineSegments[this.currentSegment];
-      }
-
-      /**
-      * Updates the currentSegment if there is a segment in that direction,
-      * otherwise moves line if there is a line with segments in that direction
-      */
-      moveCursor (direction=1) {
-          do {
-              if (this._getLineSegments() && this._getLineSegments()[this.currentSegment + direction]) {
-                  this.currentSegment = this.currentSegment + direction;
-              } else {
-                  this._moveLine(direction);
-              }
-          } while (!this._getCurrentSegment().editable);
-      }
-
-      /**
-      * Keeps moving the cursor until the segment is editable
-      */
-      _moveCursorToEditable (direction=1) {
+      _selectLine (e) {
+          this.currentLine = e.model.lineIndex;
+          this.currentSegment = 0;
           while (!this._getCurrentSegment().editable) {
-              this.moveCursor(direction);
+              this.moveCursor();
           }
-      }
-
-      _moveLine (direction=1) {
-          if (this._getLineSegments(this.currentLine + direction)) {
-              this.currentLine = this.currentLine + direction;
-              this.currentSegment = (direction > 0) ? 0 : (this._getLineSegments().length - 1);
-          } else {
-              this.currentLine = direction === 1 ? 0 : this.lines.length - 1;
-              this.currentSegment = 0;
-          }
-      }
-
-      _calculateSegmentClass (type, currentLine, currentSegment, lineIndex, segmentNo) {
-          if (currentLine === lineIndex && currentSegment === segmentNo) {
-              return `segment ${type} highlight`;
-          } else {
-              return `segment ${type}`;
-          }
-      }
-
-      _computeEditableId (lineIndex, segmentNo) {
-          return `l${lineIndex}-s${segmentNo}`
-      }
-
-      _getLineIndex (index) {
-          return index + 1;
       }
 
       _onSegmentSelectionChanged () {
@@ -295,28 +264,50 @@
         );
       }
 
-      processInput (newValue) {
-          const currentValue = this.get(`lines.${this.currentLine}.segments.${this.currentSegment}.value`);
-          this.set(`lines.${this.currentLine}.segments.${this.currentSegment}.value`,
-                  this.editingStarted ? currentValue + newValue : newValue);
-          this.editingStarted = true;
-      }
+      /******************
+      * Data-bind helpers
+      *******************/
 
-      _selectParam (e) {
-          // Update current selection
-          e.currentTarget.id.replace(/(l)(\d*)(-s)(\d*)/, (match, p1, lineIndex, p2, segmentIndex) => {
-              this.currentLine = parseInt(lineIndex);
-              this.currentSegment = parseInt(segmentIndex);
-          });
-          this.moveCursor();
-      }
-
-      _selectLine (e) {
-          this.currentLine = e.model.lineIndex;
-          this.currentSegment = 0;
-          while (!this._getCurrentSegment().editable) {
-              this.moveCursor();
+      _calculateSegmentClass (type, currentLine, currentSegment, lineIndex, segmentNo) {
+          if (currentLine === lineIndex && currentSegment === segmentNo) {
+              return `segment ${type} highlight`;
+          } else {
+              return `segment ${type}`;
           }
+      }
+
+      _computeEditableId (lineIndex, segmentNo) {
+          return `l${lineIndex}-s${segmentNo}`
+      }
+
+      _getLineIndex (index) {
+          return index + 1;
+      }
+
+      /****************
+      * Private helpers
+      ******************/
+
+      _computeScopeId (label) {
+          this.instanceTracker[label] = this.instanceTracker[label] || 0;
+          this.instanceTracker[label]++;
+          return `${label}-${this.instanceTracker[label]}`;
+      }
+
+      _getLineSegments (lineIndex=this.currentLine) {
+          return this.get(`lines.${lineIndex}.segments`);
+      }
+
+      _getWhitespace () {
+          return { type: 'whitespace', scope: ['global'], editable: true };
+      }
+
+      _getCurrentSegment () {
+          const lineSegments = this._getLineSegments();
+          if (!lineSegments) {
+              return;
+          }
+          return lineSegments[this.currentSegment];
       }
 
     }

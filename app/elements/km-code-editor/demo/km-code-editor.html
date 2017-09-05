@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>Kano-mobile-code-editor demo</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <script src="../../../bower_components/webcomponentsjs/webcomponents-lite.js"></script>
+        <link rel="import" href="../../../bower_components/iron-demo-helpers/demo-snippet.html">
+        <link rel="import" href="../../../bower_components/iron-demo-helpers/demo-pages-shared-styles.html">
+        <link rel="import" href="../km-code-editor.html">
+
+        <custom-style>
+            <style is="custom-style" include="demo-pages-shared-styles">
+
+                html, body {
+                    margin: 0;
+                    padding: 0;
+                    height: 100vh;
+                }
+
+                .actions {
+                    margin: 16px 0;
+                }
+
+                button {
+                    background-color: white;
+                    border: 1px solid black;
+                    padding: 16px;
+                    margin-right: 8px;
+                }
+
+            </style>
+        </custom-style>
+    </head>
+    <body unresolved>
+        <div class="centered">
+            <div class="vertical-section-container">
+                <h3>km-code-editor</h3>
+                <demo-snippet class="vertical layout center-justified">
+                    <template id="bind">
+
+                        <style>
+                            #editor {
+                                min-height: 400px;
+                                padding: 32px;
+                            }
+                        </style>
+
+                        <div class="actions">
+                            <button id="submit-code">Add code</button>
+                            <button id="submit-block">Add block</button>
+                            <button id="move-left" on-tap="_moveLeft"><-cursor</button>
+                            <button id="move-right" on-tap="_moveRight">cursor-></button>
+                        </div>
+                        <km-code-editor id="editor"></km-code-editor>
+
+                        <script>
+                            document.addEventListener('WebComponentsReady', () => {
+                                let editor = document.getElementById('editor'),
+                                    submitCode = document.getElementById('submit-code'),
+                                    submitBlock = document.getElementById('submit-block'),
+                                    moveLeft = document.getElementById('move-left'),
+                                    moveRight = document.getElementById('move-right');
+
+                                moveLeft.addEventListener('click', () => {
+                                    editor.moveCursor(-1);
+                                });
+                                moveRight.addEventListener('click', () => {
+                                    editor.moveCursor(1);
+                                });
+                                submitCode.addEventListener('click', () => {
+                                    let code = {
+                                        label: "moveTo",
+                                        type: "drawing",
+                                        lines: [
+                                            {
+                                                segments: [
+                                                    {
+                                                        value: 'moveTo',
+                                                        type: 'statement',
+                                                        handler: true,
+                                                        editable: true
+                                                    },
+                                                    {
+                                                        value: '(',
+                                                        type: 'token'
+                                                    },
+                                                    {
+                                                        value: 'x',
+                                                        type: 'parameter',
+                                                        dataType: 'number',
+                                                        editable: true
+                                                    },
+                                                    {
+                                                        value: ',',
+                                                        type: 'comma'
+                                                    },
+                                                    {
+                                                        value: 'y',
+                                                        type: 'parameter',
+                                                        dataType: 'number',
+                                                        editable: true
+                                                    },
+                                                    {
+                                                        value: ')',
+                                                        type: 'token'
+                                                    },
+                                                    {
+                                                        value: ';',
+                                                        type: 'token'
+                                                    }
+                                                ]
+                                            }
+                                        ]
+                                    };
+                                    editor.addCode(code);
+                                });
+
+                                submitBlock.addEventListener('click', () => {
+                                    let block = {
+                                        label: "function",
+                                        type: "control",
+                                        lines: [
+                                            {
+                                                segments: [
+                                                    {
+                                                        value: 'function animate',
+                                                        type: 'statement',
+                                                        handler: true,
+                                                        editable: true
+                                                    },
+                                                    {
+                                                        value: '(',
+                                                        type: 'token'
+                                                    },
+                                                    {
+                                                        value: ')',
+                                                        type: 'token'
+                                                    },
+                                                    {
+                                                        type: 'whitespace'
+                                                    },
+                                                    {
+                                                        value: '{',
+                                                        type: 'token'
+                                                    },
+                                                ]
+                                            },
+                                            {
+                                                segments: [
+                                                    {
+                                                        type: 'indentation'
+                                                    },
+                                                    {
+                                                        type: 'whitespace',
+                                                        editable: true
+                                                    }
+                                                ]
+                                            },
+                                            {
+                                                segments: [
+                                                    {
+                                                        value: '}',
+                                                        type: 'token'
+                                                    }
+                                                ]
+                                            }
+                                        ]
+                                    };
+                                    editor.addCode(block);
+                                });
+                            });
+                        </script>
+                    </template>
+                </demo-snippet>
+            </div>
+        </div>
+    </body>
+</html>

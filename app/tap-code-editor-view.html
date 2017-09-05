@@ -160,10 +160,6 @@
             padding: 8px 12px;
             margin: 0 8px 8px 0;
         }
-        .toolbox-item>div {
-            display: flex;
-            flex-direction: row;
-        }
 
         [hidden] {
             display: none !important;
@@ -197,13 +193,13 @@
           <div class$="[[_computeTabClass(activeTab, 'style')]]" data-value="style" on-tap="_selectMenuTab">style</div>
           <div class$="[[_computeTabClass(activeTab, 'control')]]" data-value="control" on-tap="_selectMenuTab">control</div>
       </div>
-      <km-softkeys id="number-input" hidden$="[[!_isEqual(selectedToolbox, 'number-input')]]" on-pad-tapped="_processInput"></km-softkeys>
-      <km-softkeys id="color-input" buttons="[[colorButtons]]" hidden$="[[!_isEqual(selectedToolbox, 'color-input')]]" on-pad-tapped="_processInput"></km-softkeys>
+      <km-softkeys id="number-input" hidden$="[[!_isEqual(selectedToolbox, 'number-input')]]" on-key-tapped="_processInput"></km-softkeys>
+      <km-softkeys id="color-input" keys="[[colorKeys]]" hidden$="[[!_isEqual(selectedToolbox, 'color-input')]]" on-key-tapped="_processInput"></km-softkeys>
       <div id="toolbox" class="layout horizontal start start-aligned wrap" hidden$="[[!_isEqual(selectedToolbox, 'toolbox')]]">
           <template id="menu-item-repeater" is="dom-repeat" items="{{statements}}" as="statement" filter="_filterMenuItem">
               <div class="toolbox-item" on-tap="_addStatement">
                   <template id="line-repeater" is="dom-repeat" items="{{statement.lines}}" as="line">
-                      <div>
+                      <div class="horizontal layout">
                           <template id="segment-repeater" is="dom-repeat" items="{{line.segments}}" as="segment">
                               <div>[[segment.value]]</div>
                           </template>
@@ -243,7 +239,7 @@
                    type: String,
                    value: 'drawing'
                },
-               colorButtons: {
+               colorKeys: {
                   type: Array,
                   value: () => ['#ff0000','#00ff00','#0000ff','#ffff00','#00ffff','#ff00ff','#ffffff','#000000','#7f7f7f']
                },
@@ -623,7 +619,7 @@
                                {
                                    segments: [
                                        {
-                                           value: 'function',
+                                           value: 'function animate',
                                            type: 'statement',
                                            handler: true,
                                            editable: true
