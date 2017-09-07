@@ -7,13 +7,6 @@ function hasExt(ext) {
     };
 }
 
-var gutil = require('gulp-util');
-
-$.uglify().on('error', function(err) {
-    gutil.log(gutil.colors.red('[Error]'), err.toString());
-    this.emit('end');
-});
-
 gulp.task('clean', () => {
     return gulp.src(['./www', './.tmp'], {read: false})
         .pipe($.clean());
@@ -49,6 +42,10 @@ gulp.task('transpile', ['clean'], () => {
             presets: ['es2015']
         })))
         .pipe($.if(hasExt('js'), $.uglify()))
+        /* For some reason, html-replace must be at the end */
+        .pipe($.if(hasExt('html'), $.htmlReplace({
+            es5adapter: '<script src="./bower_components/webcomponentsjs/custom-elements-es5-adapter.js"></script>'
+        })))
         .pipe(gulp.dest('./.tmp/'));
 });
 
