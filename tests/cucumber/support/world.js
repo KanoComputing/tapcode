@@ -65,7 +65,7 @@ class CustomWorld {
             });
     }
 
-    waitForRootElement (timeout=2000) {
+    waitForRootElement (timeout=10000) {
         return this.driver.wait(() => {
             return this.driver.executeScript(`return document.querySelector('tap-code-app').shadowRoot;`)
                 .then(rootElement => {
