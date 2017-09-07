@@ -6,3 +6,6 @@
 
 # App
 app/bower_components
+node_modules
+.tmp
+www
