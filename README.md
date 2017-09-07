@@ -1,6 +1,6 @@
 # Taptype
 
-Taptype is creative-code creation tool with a mobile-first design. Users can enter JavaScript from a set API to draw on a canvas directly beneath the code.
+Taptype is a creative-code creation tool with a mobile-first design. Users can code with a set selection of JavaScript snippets to draw on a canvas directly beneath the code.
 ## Getting Started
 
 ### Prerequisites
