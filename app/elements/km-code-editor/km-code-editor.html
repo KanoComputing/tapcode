@@ -18,21 +18,29 @@
         }
 
         .line {
-            padding-bottom: 4px;
+            padding-bottom: 12px;
         }
 
         .line-number {
             width: 16px;
             text-align: right;
             margin-right: 24px;
+            cursor: pointer;
         }
 
-        .whitespace:before {
+        .whitespace:before,
+        .insertPoint:before,
+        .lineEnd:before {
             content: '\00a0';
         }
 
         .indentation:before {
             content: '\00a0\00a0\00a0\00a0';
+        }
+
+        .control:before {
+            color: #7dc6ba;
+            content: 'function\00a0';
         }
 
         .parameter {
@@ -57,14 +65,14 @@
 
       </style>
       <!-- shadow DOM-->
-      <template is="dom-repeat" items="{{lines}}" as="line" index-as="lineIndex">
+      <template id="line-repeater" is="dom-repeat" items="{{lines}}" as="line" index-as="lineIndex">
           <div class="line horizontal layout" on-tap="_selectLine">
-              <span class="line-number">[[_getLineIndex(lineIndex)]]</span>
+              <span class="line-number" on-tap="_onLineNumberTapped">[[_getLineIndex(lineIndex)]]</span>
               <div class="line-segments horizontal layout">
                   <template id="segment-repeater" is="dom-repeat" items="{{line.segments}}" as="segment" index-as="segmentNo">
                       <div id$="[[_computeEditableId(lineIndex, segmentNo)]]"
                            class$="[[_calculateSegmentClass(segment.type, currentLine, currentSegment, lineIndex, segmentNo)]]"
-                           on-tap="_selectParam">[[segment.value]]</div>
+                           on-tap="_selectSegment">[[segment.value]]</div>
                   </template>
               </div>
           </div>
@@ -96,6 +104,15 @@
               value: () => {
                   return {};
               }
+          },
+          editingStarted: {
+              type: Boolean,
+              value: false,
+              observer: '_onEditingStarted'
+          },
+          editedValue: {
+              type: 'String',
+              notify: true
           }
         }
       }
@@ -114,51 +131,70 @@
       }
 
       addCode (code) {
-          let currentSegment = this._getCurrentSegment(),
-              newLinesNeeded = 0,
-              scopeId;
+          let insertPoint = this._getCurrentSegment(),
+              newLinesNeeded = code.lines.length - 1,
+              currentScope = insertPoint.scope.concat(this._computeScopeId(code.name));
 
-          if (!currentSegment) {
-              return;
+          // Cursor sits on existing code -> replace exisiting code
+          if (insertPoint.handler) {
+              this.deleteScope(insertPoint.scope[insertPoint.scope.length - 1]);
           }
 
-          if (currentSegment.type === 'whitespace') {
-              newLinesNeeded = code.lines.length;
+          if (this.currentLine === this.lines.length - 1
+              || this._doesLineCloseBlock(this.currentLine + 1)) {
+              newLinesNeeded++;
           }
 
-          if (currentSegment.handler) {
-              this.deleteScope(currentSegment.scopeId);
-              newLinesNeeded = code.lines.length - 1;
+          // Cursor sits at end of line -> insert new line
+          if (insertPoint.type === 'lineEnd') {
+              this._insertLine(1);
+              this.moveCursor();
+              newLinesNeeded--;
           }
-
+          
+          // Insert new lines for code
           for (var i = 0; i < newLinesNeeded; i++) {
-              this.duplicateLine(this.lines[this.currentLine]);
+              this._insertLine(0, 1);
           }
-          scopeId = this._computeScopeId(code.label);
 
           code.lines.forEach((line, index) => {
-              // Clone the line object
+
+              // Clone the line
               line = JSON.parse(JSON.stringify(line));
+
+              // Assign scope
               line.segments.forEach(segment => {
-                  segment.scope = currentSegment.scope.concat(scopeId);
-                  if (segment.handler) {
-                      segment.scopeId = scopeId;
+                  segment.scope = currentScope;
+                  if (segment.type === 'parameter') {
+                      segment.value = code.getParamDefaultValue(segment.value);
                   }
-              });  
+              });
+
+              // Add semi-colon
+              if (insertPoint.type !== 'parameter' && !insertPoint.returns
+                  && code.type !== 'control') {
+                  line.segments.push({ value: ';', type: 'token', scope: currentScope });
+              }
+
+              // Mark end of line
+              if (line.segments[line.segments.length - 1].type !== 'insertPoint'
+                  //refactor
+                  || (this.lines[this.currentLine + index].segments[this.lines[this.currentLine + index].segments.length - 1]
+                  && this.lines[this.currentLine + index].segments[this.lines[this.currentLine + index].segments.length - 1].type !== 'lineEnd')) {
+                  line.segments.push({ type: 'lineEnd', scope: currentScope });
+              }
+
               this.splice(`lines.${this.currentLine + index}.segments`, this.currentSegment, 1, ...line.segments);
           });
           this.moveCursor();
       }
 
       reset () {
-          this.set('lines', [{ segments: [{ type: 'whitespace', scope: ['global'], editable: true }] }]);
+          this.set('lines', [{ segments: [{ type: 'insertPoint', scope: ['global'], editable: true }] }]);
           this.moveCursor();
       }
 
-      /**
-      * Moves cursor backwards or forwards by changing the segment selection or moving line
-      */
-      moveCursor (direction=1) {
+      moveCursor (direction = 1) {
           do {
               if (this._getLineSegments() && this._getLineSegments()[this.currentSegment + direction]) {
                   this.currentSegment = this.currentSegment + direction;
@@ -168,11 +204,7 @@
           } while (!this._getCurrentSegment().editable);
       }
 
-      /**
-      * Moves line backwards or forwards with the ability of jumping between first and last lines
-      */
-
-      moveLine (direction=1) {
+      moveLine (direction = 1) {
           if (this._getLineSegments(this.currentLine + direction)) {
               this.currentLine = this.currentLine + direction;
               this.currentSegment = (direction > 0) ? 0 : (this._getLineSegments().length - 1);
@@ -182,16 +214,35 @@
           }
       }
 
-      duplicateLine (line) {
-          line = JSON.parse(JSON.stringify(line));
-          this.splice(`lines`, this.currentLine + 1, 0, line);
+      processInput (newValue) {
+          const currentSegment = this._getCurrentSegment();
+
+          // Cursor sits on existing code -> replace exisiting code
+          if (currentSegment.returns) {
+              this.deleteScope(currentSegment.scope[currentSegment.scope.length - 1]);
+              this.splice(`lines.${this.currentLine}.segments`, this.currentSegment, 0, {
+                  type: 'parameter',
+                  dataType: currentSegment.returns,
+                  editable: true,
+                  scope: currentSegment.scope
+              });
+          }
+
+          this.editedValue = this.editingStarted ? currentSegment.value + newValue : newValue;
+          this.set(`lines.${this.currentLine}.segments.${this.currentSegment}.value`,
+                  this.editingStarted ? currentSegment.value + newValue : newValue);
+
+          this.editingStarted = true;
       }
 
-      processInput (newValue) {
-          const currentValue = this.get(`lines.${this.currentLine}.segments.${this.currentSegment}.value`);
-          this.set(`lines.${this.currentLine}.segments.${this.currentSegment}.value`,
-                  this.editingStarted ? currentValue + newValue : newValue);
-          this.editingStarted = true;
+      toggleOperator () {
+          const currentSegmentValue = this._getCurrentSegment().value;
+          if (currentSegmentValue[0] === '-') {
+              this.set(`lines.${this.currentLine}.segments.${this.currentSegment}.value`,
+                      currentSegmentValue.substr(1));
+          } else {
+              this.set(`lines.${this.currentLine}.segments.${this.currentSegment}.value`, '-' + currentSegmentValue);
+          }
       }
 
       /**
@@ -200,7 +251,8 @@
 
       deleteScope (scope) {
           let scopeArray,
-            lineSegments;
+            lineSegments,
+            linesToDelete = [];
 
           for (var i = this.currentLine; i < this.lines.length; i++) {
               lineSegments = this._getLineSegments(i);
@@ -216,52 +268,93 @@
               if (scopeArray.indexOf(scope) === -1) {
                   break;
               }
-
               // Delete segments with the given scope value starting from the end of a line
               for (var j = lineSegments.length - 1; j >= 0; j--) {
-                  if (lineSegments[j].scope.indexOf(scope) !== -1) {
+                  if (lineSegments[j].scope.indexOf(scope) !== -1)  {
                       this.splice(`lines.${i}.segments`, j, 1);
                   }
               }
-              // Reinsert a whitespace
-              this.push(`lines.${i}.segments`, this._getWhitespace());
+
+              if (lineSegments.length === 0) {
+                  linesToDelete.push(i);
+              }
           }
+
+          for (var k = linesToDelete.length - 1; k > 0; k--) {
+              // if (k !== 0) {
+                  this.splice('lines', linesToDelete[k], 1);
+              // }
+          }
+
       }
 
       /*****************************
       * Event and observer callbacks
       ******************************/
 
-      _selectParam (e) {
+      _selectSegment (e) {
+          e.stopPropagation();
           // Update current selection
           e.currentTarget.id.replace(/(l)(\d*)(-s)(\d*)/, (match, p1, lineIndex, p2, segmentIndex) => {
               this.currentLine = parseInt(lineIndex);
               this.currentSegment = parseInt(segmentIndex);
           });
-          this.moveCursor();
-      }
-
-      _selectLine (e) {
-          this.currentLine = e.model.lineIndex;
-          this.currentSegment = 0;
           while (!this._getCurrentSegment().editable) {
               this.moveCursor();
           }
       }
 
+      _selectLine (e) {
+          this.currentLine = e.model.lineIndex;
+          this.currentSegment = this.lines[this.currentLine].segments.length - 1;
+      }
+
+      _onLineNumberTapped (e) {
+          this.currentLine = e.model.lineIndex;
+          let copyFrom = this._doesLineCloseBlock(this.currentLine) ? -1 : 0;
+          this._insertLine(copyFrom, 0);
+      }
+
+      _insertLine (from, to) {
+          let lineIndex = this.currentLine + from,
+              lineCopy = JSON.parse(JSON.stringify(this.lines[lineIndex])),
+              currentScope = lineCopy.segments[0].scope;
+          if (typeof to === 'undefined') {
+              to = from;
+          }
+
+          for (var j = lineCopy.segments.length - 1; j >= 0; j--) {
+              if (lineCopy.segments[j].type !== 'indentation') {
+                  lineCopy.segments.splice(j, 1);
+              }
+          }
+          lineCopy.segments.push({ type: 'insertPoint', scope: currentScope, editable: true });  
+          this.splice('lines', this.currentLine + to, 0, lineCopy)
+      }
+
       _onSegmentSelectionChanged () {
-        const selected = this._getCurrentSegment();
-        this.editingStarted = false;
-        if (!selected || !selected.editable) {
-            return;
-        }
-        this.dispatchEvent(
-            new CustomEvent('edit-request', {
-                bubbles: true,
-                composed: true,
-                detail: selected
-            })
-        );
+          const selected = this._getCurrentSegment();
+          this.editingStarted = false;
+          if (!selected || (!selected.editable && selected.type !== 'lineEnd')) {
+              return;
+          }
+          this.dispatchEvent(
+              new CustomEvent('edit-request', {
+                  bubbles: true,
+                  composed: true,
+                  detail: selected
+              })
+          );
+
+          if (typeof selected.value !== 'undefined') {
+              this.editedValue = selected.value;
+          }
+      
+      }
+      _onEditingStarted (started) {
+          if (started) {
+
+          }
       }
 
       /******************
@@ -288,18 +381,23 @@
       * Private helpers
       ******************/
 
-      _computeScopeId (label) {
-          this.instanceTracker[label] = this.instanceTracker[label] || 0;
-          this.instanceTracker[label]++;
-          return `${label}-${this.instanceTracker[label]}`;
+      _computeScopeId (name) {
+          this.instanceTracker[name] = this.instanceTracker[name] || 0;
+          this.instanceTracker[name]++;
+          return `${name}-${this.instanceTracker[name]}`;
       }
 
       _getLineSegments (lineIndex=this.currentLine) {
           return this.get(`lines.${lineIndex}.segments`);
       }
 
-      _getWhitespace () {
-          return { type: 'whitespace', scope: ['global'], editable: true };
+      _doesLineCloseBlock (index) {
+          let endingTokens = this.lines[index].segments.filter(s => s.endsBlock);
+          return Boolean(endingTokens.length);
+      }
+
+      _getInsertPoint() {
+          return { type: 'insertPoint', scope: this._getCurrentSegment().scope, editable: true };
       }
 
       _getCurrentSegment () {
