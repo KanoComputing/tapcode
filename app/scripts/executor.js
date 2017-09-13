@@ -1,9 +1,9 @@
-document.addEventListener('run-code', () => {
-	console.log('got the event');
-	try {
-		var code = new Function('moveBy()');
-		code();
-	} catch (err) {
-		console.log('err', err);
-	}
+document.addEventListener('run-code', (e) => {
+	// console.log('got the event');
+	// try {
+	// 	console.log('yoy', e.detail)
+	// 	eval(e.detail);
+	// } catch (err) {
+	// 	console.log('err', err);
+	// }
 });

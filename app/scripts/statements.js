@@ -1,5 +1,6 @@
 (function() {
 
+
 	window.statements = [
 		{
 			name: 'moveBy',
@@ -7,16 +8,16 @@
 			parameters: [
 				{
 					name: 'x',
-					value: '20',
+					value: '10',
 					dataType: 'number'
 				},
 				{
 					name: 'y',
-					value: '0',
+					value: '10',
 					dataType: 'number'
 				}
 			],
-			body: ``
+			body: `cursorX += x;\ncursorY += y;\n`
 		},
 		{
 			name: 'moveTo',
@@ -33,7 +34,7 @@
 					dataType: 'number'
 				}
 			],
-			body: ``
+			body: `cursorX = x;\ncursorY = y;`
 		},
 		{
 			name: 'lineTo',
@@ -72,7 +73,7 @@
 					dataType: 'number'
 				}
 			],
-			body: ``
+			body: `ctx.beginPath();\nctx.arc(cursorX, cursorY, radius, 0, 2 * Math.PI, false);\nctx.fill();\nctx.stroke();`
 		},
 		{
 			name: 'square',
@@ -85,70 +86,70 @@
 				}
 			],
 			body: ``
-		},
-		{
-			name: 'background',
-			type: 'style',
-			parameters: [
-				{
-					name: 'color',
-					value: '#2b3035',
-					dataType: 'color'
-				}
-			],
-			body: ``
-		},
-		{
-			name: 'fillColor',
-			type: 'style',
-			parameters: [
-				{
-					name: 'color',
-					value: '#ffff00',
-					dataType: 'color'
-				}
-			],
-			body: ``
-		},
-		{
-			name: 'stroke',
-			type: 'drawing',
-			parameters: [
-				{
-					name: 'thickness',
-					value: '1',
-					dataType: 'number'
-				},
-				{
-					name: 'color',
-					value: '#ff00ff',
-					dataType: 'color'
-				}
-			],
-			body: ``
-		},
-		{
-			name: 'random',
-			returns: 'number',
-			parameters: [
-				{
-					name: 'from',
-					value: '0',
-					dataType: 'number'
-				},
-				{
-					name: 'to',
-					value: '100',
-					dataType: 'number'
-				}
-			],
-			body: ``
-		},
-		{
-			name: 'animate',
-			type: 'control',
-			body: ``
-		},
+		}
+		// {
+		// 	name: 'background',
+		// 	type: 'style',
+		// 	parameters: [
+		// 		{
+		// 			name: 'color',
+		// 			value: '#2b3035',
+		// 			dataType: 'color'
+		// 		}
+		// 	],
+		// 	body: ``
+		// },
+		// {
+		// 	name: 'fillColor',
+		// 	type: 'style',
+		// 	parameters: [
+		// 		{
+		// 			name: 'color',
+		// 			value: '#ffff00',
+		// 			dataType: 'color'
+		// 		}
+		// 	],
+		// 	body: ``
+		// },
+		// {
+		// 	name: 'stroke',
+		// 	type: 'drawing',
+		// 	parameters: [
+		// 		{
+		// 			name: 'thickness',
+		// 			value: '1',
+		// 			dataType: 'number'
+		// 		},
+		// 		{
+		// 			name: 'color',
+		// 			value: '#ff00ff',
+		// 			dataType: 'color'
+		// 		}
+		// 	],
+		// 	body: ``
+		// },
+		// {
+		// 	name: 'random',
+		// 	returns: 'number',
+		// 	parameters: [
+		// 		{
+		// 			name: 'from',
+		// 			value: '0',
+		// 			dataType: 'number'
+		// 		},
+		// 		{
+		// 			name: 'to',
+		// 			value: '100',
+		// 			dataType: 'number'
+		// 		}
+		// 	],
+		// 	body: ``
+		// },
+		// {
+		// 	name: 'animate',
+		// 	type: 'control',
+		// 	body: ``
+		// },
 
 
 	]
@@ -159,9 +160,9 @@
             this.type = opts.type;
             this.returns = opts.returns;
             this.lines = this.getLines(opts);
-            //PUT THIS BACK WHEN BLOCK IS FUNCTIONING
-            // window[opts.name] = new Function(opts.parameters.map(p => p.name), opts.body);
-            // console.log('this.lines', this.lines)
+            // window.ctx = opts.ctx;
+            //creating functions
+            window[opts.name] = new Function(opts.parameters.map(p => p.name), opts.body);
         }
 
         getLines (opts) {
@@ -294,18 +295,61 @@
     	}
     }
 
+    window.clearCanvas = function () {
+        var fillSave = ctx.fillStyle;
+        var alphaSave = ctx.globalAlpha;
+        ctx.globalAlpha = 1;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#2b3035";
+        ctx.fillRect(0, 0, 400, 400);
+        ctx.fillStyle = fillSave;
+        ctx.globalAlpha = alphaSave;
+    }
+
+    window.resetCanvas = function () {
+        cursorX = 0;
+        cursorY = 0;
+        ctx.globalAlpha = 1;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#2b3035";
+        ctx.fillRect(0, 0, 400, 400);
+        ctx.fillStyle = "#ff00ff";
+        ctx.strokeStyle = "#00ffff";
+        ctx.lineWidth = 2;
+    }
+
 
     window.TaptypeApi = class {
-        	constructor (opts) {
-        		this.statements = opts.map(f => {
-        			if (f.type === 'control') {
-        				return new Block(f);	
-        			} else {
-		        		return new FunctionCall(f);
-        			}
-        		});
-        	}
+    	constructor (opts) {
+    		window.canvas = opts.canvas;
+    		window.ctx = opts.ctx;
+    		window.cursorX = 0;
+    		window.cursorY = 0;
+    		window.gate = true;
+    		this.statements = opts.statements.map(f => {
+    			if (f.type === 'control') {
+    				return new Block(f);	
+    			} else {
+	        		return new FunctionCall(f);
+    			}
+    		});
+    	}
 
-        }
+    	runCode (e) {
+    	    var prependJS = "var doLoop; function animate(){;"
+    	    var appendJS = "} function loop() {"
+    	                        +"animate();"
+    	                        +"if (gate) {"
+    	                        +"doLoop = requestAnimationFrame(loop);"
+    	                        +"}"
+    	                    +"}"
+    	                    +"loop();";
+    	    try {
+    	      eval(prependJS + e.detail + appendJS);
+    	    } catch (err) {
+    	      console.log('err', err);
+    	    }
+    	}
+    }
     
 }());

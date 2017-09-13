@@ -46,11 +46,14 @@
             display: block;
             width: 100%;
             position: absolute;
+            top: 0;
+            left: 0;
             color: #fff;
             font-size: 18px;
             overflow: scroll;
             box-sizing: border-box;
             padding: 20px;
+            background: transparent;
         }
 
         #canvas {
@@ -157,6 +160,11 @@
             margin: 0 8px 24px 0;
         }
 
+        [disabled] {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
         [hidden] {
             display: none !important;
         }
@@ -167,12 +175,12 @@
           <img id="kano-logo" src="assets/kano.svg">
       </div>
       <div class="editor-and-canvas">
-          <canvas id="canvas"></canvas>
-          <km-code-editor id="editor" on-edit-request="_onEditRequest" edited-value="{{editedValue}}"></km-code-editor>
+          <canvas id="canvas" width="400" height="400"></canvas>
+          <km-code-editor id="editor" on-edit-request="_onEditRequest" edited-value="{{editedValue}}" on-run-code="runCode"></km-code-editor>
   
           <div class="clear-and-refresh">
               <div on-tap="clearEditor">clear</div>
-              <div>refresh</div>
+              <div on-tap="resetCanvas">refresh</div>
           </div>
           <div class="left-and-right-arrow">
               <div class="arrow" on-tap="_moveLeft">
@@ -195,8 +203,8 @@
               <div class$="[[_computeTabClass(activeTab, inputType)]]" data-value$="[[inputType]]" on-tap="_selectMenuTab">[[inputType]]</div>
           </div>
           <div class="toolbox-bar layout horizontal center" hidden$="[[!_needNumberControl(activeTab, showNumberControl)]]">
-              <div class="toolbox-tab flex" on-tap="_toggleOperator">[[operator]]</div>
-              <div class="toolbox-tab flex" on-tap="spliceValue" hidden$="[[!showNumberDelete]]"><-</div>
+              <div class="toolbox-tab flex" on-tap="_toggleOperator" disabled$="[[!needOperator]]">[[operator]]</div>
+              <div class="toolbox-tab flex" on-tap="spliceValue" disabled$="[[!needNumberDelete]]"><-</div>
           </div>
           <km-softkeys id="number-input" class="flex" hidden$="[[!_isEqual(activeTab, 'number')]]" on-key-tapped="_processInput"></km-softkeys>
           <km-softkeys id="color-input" class="flex" keys="[[colorKeys]]" hidden$="[[!_isEqual(activeTab, 'color')]]" on-key-tapped="_processInput"></km-softkeys>
@@ -217,6 +225,7 @@
     </template>
 
     <script>
+
       class TapCodeEditorView extends Polymer.GestureEventListeners(Polymer.Element) {
         static get is() { 
             return 'tap-code-editor-view';
@@ -248,7 +257,11 @@
                     type: String,
                     observer: '_onEditedValueChanged'
                 },
-                showNumberDelete: {
+                needNumberDelete: {
+                    type: Boolean,
+                    value: false
+                },
+                needOperator: {
                     type: Boolean,
                     value: false
                 }
@@ -262,14 +275,8 @@
             });
         }
 
-        runCode () {
-            this.dispatchEvent(
-                new CustomEvent('run-code', {
-                    bubbles: true,
-                    composed: true
-                })
-            );
-
+        runCode (e) {
+            this.taptypeApi.runCode(e);
         }
 
         _addMinus () {
@@ -277,17 +284,24 @@
         }
 
         processApiStatements (statements) {
-            this.taptypeApi = new window.TaptypeApi(window.statements);
+            let opts = {};
+            opts.statements = window.statements;
+            opts.ctx = this.$.canvas.getContext("2d");
+            opts.canvas = this.$.canvas;
+
+            this.taptypeApi = new window.TaptypeApi(opts);
             this.set('statements', this.taptypeApi.statements);
+            setTimeout(() => {
+                this.$.editor.addCode(this.statements[0]);
+                this.$.editor.moveLine();
+                this.$.editor.addCode(this.statements[3]);
+            }, 100);
         }
   
         ready () {
             super.ready();
             Polymer.RenderStatus.afterNextRender(this, function() {
-                this.ctx = this.$.canvas.getContext("2d");
-                this.$.canvas.style.width = '100%';
-                this.$.canvas.style.height = '100%';
-                this.resetCanvas();
+                resetCanvas();
             });
         }  
   
@@ -348,6 +362,11 @@
             this.$.editor.reset();
         }
 
+        resetCanvas () {
+            resetCanvas();
+            // gate = false;
+        }
+
         spliceValue () {
             //TODO refactor
             let ed = this.$.editor;
@@ -364,18 +383,10 @@
             this.showNumberControl = !isNaN(parseFloat(value));
             if (!isNaN(parseFloat(value))) {
                 this.showNumberControl = true;
-                this.showNumberDelete = Math.abs(value) >= 10;
+                this.needNumberDelete = value.length > 1;
+                this.needOperator = value !== '0';
                 this.operator = value < 0 ? '+' : '-' 
             }
-        }
-  
-        clearCanvas() {
-            let ctx = this.ctx;
-            var fillSave = ctx.fillStyle;
-            ctx.clearRect(0, 0, this.$.canvas.width, this.$.canvas.height);
-            ctx.fillStyle = '#2b3035';
-            ctx.fillRect(0, 0, this.$.canvas.width, this.$.canvas.height);
-            ctx.fillStyle = fillSave;
         }
 
         _needCodeTray (inputType, activeTab) {
@@ -384,19 +395,6 @@
 
         _computeTabClass (activeTab, instance) {
             return activeTab === instance ? 'toolbox-tab flex selected' : 'toolbox-tab flex';
-        }
-  
-        resetCanvas() {
-            let ctx = this.ctx;
-            this.x = 0;
-            this.y = 0;
-            ctx.clearRect(0, 0, this.$.canvas.width, this.$.canvas.height);
-            ctx.fillStyle = '#2b3035'
-            ctx.fillRect(0, 0, this.$.canvas.width, this.$.canvas.height);
-            ctx.fillStyle = "#ff00ff";
-            ctx.strokeStyle = "#00ffff";
-            ctx.lineWidth = 2;
-            ctx.globalAlpha = 1;
         }
 
       }
