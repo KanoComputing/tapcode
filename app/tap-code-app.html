@@ -1,5 +1,5 @@
 <link rel="import" href="./bower_components/polymer/polymer-element.html">
-<link rel="import" href="./tap-code-editor-view.html">
+<link rel="import" href="./views/tap-code-editor-view.html">
 
 <dom-module id="tap-code-app">
 
@@ -7,9 +7,13 @@
 
       <style>
           :host {
-            display: block;
-            height: 100%;
-          }  
+              display: block;
+          }
+
+          tap-code-editor-view {
+              height: 100%;
+              overflow: hidden;
+          }
       </style>
 
       <tap-code-editor-view></tap-code-editor-view>

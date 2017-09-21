@@ -1,0 +1,64 @@
+{
+  "steps": [
+    {
+      "insert": 0,
+      "instructions": [
+        {
+          "text": "Use moveTo",
+          "insert": 0,
+          "validation":
+            {
+              "add-code": {
+                "name": "moveTo"
+              }
+            }
+        },
+        {
+          "text": "Change the first parameter to 20",
+          "insert": 1,
+          "validation":
+            {
+              "param-change": {
+                "id": "moveTo-1-0",
+                "value": "20"
+              }
+            }
+        },
+        {
+          "text": "Well done",
+          "insert": 3,
+          "validation":
+            {
+              "param-change": {
+                "id": "moveTo-1-0",
+                "value": "20"
+              }
+            }
+        },
+      ]
+    },
+    {
+      "insert": 3,
+      "instructions": [
+        {
+          "text": "Well done",
+          "validation":
+            {
+              "add-code": {
+                "name": "moveToRandom"
+              }
+            }
+        },
+        {
+          "text": "Bonjour2",
+          "validation":
+            {
+              "add-code": {
+                "name": "moveToRandom"
+              }
+            }
+        }
+      ]
+    }
+  ]
+}

@@ -2,7 +2,7 @@
 <link rel="import" href="../../bower_components/polymer/lib/mixins/gesture-event-listeners.html">
 <link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
 
-<dom-module id="km-code-editor">
+<dom-module id="km-code-display">
 
   <template>
 
@@ -13,7 +13,6 @@
             background-color: #2b3035;
             color: #fff;
             font-family: monospace;
-            font-size: 16px;
             overflow: auto;
         }
 
@@ -23,32 +22,28 @@
 
         .line-number {
             width: 16px;
+            font-size: 12px;
             text-align: right;
             margin-right: 24px;
             cursor: pointer;
+        }
+
+        .line-segments {
+            font-size: 12px;
         }
 
         .whitespace:before,
         .insertPoint:before,
         .lineEnd:before {
             content: '\00a0';
-            /*background: yellow;*/
         }
-
-/*        .lineEnd:before {
-            background: purple;
-        }*/
 
         .indentation:before {
             content: '\00a0\00a0\00a0\00a0';
         }
 
-        .control:before {
-            color: #7dc6ba;
-            content: 'function\00a0';
-        }
-
-        .parameter {
+        .parameter,
+        .function {
             color: #7dc6ba;
         }
 
@@ -64,6 +59,10 @@
           background: #999;
         }
 
+        .comment {
+            opacity: 0.5;
+        }
+
         [hidden] {
             display: none !important;
         }
@@ -74,9 +73,9 @@
           <div class="line horizontal layout" on-tap="_selectLine">
               <span class="line-number" on-tap="_onLineNumberTapped">[[_getLineIndex(lineIndex)]]</span>
               <div class="line-segments horizontal layout">
-                  <template id="segment-repeater" is="dom-repeat" items="{{line.segments}}" as="segment" index-as="segmentNo">
-                      <div id$="[[_computeEditableId(lineIndex, segmentNo)]]"
-                           class$="[[_calculateSegmentClass(segment.type, currentLine, currentSegment, lineIndex, segmentNo)]]"
+                  <template id="segment-repeater" is="dom-repeat" items="{{line.segments}}" as="segment" index-as="segmentIndex">
+                      <div id$="[[_computeEditableId(lineIndex, segmentIndex)]]"
+                           class$="[[_calculateSegmentClass(segment.type, currentLine, currentSegment, lineIndex, segmentIndex)]]"
                            on-tap="_selectSegment">[[segment.value]]</div>
                   </template>
               </div>
@@ -85,9 +84,9 @@
   </template>
 
   <script>
-  class KmCodeEditor extends Polymer.GestureEventListeners(Polymer.Element) {
+  class KmCodeDisplay extends Polymer.GestureEventListeners(Polymer.Element) {
       static get is() {
-        return 'km-code-editor';
+        return 'km-code-display';
       }
 
       static get properties() {
@@ -124,44 +123,109 @@
 
       static get observers() {
           return [
-              '_onSegmentSelectionChanged(currentSegment, currentLine)'
+              '_onSegmentSelectionChanged(currentSegment, currentLine)',
+              '_onLinesChanged(lines.*)'
           ]
       }
 
       constructor() {
           super();
-          Polymer.RenderStatus.afterNextRender(this, function() {
+          Polymer.RenderStatus.afterNextRender(this, () => {
               this.reset();
-              setTimeout(() => {
-                  this.getCode();
-              }, 200)
           });
       }
 
-      getCode () {
-          let lines = this.shadowRoot.querySelectorAll('.line-segments'),
-              code = '';
-          lines.forEach(l => {
-              code += l.textContent;
-          });
-          code = code.replace(/\s/g, '');
+      getCode (beginning, end) {
+          let lines;
+          // It's okay if end is undefined for the last chunk
+          if (beginning) {
+              lines = this.lines.slice(beginning, end);
+          } else {
+              lines = this.lines;
+          }
+
+          let code = this.lines.reduce((code, l) => {
+              let line = this.transformLine(l);
+              return code + line + '\n';
+          }, '')
+          return code;
+      }
+
+      transformLine (line) {
+          return line.segments.reduce((acc, s) => {
+              if (s.type === 'comma') {
+                  acc += ', ';
+                  return acc;
+              } else if (s.type === 'function') {
+                // Wrapping up function in parenthesis
+                acc = acc + '(' + s.value;
+                return acc; 
+              } else if (s.type === 'whitespace') {
+                  acc += ' ';
+              } else if (s.type === 'indentation') {
+                  acc += '    ';
+              } else if (s.value === '}' && /animate/.test(s.scope[s.scope.length -1])) {
+                  // Special animate function case
+                  acc += `Kano.TapCode.loop = requestAnimationFrame(animate)\n})();`;
+                  return acc;
+              }
+
+              // Actually adding the value
+              if (typeof s.value !== 'undefined' && s.type !== 'comma') {
+                  acc += s.value;
+              }
+              return acc;
+          }, '')
+      }
+
+      runCode () {
           this.dispatchEvent(
               new CustomEvent('run-code', {
                   bubbles: true,
                   composed: true,
-                  detail: code
+                  detail: this.getCode()
               })
           );
       }
 
+      typeComment (comment, lineNumber, segmentNumber) {
+          setTimeout(() => {             
+              this.set(`lines.${lineNumber}.segments.${segmentNumber}.value`, this.get(`lines.${lineNumber}.segments.${segmentNumber}.value`) + comment.shift());
+              if (comment.length > 0) { 
+                  this.typeComment(comment, lineNumber, segmentNumber);
+              }
+          }, 40)
+      }; 
+
+      addComment (lineNumber, comment) {
+          if (this._getCurrentSegment() && this._getCurrentSegment().type === 'comment') {
+              this._insertLine(0, 0);
+              // this.moveLine();
+          } else {
+              this._insertLine(0, 0);
+              // this.moveLine();
+          }
+          this.set(`lines.${lineNumber}.segments.${this.currentSegment}`,
+              {
+                  type: 'comment',
+                  value: `// `,
+                  scope: ['general']
+              }
+          );
+          let commentArray = comment.split('');
+          this.typeComment(commentArray, lineNumber, this.currentSegment);
+          this.moveLine();
+      }
+
       addCode (code) {
-          let insertPoint = this._getCurrentSegment(),
+          let currentSegment = this._getCurrentSegment(),
               newLinesNeeded = code.lines.length - 1,
-              currentScope = insertPoint.scope.concat([this._computeScopeId(code.name)]);
+              currentScope = currentSegment.scope.concat([this._computeScopeId(code.name)]),
+              insertPoint;
 
           // Cursor sits on existing code -> replace exisiting code
-          if (insertPoint.handler) {
-              this.deleteScope(insertPoint.scope[insertPoint.scope.length - 1]);
+          if (currentSegment.handler) {
+              this.deleteScope(currentSegment.scope[currentSegment.scope.length - 1]);
           }
 
           if (this.currentLine === this.lines.length - 1
@@ -170,12 +234,11 @@
           }
 
           // Cursor sits at end of line -> insert new line
-          if (insertPoint.type === 'lineEnd') {
+          if (currentSegment.type === 'lineEnd') {
               this._insertLine(1);
               this.moveCursor();
               newLinesNeeded--;
           }
-          // debugger;
           
           // Insert new lines for code
           for (var i = 0; i < newLinesNeeded; i++) {
@@ -190,13 +253,14 @@
               // Assign scope
               line.segments.forEach(segment => {
                   segment.scope = currentScope;
+
                   if (segment.type === 'parameter') {
-                      segment.value = code.getParamDefaultValue(segment.value);
+                      segment.value = segment.defaultValue;
                   }
               });
 
               // Add semi-colon
-              if (insertPoint.type !== 'parameter' && !insertPoint.returns
+              if (currentSegment.type !== 'parameter' && !currentSegment.returns
                   && code.type !== 'control') {
                   line.segments.push({ value: ';', type: 'token', scope: currentScope });
               }
@@ -207,9 +271,23 @@
                   line.segments.push({ type: 'lineEnd', scope: currentScope });
               }
 
-              this.splice(`lines.${this.currentLine + index}.segments`, this.currentSegment, 1, ...line.segments);
+              insertPoint = currentSegment.type === 'control' ? this.currentSegment - 2 : this.currentSegment;
+
+              this.splice(`lines.${this.currentLine + index}.segments`, insertPoint, 1, ...line.segments);
           });
+          this.notifyChange('add-code', { code });
           this.moveCursor();
+      }
+
+      notifyChange (type, data={}) {
+          data.type = type;
+          this.dispatchEvent(
+              new CustomEvent('change', {
+                  bubbles: true,
+                  composed: true,
+                  detail: data
+              })
+          );
       }
 
       reset () {
@@ -237,9 +315,17 @@
           }
       }
 
+      concludeEdit () {
+          let currentSegment = this._getCurrentSegment();
+          this.notifyChange('param-change', { currentSegment });
+          this.moveCursor();
+      }
+
       processInput (newValue) {
           const currentSegment = this._getCurrentSegment();
-
+          if (!currentSegment) {
+              return;
+          }
           // Cursor sits on existing code -> replace exisiting code
           if (currentSegment.returns) {
               this.deleteScope(currentSegment.scope[currentSegment.scope.length - 1]);
@@ -251,10 +337,18 @@
               });
           }
 
+          //it's a color!
+          if (isNaN(parseFloat(newValue))) {
+              this.set(`lines.${this.currentLine}.segments.${this.currentSegment}.value`,
+                      `"${newValue}"`);
+              return;
+          }
+
+          //it's a number!
           this.editedValue = this.editingStarted ? currentSegment.value + newValue : newValue;
           this.set(`lines.${this.currentLine}.segments.${this.currentSegment}.value`,
                   this.editingStarted ? currentSegment.value + newValue : newValue);
-
+          this.notifyChange('param-value', { currentSegment });
           this.editingStarted = true;
       }
 
@@ -388,20 +482,29 @@
           }
       }
 
+      _onLinesChanged () {
+          this._debouncer = Polymer.Debouncer.debounce(
+             this._debouncer,
+             Polymer.Async.timeOut.after(20),
+             this.runCode.bind(this)
+          );
+
+      }
+
       /******************
       * Data-bind helpers
       *******************/
 
-      _calculateSegmentClass (type, currentLine, currentSegment, lineIndex, segmentNo) {
-          if (currentLine === lineIndex && currentSegment === segmentNo) {
+      _calculateSegmentClass (type, currentLine, currentSegment, lineIndex, segmentIndex) {
+          if (currentLine === lineIndex && currentSegment === segmentIndex) {
               return `segment ${type} highlight`;
           } else {
               return `segment ${type}`;
           }
       }
 
-      _computeEditableId (lineIndex, segmentNo) {
-          return `l${lineIndex}-s${segmentNo}`
+      _computeEditableId (lineIndex, segmentIndex) {
+          return `l${lineIndex}-s${segmentIndex}`
       }
 
       _getLineIndex (index) {
@@ -423,7 +526,7 @@
       }
 
       _doesLineCloseBlock (index) {
-          let endingTokens = this.lines[index].segments.filter(s => s.endsBlock);
+          let endingTokens = this.lines[index].segments.filter(s => s.value === '}');
           return Boolean(endingTokens.length);
       }
 
@@ -445,6 +548,6 @@
 
     }
 
-    customElements.define(KmCodeEditor.is, KmCodeEditor);
+    customElements.define(KmCodeDisplay.is, KmCodeDisplay);
   </script>
 </dom-module>
