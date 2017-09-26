@@ -9,7 +9,8 @@
     			'x': 'indentation',
     			'o': 'insertPoint',
     			'p': 'parameters',
-    			'f': 'function'
+    			'f': 'function',
+                'c': 'callback'
     		}
     		this.instances = {};
     		this.statements = opts.statements.map(method => {
@@ -27,7 +28,7 @@
     		this.instances[method] = method;
     		code.lines = this.getLines(method)
     		//creating functions
-    		if (method.type !== 'control') {
+    		if (method.template !== 'control') {
 
     			window[method.name] = new Function(params, method.body);
     		}
@@ -35,41 +36,82 @@
     	}
 
     	getLines (method) {
-    		let lines;
-    		switch (method.type) {
+    		let lines = [],
+                lineProto,
+                lineCounter = 1,
+                startIndex = 0;
+    		switch (method.template) {
     			case 'control':
-    			    lines = ['f_*_()_{', 'xo', '}'];
+                    // lineProto = ['f_*_()_{', 'xo', '}'];
+    			    lineProto = 'f_*_()_{nxon}';
     			    break;
+                case 'repeat':
+                    // lines =['*(p,_f()_{','xo','}']
+                    lineProto = '*(p,_c_()_{nxon})';
+                    break;
 	    		default:
-	    			lines = ['*(p)'];
+	    			lineProto = '*(p)';
    		    }
-
-	        return lines.map(l => {
-	        	let segments = l.split('');
-	        	segments = segments.map(this.formatSegment.bind(this, method));
-	        	segments = segments.reduce((sum, value) => {
-	        	    return sum.concat(value);
-	        	}, []);
-	        	segments = segments.filter(i => !!i);
-	        	return {segments: segments}
-	        });
+            
+            lineProto = lineProto.split('');
+            
+            lineProto = lineProto.map(segment => {
+                
+                segment = this.formatSegment(method, segment);
+                return segment;
+                
+            });
+            
+            // if anything undefined (like no parameters), filter them out
+            lineProto = lineProto.filter(l => typeof l !== 'undefined');
+            
+            lineProto = lineProto.reduce((sum, value) => {
+                return sum.concat(value);
+            }, []);
+            
+            
+            var checkArr = lineProto;
+            
+            checkArr.forEach((item, index, array) => {
+                if (item === 'n') {
+                    lines.push(array.slice(startIndex, index))
+                    startIndex = index + 1;
+                }
+                
+                if (index === array.length - 1) {
+                    lines.push(array.slice(startIndex))
+                }
+            });
+            
+            
+            
+            lines = lines.map(l => {
+                return {segments: l}
+            });
+            
+            
+            return lines;
     	}
-    	
 
     	getParams (method) {
     		if (!method.parameters) {
     			return;
     		}
-    		let paramsWithCommas = [];
-    		method.parameters.forEach((p, i, arr) => {
-		        paramsWithCommas.push({
-		            value: p.name,
-		            defaultValue: p.value,
+    		let paramsWithCommas = [],
+                clonedParams;
+            clonedParams = JSON.parse(JSON.stringify(method.parameters));
+            clonedParams = clonedParams.filter(p => p.dataType !== 'callback');
+    		clonedParams.forEach((p, i, arr) => {
+                let formattedParam = {
+                    value: p.name,
+                    defaultValue: p.value,
                     paramIndex: i,
-		            type: 'parameter',
-		            dataType: p.dataType,
-		            editable: true
-		        });
+                    type: 'parameter',
+                    dataType: p.dataType,
+                    editable: true
+                }
+                paramsWithCommas = [].concat.apply([], [paramsWithCommas, formattedParam]);
+                
 
 		        if (i < arr.length - 1) {
 		        	paramsWithCommas.push(
@@ -80,6 +122,9 @@
                     );
 		        }
     		});
+            if (method.name === 'repeat') {
+                // console.log("VOILA PARAMSWITHCOMMAS", paramsWithCommas)
+            }
     		return paramsWithCommas;
     	}
 
@@ -100,9 +145,16 @@
 					value: s,
 					type: 'token'	
 				}
-
-			} else {
-				segmentType = this.templates[s];
+			} else if ((/[,]/.test(s))) {
+                s = {
+                    value: ',',
+                    type: 'comma'
+                }
+            } else if ((/[n]/.test(s))) {
+                s = 'n'
+            } else {
+                segmentType = this.templates[s];
+                // console.log('format', segmentType)
 	    		switch (segmentType) {
 	    			case 'handler':
 	    			    s = this.getHandler(method);
@@ -116,6 +168,12 @@
 		    				type: 'function'
 		    			}
 		    			break;
+                    case 'callback':
+                        s = {
+                            value: 'function\u0020',
+                            type: 'callback'
+                        }
+                        break;
 		    		default:
 		    			s = {
 		    				value: s.value,

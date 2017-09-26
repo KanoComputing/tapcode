@@ -25,11 +25,12 @@
               font-size: 16px;
               cursor: pointer;
               margin: 2px;
+              flex: 1;
           }
 
         </style>
 
-        <div class="keypad layout horizontal justified wrap">
+        <div class="keypad flex layout horizontal wrap">
             <template is="dom-repeat" items="{{keys}}">
                 <div class="key flex layout vertical center-center"
                      on-tap="_keyTapped">[[item]]</div>

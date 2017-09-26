@@ -1,0 +1,215 @@
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../elements/tapcode-ide/tapcode-ide.html">
+
+<dom-module id="tap-code-challenge-view">
+
+    <template>
+  
+      <style is="custom-style" include="iron-flex iron-flex-alignment">
+  
+        :host {
+            display: block;
+            height: 100%;
+            width: 100%;
+            background-color: #33393d;
+        }
+
+        tapcode-ide {
+            height: 100%;
+            width: 100%;
+        }
+
+        [hidden] {
+            display: none !important;
+        }
+  
+      </style>
+      <tapcode-ide id="ide" on-change="_lineChanged"></tapcode-ide>
+    </template>
+
+    <script>
+
+      class TapCodeChallengeView extends Polymer.GestureEventListeners(Polymer.Element) {
+        static get is() { 
+            return 'tap-code-challenge-view';
+        }
+  
+        static get properties() {
+            return {
+                steps: {
+                    type: Array,
+                    value: () => []
+                },
+                step: {
+                    type: Object,
+                    value: () => {
+                        return {}
+                    }
+                },
+                stepIndex: {
+                    type: Number,
+                    value: 0
+                },
+                task: {
+                    type: Object,
+                    computed: 'computeTask(taskIndex)',
+                    observer: '_onTaskChanged'
+                },
+                taskIndex: {
+                    type: Number
+                },
+                validators: {
+                    type: Object,
+                    value: () => {
+                        return {}
+                    }
+                }
+            }
+        }
+        
+        disconnectedCallback () {
+            console.log('challenge view DISconnected');
+        }
+
+
+        static get observers() {
+            return [
+                '_onStepsChanged(steps)',
+                '_onStepChanged(step)'
+            ]
+        }
+  
+        constructor () {
+            super();
+            Polymer.RenderStatus.afterNextRender(this, () => {
+                this._addValidator('add-code', 'matchAddCode');
+                this._addValidator('param-change', 'matchParamChange');
+                this._addValidator('param-value', 'matchParamValue');
+                this.loadChallenge();
+            });
+        }
+
+        loadChallenge () {
+            let creation,
+                steps;
+
+            fetch(`/assets/challenges/challenge-no1/challenge-no1.json`)
+                .then(r => r.json())
+                .then(data => {
+                    this.steps = data.steps;
+                    this.tasks = this.flattenTasks(this.steps);
+                    this.taskIndex = 0;
+                    this.steps.forEach((step, index, steps) => {
+                        // TODO Be ready for multi-line instructions
+                        // this.$.editor.addComment(step.insert, step.instructions[0]);
+                    });
+                });
+        
+            // fetch(`/assets/challenges/challenge-no1/challenge-no1.tapcode`)
+            //     .then(r => r.json())
+            //     .then(data => {
+            //         creation = data;
+            //         this.$.editor.set('lines', creation);
+
+            //     });
+        }
+
+        _lineChanged (e) {
+            if (!this.task || !this.task.validation) {
+                return;
+            }
+            this._checkEvent(this.task.validation, e.detail);
+        }
+
+        flattenTasks (steps) {
+            let tasks;
+            return [].concat.apply([], steps.map(s => s.instructions));
+        }
+
+        _onStepsChanged (steps) {
+            if (!steps) {
+                return;
+            }
+            this.step = steps[1];
+        }
+
+        _onStepChanged (step) {
+            // this.task = step.instructions
+        }
+
+        computeSelectedStep () {
+
+        }
+
+        computeTask (taskIndex) {
+            return this.tasks[taskIndex];
+        }
+
+        _onTaskChanged (task) {
+            this.$.ide.$.editor.addComment(task.insert, task.text)
+        }
+        /**
+         * Goes through all the defined validations and check them
+         */
+        _checkEvent (validation, detail) {
+            console.log('check event')
+            Object.keys(validation).forEach((type) => {
+                if (type !== detail.type) {
+                    console.log('wrong type');
+                } else {
+                    if (this._validateEvent(validation[type], type, detail)) {
+                        // TODO something like while if next step is also done
+                        this.nextStep();
+                    }
+                    // The matching event didn't pass the checks, find a fallback
+                    else {
+                        // this._validateMatchFallback(validation[type], type, detail);
+                    }
+                }
+            });
+        }
+
+        nextStep () {
+            console.log('next step YO')
+            this.taskIndex++;
+        }
+
+        _validateEvent (validation, type, detail) {
+            if (this.validators[type] && this[this.validators[type]].call(this, validation, detail)) {
+                return true;
+            }
+        }
+
+        _addValidator (type, method) {
+            this.validators[type] = method;
+        }
+
+        matchAddCode (validation, event) {
+            console.log('event', event)
+            if (typeof validation.paramIndex !== 'undefined') {
+                return validation.name === event.detail.code.name && validation.paramIndex === event.detail.currentSegment.paramIndex;
+            } else {
+                return validation.name === event.detail.code.name;
+            }
+        }
+
+        matchParamChange (validation, event) {
+            let paramIndex = event.currentSegment.paramIndex;
+            let scope = event.currentSegment.scope[event.currentSegment.scope.length - 1];
+            let realId = scope + '-' + paramIndex;
+            return validation.id === realId;
+        }
+
+        matchParamValue (validation, event) {
+            console.log('param value', event)
+            let paramIndex = event.currentSegment.paramIndex;
+            let scope = event.currentSegment.scope[event.currentSegment.scope.length - 1];
+            let realId = scope + '-' + paramIndex;
+            return validation.id === realId && validation.value === event.currentSegment.value;
+        }
+
+      }
+      customElements.define(TapCodeChallengeView.is, TapCodeChallengeView);
+    </script>
+
+</dom-module>

@@ -18,9 +18,9 @@
           "insert": 1,
           "validation":
             {
-              "param-change": {
-                "id": "moveTo-1-0",
-                "value": "20"
+              "add-code": {
+                "name": "random",
+                "paramIndex": 0
               }
             }
         },
@@ -29,12 +29,11 @@
           "insert": 3,
           "validation":
             {
-              "param-change": {
-                "id": "moveTo-1-0",
-                "value": "20"
+              "add-code": {
+                "name": "moveTo"
               }
             }
-        },
+        }
       ]
     },
     {

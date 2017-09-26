@@ -1,5 +1,6 @@
 const gulp = require('gulp');
 const $ = require('gulp-load-plugins')();
+const path = require('path');
 
 function hasExt(ext) {
     return (file) => {
@@ -21,11 +22,21 @@ gulp.task('copy-assets', ['clean'], () => {
  * We copy these separately to avoid transpiling them to ES5
  * as per the docs: https://www.polymer-project.org/2.0/docs/es6
 */
+
 gulp.task('copy-scripts', ['clean'], () => {
+    return gulp.src(['./app/scripts/**/*',
+            './.tmp/bower_components/webcomponentsjs/custom-elements-es5-adapter.js',
+            './.tmp/bower_components/webcomponentsjs/webcomponentsjs-loader.js'
+            ],
+                    {base: './app/'})
+        .pipe(gulp.dest('./.tmp/'));
+});
+
+gulp.task('copy-polyfills', ['copy-scripts'], () => {
     return gulp.src(['./app/bower_components/webcomponentsjs/**/*',
                      './app/bower_components/shadycss/**/*'],
                     {base: './app/'})
-        .pipe(gulp.dest('./.tmp/'));
+        .pipe(gulp.dest('./www/'));
 });
 
 gulp.task('transpile', ['clean'], () => {
@@ -49,13 +60,18 @@ gulp.task('transpile', ['clean'], () => {
         .pipe(gulp.dest('./.tmp/'));
 });
 
-gulp.task('build', ['copy-assets', 'copy-scripts', 'transpile'], () => {
+gulp.task('build', ['copy-assets', 'copy-polyfills', 'transpile'], () => {
     return gulp.src('./.tmp/index.html', { base: './.tmp' })
         /* Vulcanize again to inline scripts */
-        .pipe($.vulcanize({ inlineScripts: true }))
-        .pipe($.htmlAutoprefixer())
+        .pipe($.vulcanize({
+            inlineScripts: true,
+            excludes: [path.resolve('./.tmp/bower_components/webcomponentsjs/custom-elements-es5-adapter.js'),
+                    path.resolve('./.tmp/bower_components/webcomponentsjs/webcomponentsjs-loader.js'),
+                    path.resolve('./.tmp/bower_components/shadycss/')]
+        }))
         .pipe($.crisper())
         .pipe($.if(hasExt('html'), $.htmlmin()))
+        .pipe($.if(hasExt('html'), $.htmlAutoprefixer()))
         .pipe(gulp.dest('./www'));
 });
 
