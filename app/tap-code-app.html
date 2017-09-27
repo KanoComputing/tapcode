@@ -1,30 +1,209 @@
 <link rel="import" href="./bower_components/polymer/polymer-element.html">
-<link rel="import" href="./tap-code-editor-view.html">
+<link rel="import" href="./bower_components/app-route/app-location.html">
+<link rel="import" href="./bower_components/app-route/app-route.html">
+<link rel="import" href="./bower_components/app-layout/app-drawer/app-drawer.html">
+<link rel="import" href="./bower_components/polymer/lib/mixins/gesture-event-listeners.html">
+<link rel="import" href="./bower_components/iron-flex-layout/iron-flex-layout-classes.html">
+<link rel="import" href="./elements/tapcode-icons.html">
 
 <dom-module id="tap-code-app">
 
     <template>
 
-      <style>
-          :host {
-            display: block;
-            height: 100%;
-          }  
-      </style>
+        <style is="custom-style" include="iron-flex iron-flex-alignment">
+        
+            :host {
+                display: block;
+                overflow: hidden;
+            }
+            
+            #view-container {
+                height: calc(100% - 56px);
+            }
+  
+            tap-code-editor-view,
+            tap-code-challenge-view {
+                height: 100%;
+                overflow: hidden;
+                box-sizing: border-box;
+            }
+  
+            .topbar {
+                background-color: #33393d;
+                padding: 0 16px;
+            }
+  
+            #kano-logo {
+                height: 18px;
+                padding: 20px 0 18px;
+            }
+  
+            #menu-icon {
+                fill: rgba(255,255,255,0.25);
+                vertical-align: middle;
+            }
+  
+            #drawer {
+                z-index: 1;
+                --app-drawer-content-container: {
+                    background: #2b3035;
+                }
+            }
+  
+            .menu-tab {
+                text-align: left;
+                padding-left: 24px;
+                width: 100%;
+                line-height: 56px;
+                font-family: monospace;
+                font-size: 16px;
+                color: #fff;
+            }
+            
+            .menu-closing-row>iron-icon {
+                padding: 16px;
+            }
+            
+            [hidden] {
+                display: none !important;
+            }
+  
+        </style>
+  
+        <app-location route="{{route}}"></app-location>
+        <app-route
+            route="{{route}}"
+            pattern="/:page"
+            data="{{routeData}}"
+            tail="{{subroute}}">
+        </app-route>
+        <app-route
+            route="{{subroute}}"
+            pattern="/:id"
+            data="{{subrouteData}}">
+        </app-route>
 
-      <tap-code-editor-view></tap-code-editor-view>
-      
+        <app-drawer id="drawer" class="vertical layout" align="end">
+            <div class="menu-closing-row">
+                <iron-icon id="menu-icon" icon="tapcode:close"></iron-icon>
+            </div>
+            <div class="menu-tab" on-tap="_toggleView">[[_computeViewLabel(page)]]</div>
+            <div class="menu-tab">Save</div>
+            <div class="menu-tab">Share</div>
+            <div class="menu-tab">More from Kano</div>
+        </app-drawer>
+        
+        <div class="topbar horizontal layout center justified">
+            <img id="kano-logo" src="assets/kano.svg">
+            <iron-icon id="menu-icon" icon="tapcode:menu" on-tap="_openDrawer"></iron-icon>
+        </div>
+        
+        <div id="view-container">
+            
+            <!-- TODO 404 -->
+            <!-- <tapcode-404 name="404"></tapcode-404> -->
+        </div>
+        
+        <template id="editor-template">
+            <tap-code-editor-view id="editor"></tap-code-editor-view>
+        </template>
+        <template id="challenge-template">
+            <tap-code-challenge-view id="challenge"></tap-code-challenge-view>
+        </template>
     </template>
 
     <script>
-      class TapCodeApp extends Polymer.Element {
-          static get is() { 
-              return 'tap-code-app';
-          }
+      class TapCodeApp extends Polymer.GestureEventListeners(Polymer.Element) {
+            static get is() { 
+                return 'tap-code-app';
+            }
+            
+            static get properties() {
+                return {
+                    page: {
+                        type: String,
+                        value: 'editor',
+                        observer: '_pageChanged',
+                    },
+                    views: {
+                        type: Array,
+                        value: () => ['editor', 'challenge']
+                    }
+                }
+            }
+            
+            static get observers() {
+                return [
+                    '_routePageChanged(routeData.page)'
+                ]
+            }
+  
+            constructor () {
+                super();
+                Polymer.RenderStatus.afterNextRender(this, function() {
+                });
+            }
+  
+            _openDrawer () {
+                this.$.drawer.open();
+            }
+            
+            _routePageChanged (page) {
+                this.page = page || 'editor';
+                this.$.drawer.close();
+             }
+             
+            _pageChanged (page) {;
+                Polymer.importHref(
+                    // Path to import
+                    this.resolveUrl('./views/tap-code-' + page + '-view.html'),
+                    // Onloaded callback
+                    this.onPageImported.bind(this),
+                    // Fallback
+                    this._showPage404.bind(this),
+                    true);
+            }
+            
+            onPageImported () {
+                let template,
+                    TemplateClass,
+                    instance;
 
-          constructor () {
-              super();
-          }
+                // Remove unused views
+                this.views.forEach(id => {
+                    let el = this.shadowRoot.querySelector(`#${id}`)
+                    if (el && id !== this.page) {
+                        el.parentNode.removeChild(el);
+                    }
+                });
+
+                // Stamp current view
+                template = document.createElement('template');
+                template.innerHTML = `<tap-code-${this.page}-view id="${this.page}"></tap-code-${this.page}-view>`;
+                TemplateClass = Polymer.Templatize.templatize(template, this);
+                instance = new TemplateClass({});
+                this.$['view-container'].appendChild(instance.root);
+            }
+            
+            _showPage404 () {
+                this.page = 'view404';
+            }
+            
+            _toggleView () {
+                this.page = this.page === 'editor' ? 'challenge' : 'editor';
+            }
+            
+            _computeViewLabel (view) {
+                if (view === 'editor') {
+                    return 'Show me a challenge';
+                } else {
+                    return 'Playground';
+                }
+            }
+  
+            _isEq (view, instance) {
+                return view === instance;
+            }
       }
 
       customElements.define(TapCodeApp.is, TapCodeApp);

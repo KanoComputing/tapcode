@@ -4,311 +4,608 @@
 
 <dom-module id="km-code-editor">
 
-  <template>
+    <template>
 
-      <style is="custom-style" include="iron-flex iron-flex-alignment">
+        <style is="custom-style" include="iron-flex iron-flex-alignment">
 
-        :host {
-            display: block;
-            background-color: #2b3035;
-            color: #fff;
-            font-family: monospace;
-            font-size: 16px;
-            overflow: auto;
+            :host {
+                display: block;
+                background-color: #2b3035;
+                color: #fff;
+                font-family: monospace;
+                overflow: auto;
+            }
+
+            .line {
+                /*padding-bottom: 12px;*/
+                line-height: 16px;
+                /*line-height: 28px;*/
+            }
+
+            .line-number {
+                width: 16px;
+                font-size: 14px;
+                color: rgba(255, 255, 255, 0.5);
+                text-align: right;
+                margin-right: 16px;
+                cursor: pointer;
+            }
+
+            .line-segments {
+                font-size: 14px;
+                max-width: 60vw;
+                /*border: 1px solid purple;*/
+            }
+            
+            .segment {
+                display: inline-block;
+                line-height: 16px;
+                background: rgba(43, 48, 53, 0.8);
+                margin-bottom: 12px;
+            }
+            
+            .line-break {
+                width: 90px;
+                height: 16px;
+                background: yellow;
+            }
+
+            .whitespace:before,
+            .insertPoint:before,
+            .lineEnd:before {
+                content: '\00a0';
+            }
+
+            .indentation:before {
+                content: '\00a0\00a0';
+            }
+
+            .parameter,
+            .function {
+                color: #7dc6ba;
+            }
+
+            .token {
+                color: #e0915a;
+            }
+
+            .comma:after {
+                content: '\00a0';
+            }
+
+            .highlight {
+              background: #999;
+            }
+
+            .comment {
+                opacity: 0.5;
+            }
+            
+            #delete-lines {
+                width: 24px;
+            }
+            
+            #bin-icon {
+                display: block;
+                height: 12px;
+                width: 12px;
+                margin: 0 auto;
+            }
+
+            [hidden] {
+                display: none !important;
+            }
+
+        </style>
+        <!-- shadow DOM-->
+        <template id="line-repeater" is="dom-repeat" items="{{lines}}" as="line" index-as="lineIndex">
+            <div class="line horizontal layout" on-tap="_selectLine">
+                <span class="line-number" on-tap="_onLineNumberTapped">[[_getLineIndex(lineIndex)]]</span>
+                <div class="line-segments horizontal layout wrap">
+                    <template id="segment-repeater" is="dom-repeat" items="{{line.segments}}" as="segment" index-as="segmentIndex">
+                        <div id$="[[_computeEditableId(lineIndex, segmentIndex)]]"
+                             class$="[[_calculateSegmentClass(segment.type, currentLine, currentSegment, lineIndex, segmentIndex)]]"
+                             on-tap="_selectSegment">[[segment.value]]</div>
+                        <div class$="[[_computeLinebreak(currentLine, currentSegment, lineIndex, segmentIndex, lines.*)]]"></div>
+                    </template>
+                </div>
+            </div>
+        </template>
+    </template>
+
+    <script>
+    class KmCodeEditor extends Polymer.GestureEventListeners(Polymer.Element) {
+        static get is() {
+            return 'km-code-editor';
         }
-
-        .line {
-            padding-bottom: 4px;
+  
+        static get properties() {
+            return {
+                lines: {
+                    type: Array,
+                    value: () => []
+                },
+                currentLine: {
+                    type: Number,
+                    value: 0
+                },
+                currentSegment: {
+                    type: Number,
+                    value: 0
+                },
+                instanceTracker: {
+                    type: Object,
+                    value: () => {
+                        return {};
+                    }
+                },
+                editingStarted: {
+                    type: Boolean,
+                    value: false,
+                    observer: '_onEditingStarted'
+                },
+                editedValue: {
+                    type: 'String',
+                    notify: true
+                }
+            }
         }
-
-        .line-number {
-            width: 16px;
-            text-align: right;
-            margin-right: 24px;
+  
+        static get observers() {
+            return [
+                '_onSegmentSelectionChanged(currentSegment, currentLine)',
+                '_onLinesChanged(lines.*)'
+            ];
         }
-
-        .whitespace:before {
-            content: '\00a0';
+  
+        constructor() {
+            super();
+            Polymer.RenderStatus.afterNextRender(this, () => {
+                this.reset();
+            });
         }
-
-        .indentation:before {
-            content: '\00a0\00a0\00a0\00a0';
+        
+        _computeLinebreak (l, s, lineIndex, segmentIndex) {
+            if (this.shadowRoot.querySelector(`#l${lineIndex}-s${segmentIndex}`)) {
+                let line = this.shadowRoot.querySelector(`#l${lineIndex}-s${segmentIndex}`).parentNode;
+                console.log('line width', line.getBoundingClientRect().width)
+                // console.log('parent', this.shadowRoot.querySelector(`#l${lineIndex}-s${segmentIndex}`).parentNode);
+            }
+            // return 'sweet';
         }
-
-        .parameter {
-            color: #7dc6ba;
+  
+        getCode (beginning, end) {
+            let lines;
+            // It's okay if end is undefined for the last chunk
+            if (beginning) {
+                lines = this.lines.slice(beginning, end);
+            } else {
+                lines = this.lines;
+            }
+  
+            let code = this.lines.reduce((code, l) => {
+                let line = this.transformLine(l);
+                return code + line + '\n';
+            }, '')
+            // console.log('code', code)
+            return code;
         }
-
-        .token {
-            color: #e0915a;
+  
+        transformLine (line) {
+            // console.log('line', line)
+            return line.segments.reduce((acc, s) => {
+                if (s.type === 'comma') {
+                    acc += ', ';
+                    return acc;
+                //todo refactor
+                } else if (s.type === 'function') {
+                  // Wrapping up function in parenthesis
+                  acc = acc + '(' + s.value;
+                  return acc; 
+                } else if (s.type === 'whitespace') {
+                    acc += ' ';
+                } else if (s.type === 'indentation') {
+                    acc += '    ';
+                } else if (s.value === '}' && /animate/.test(s.scope[s.scope.length -1])) {
+                    // Special animate function case
+                    acc += `Kano.TapCode.loop = requestAnimationFrame(animate)\n})();`;
+                    return acc;
+                }
+  
+                // Actually adding the value
+                if (typeof s.value !== 'undefined' && s.type !== 'comma') {
+                    acc += s.value;
+                }
+                return acc;
+            }, '')
         }
-
-        .comma:after {
-            content: '\00a0';
+  
+        runCode () {
+            this.dispatchEvent(
+                new CustomEvent('run-code', {
+                    bubbles: true,
+                    composed: true,
+                    detail: this.getCode()
+                })
+            );
         }
-
-        .highlight {
-          background: #999;
+  
+        typeComment (comment, lineNumber, segmentNumber) {
+            setTimeout(() => {             
+                this.set(`lines.${lineNumber}.segments.${segmentNumber}.value`, this.get(`lines.${lineNumber}.segments.${segmentNumber}.value`) + comment.shift());
+                if (comment.length > 0) { 
+                    this.typeComment(comment, lineNumber, segmentNumber);
+                }
+            }, 40)
+        }; 
+  
+        addComment (lineNumber, comment) {
+            this.splice('lines', lineNumber, 0, { segments: [{ type: 'insertPoint', scope: ['global'], editable: true }] });
+            if (lineNumber === this.lines.length - 1) {
+            } else {
+              // this._insertLine(0, 0);
+            }
+            // FIXME it wont always be general scope
+            this.set(`lines.${lineNumber}.segments.0`,
+                {
+                    type: 'comment',
+                    value: `// `,
+                    scope: ['general']
+                }
+            );
+            let commentArray = comment.split('');
+            this.typeComment(commentArray, lineNumber, 0);
+            this.moveLine();
         }
+  
+        addCode (code) {
+            let currentSegment = this._getCurrentSegment(),
+                newLinesNeeded = code.lines.length - 1,
+                currentScope = currentSegment.scope.concat([this._computeScopeId(code.name)]),
+                insertPoint;
+  
+            // Cursor sits on existing code -> replace exisiting code
+            if (currentSegment.handler) {
+                this.deleteScope(currentSegment.scope[currentSegment.scope.length - 1]);
+            }
+  
+            if (this.currentLine === this.lines.length - 1
+                || this._doesLineCloseBlock(this.currentLine + 1)) {
+                newLinesNeeded++;
+            }
+  
+            // Cursor sits at end of line -> insert new line
+            if (currentSegment.type === 'lineEnd') {
+                this._insertLine(1);
+                this.moveCursor();
+                newLinesNeeded--;
+            }
+            
+            // Insert new lines for code
+            for (var i = 0; i < newLinesNeeded; i++) {
+                this._insertLine(0, 1);
+            }
+  
+            code.lines.forEach((line, index) => {
+  
+                // Clone the line
+                line = JSON.parse(JSON.stringify(line));
+  
+                // Assign scope
+                line.segments.forEach(segment => {
+                    segment.scope = currentScope;
+  
+                    if (segment.type === 'parameter') {
+                        segment.value = segment.defaultValue;
+                    }
+                });
+  
+                // Add semi-colon
+                if (currentSegment.type !== 'parameter' && !currentSegment.returns
+                    && code.type !== 'control') {
+                    line.segments.push({ value: ';', type: 'token', scope: currentScope });
+                }
+  
+                // Mark end of line
+                if (line.segments[line.segments.length - 1].type !== 'insertPoint'
+                        && this.currentSegment === this._getLineSegments().length - 1) {
+                    line.segments.push({ type: 'lineEnd', scope: currentScope });
+                }
+  
+                insertPoint = currentSegment.type === 'control' ? this.currentSegment - 2 : this.currentSegment;
+  
+                this.splice(`lines.${this.currentLine + index}.segments`, insertPoint, 1, ...line.segments);
+            });
+            let detail = {
+                code: code,
+                currentSegment: currentSegment
+            }
+            this.notifyChange('add-code', { detail });
 
-        [hidden] {
-            display: none !important;
+            if (code.type === 'control') {
+                this.moveLine();
+                this.moveCursor();
+            } else {
+                this.moveCursor();
+            }
         }
-
-      </style>
-      <!-- shadow DOM-->
-      <template is="dom-repeat" items="{{lines}}" as="line" index-as="lineIndex">
-          <div class="line horizontal layout" on-tap="_selectLine">
-              <span class="line-number">[[_getLineIndex(lineIndex)]]</span>
-              <div class="line-segments horizontal layout">
-                  <template id="segment-repeater" is="dom-repeat" items="{{line.segments}}" as="segment" index-as="segmentNo">
-                      <div id$="[[_computeEditableId(lineIndex, segmentNo)]]"
-                           class$="[[_calculateSegmentClass(segment.type, currentLine, currentSegment, lineIndex, segmentNo)]]"
-                           on-tap="_selectParam">[[segment.value]]</div>
-                  </template>
-              </div>
-          </div>
-      </template>
-  </template>
-
-  <script>
-  class KmCodeEditor extends Polymer.GestureEventListeners(Polymer.Element) {
-      static get is() {
-        return 'km-code-editor';
-      }
-
-      static get properties() {
-        return {
-          lines: {
-              type: Array,
-              value: () => []
-          },
-          currentLine: {
-              type: Number,
-              value: 0
-          },
-          currentSegment: {
-              type: Number,
-              value: 0
-          },
-          instanceTracker: {
-              type: Object,
-              value: () => {
-                  return {};
-              }
-          }
+  
+        notifyChange (type, data={}) {
+            data.type = type;
+            this.dispatchEvent(
+                new CustomEvent('change', {
+                    bubbles: true,
+                    composed: true,
+                    detail: data
+                })
+            );
         }
-      }
-
-      static get observers() {
-          return [
-              '_onSegmentSelectionChanged(currentSegment, currentLine)'
-          ]
-      }
-
-      constructor() {
-          super();
-          Polymer.RenderStatus.afterNextRender(this, function() {
-              this.reset();
-          });
-      }
-
-      addCode (code) {
-          let currentSegment = this._getCurrentSegment(),
-              newLinesNeeded = 0,
-              scopeId;
-
-          if (!currentSegment) {
-              return;
-          }
-
-          if (currentSegment.type === 'whitespace') {
-              newLinesNeeded = code.lines.length;
-          }
-
-          if (currentSegment.handler) {
-              this.deleteScope(currentSegment.scopeId);
-              newLinesNeeded = code.lines.length - 1;
-          }
-
-          for (var i = 0; i < newLinesNeeded; i++) {
-              this.duplicateLine(this.lines[this.currentLine]);
-          }
-          scopeId = this._computeScopeId(code.label);
-
-          code.lines.forEach((line, index) => {
-              // Clone the line object
-              line = JSON.parse(JSON.stringify(line));
-              line.segments.forEach(segment => {
-                  segment.scope = currentSegment.scope.concat(scopeId);
-                  if (segment.handler) {
-                      segment.scopeId = scopeId;
-                  }
-              });  
-              this.splice(`lines.${this.currentLine + index}.segments`, this.currentSegment, 1, ...line.segments);
-          });
-          this.moveCursor();
-      }
-
-      reset () {
-          this.set('lines', [{ segments: [{ type: 'whitespace', scope: ['global'], editable: true }] }]);
-          this.moveCursor();
-      }
-
-      /**
-      * Moves cursor backwards or forwards by changing the segment selection or moving line
-      */
-      moveCursor (direction=1) {
-          do {
-              if (this._getLineSegments() && this._getLineSegments()[this.currentSegment + direction]) {
-                  this.currentSegment = this.currentSegment + direction;
-              } else {
-                  this.moveLine(direction);
-              }
-          } while (!this._getCurrentSegment().editable);
-      }
-
-      /**
-      * Moves line backwards or forwards with the ability of jumping between first and last lines
-      */
-
-      moveLine (direction=1) {
-          if (this._getLineSegments(this.currentLine + direction)) {
-              this.currentLine = this.currentLine + direction;
-              this.currentSegment = (direction > 0) ? 0 : (this._getLineSegments().length - 1);
-          } else {
-              this.currentLine = direction === 1 ? 0 : this.lines.length - 1;
-              this.currentSegment = 0;
-          }
-      }
-
-      duplicateLine (line) {
-          line = JSON.parse(JSON.stringify(line));
-          this.splice(`lines`, this.currentLine + 1, 0, line);
-      }
-
-      processInput (newValue) {
-          const currentValue = this.get(`lines.${this.currentLine}.segments.${this.currentSegment}.value`);
-          this.set(`lines.${this.currentLine}.segments.${this.currentSegment}.value`,
-                  this.editingStarted ? currentValue + newValue : newValue);
-          this.editingStarted = true;
-      }
-
-      /**
-      * Deletes code of a given scope starting from currentLine
-      */
-
-      deleteScope (scope) {
-          let scopeArray,
-            lineSegments;
-
-          for (var i = this.currentLine; i < this.lines.length; i++) {
-              lineSegments = this._getLineSegments(i);
-              if (!lineSegments) {
-                  break;
-              }
-
-              // Create an array of all scope values
-              scopeArray = lineSegments.map(segment => segment.scope);
-              scopeArray = [].concat.apply([], scopeArray);
-
-              // Stop deleting if line is not in scope
-              if (scopeArray.indexOf(scope) === -1) {
-                  break;
-              }
-
-              // Delete segments with the given scope value starting from the end of a line
-              for (var j = lineSegments.length - 1; j >= 0; j--) {
-                  if (lineSegments[j].scope.indexOf(scope) !== -1) {
-                      this.splice(`lines.${i}.segments`, j, 1);
-                  }
-              }
-              // Reinsert a whitespace
-              this.push(`lines.${i}.segments`, this._getWhitespace());
-          }
-      }
-
-      /*****************************
-      * Event and observer callbacks
-      ******************************/
-
-      _selectParam (e) {
-          // Update current selection
-          e.currentTarget.id.replace(/(l)(\d*)(-s)(\d*)/, (match, p1, lineIndex, p2, segmentIndex) => {
-              this.currentLine = parseInt(lineIndex);
-              this.currentSegment = parseInt(segmentIndex);
-          });
-          this.moveCursor();
-      }
-
-      _selectLine (e) {
-          this.currentLine = e.model.lineIndex;
-          this.currentSegment = 0;
-          while (!this._getCurrentSegment().editable) {
-              this.moveCursor();
-          }
-      }
-
-      _onSegmentSelectionChanged () {
-        const selected = this._getCurrentSegment();
-        this.editingStarted = false;
-        if (!selected || !selected.editable) {
-            return;
+  
+        reset () {
+            this.set('lines', [{ segments: [{ type: 'insertPoint', scope: ['global'], editable: true }] }]);
+            this.moveCursor();
         }
-        this.dispatchEvent(
-            new CustomEvent('edit-request', {
-                bubbles: true,
-                composed: true,
-                detail: selected
-            })
-        );
-      }
-
-      /******************
-      * Data-bind helpers
-      *******************/
-
-      _calculateSegmentClass (type, currentLine, currentSegment, lineIndex, segmentNo) {
-          if (currentLine === lineIndex && currentSegment === segmentNo) {
-              return `segment ${type} highlight`;
-          } else {
-              return `segment ${type}`;
-          }
-      }
-
-      _computeEditableId (lineIndex, segmentNo) {
-          return `l${lineIndex}-s${segmentNo}`
-      }
-
-      _getLineIndex (index) {
-          return index + 1;
-      }
-
-      /****************
-      * Private helpers
-      ******************/
-
-      _computeScopeId (label) {
-          this.instanceTracker[label] = this.instanceTracker[label] || 0;
-          this.instanceTracker[label]++;
-          return `${label}-${this.instanceTracker[label]}`;
-      }
-
-      _getLineSegments (lineIndex=this.currentLine) {
-          return this.get(`lines.${lineIndex}.segments`);
-      }
-
-      _getWhitespace () {
-          return { type: 'whitespace', scope: ['global'], editable: true };
-      }
-
-      _getCurrentSegment () {
-          const lineSegments = this._getLineSegments();
-          if (!lineSegments) {
-              return;
-          }
-          return lineSegments[this.currentSegment];
-      }
+  
+        moveCursor (direction = 1) {
+            do {
+                if (this._getLineSegments() && this._getLineSegments()[this.currentSegment + direction]) {
+                    this.currentSegment = this.currentSegment + direction;
+                } else {
+                    this.moveLine(direction);
+                }
+            } while (!this._getCurrentSegment().editable);
+        }
+  
+        moveLine (direction = 1) {
+            if (this._getLineSegments(this.currentLine + direction)) {
+                this.currentLine = this.currentLine + direction;
+                this.currentSegment = (direction > 0) ? 0 : (this._getLineSegments().length - 1);
+            } else {
+                this.currentLine = direction === 1 ? 0 : this.lines.length - 1;
+                this.currentSegment = 0;
+            }
+        }
+  
+        concludeEdit () {
+            let currentSegment = this._getCurrentSegment();
+            this.notifyChange('param-change', { currentSegment });
+            this.moveCursor();
+        }
+  
+        processInput (newValue) {
+            const currentSegment = this._getCurrentSegment();
+            if (!currentSegment) {
+                return;
+            }
+            // console.log('processing newVAlue', newValue)
+            // Cursor sits on existing code -> replace exisiting code
+            if (currentSegment.returns) {
+                this.deleteScope(currentSegment.scope[currentSegment.scope.length - 1]);
+                this.splice(`lines.${this.currentLine}.segments`, this.currentSegment, 0, {
+                    type: 'parameter',
+                    dataType: currentSegment.returns,
+                    editable: true,
+                    scope: currentSegment.scope
+                });
+            }
+  
+            //it's a color!
+            if (isNaN(parseFloat(newValue))) {
+                console.log('its a color');
+                this.set(`lines.${this.currentLine}.segments.${this.currentSegment}.value`,
+                        `"${newValue}"`);
+                return;
+            }
+  
+            //it's a number!
+            this.editedValue = this.editingStarted ? currentSegment.value + newValue : newValue;
+            this.set(`lines.${this.currentLine}.segments.${this.currentSegment}.value`,
+                    this.editingStarted ? currentSegment.value + newValue : newValue);
+            this.notifyChange('param-value', { currentSegment });
+            this.editingStarted = true;
+        }
+  
+        toggleOperator () {
+            const currentSegmentValue = this._getCurrentSegment().value;
+            if (currentSegmentValue[0] === '-') {
+                this.set(`lines.${this.currentLine}.segments.${this.currentSegment}.value`,
+                        currentSegmentValue.substr(1));
+            } else {
+                this.set(`lines.${this.currentLine}.segments.${this.currentSegment}.value`, '-' + currentSegmentValue);
+            }
+        }
+  
+        /**
+        * Deletes code of a given scope starting from currentLine
+        */
+  
+        deleteScope (scope) {
+            let scopeArray,
+              lineSegments,
+              linesToDelete = [],
+              segmentTypes;
+  
+            for (var i = this.currentLine; i < this.lines.length; i++) {
+                lineSegments = this._getLineSegments(i);
+                if (!lineSegments) {
+                    break;
+                }
+  
+                // Create an array of all scope values
+                scopeArray = lineSegments.map(segment => segment.scope);
+                scopeArray = [].concat.apply([], scopeArray);
+  
+                // Stop deleting if line is not in scope
+                if (scopeArray.indexOf(scope) === -1) {
+                    break;
+                }
+  
+                // Delete segments with the given scope value starting from the end of a line
+                for (var j = lineSegments.length - 1; j >= 0; j--) {
+                    if (lineSegments[j].scope.indexOf(scope) !== -1)  {
+                        this.splice(`lines.${i}.segments`, j, 1);
+                    }
+                }
+  
+                segmentTypes = lineSegments.filter(s => s.type !== 'indentation');
+                if (segmentTypes.length === 0) {
+                    linesToDelete.push(i);
+                }
+                // debugger;
+            }
+  
+            for (var k = linesToDelete.length - 1; k >= 0; k--) {
+                if (k !== 0) {
+                    this.splice('lines', linesToDelete[k], 1);
+                } else {
+                    this.push(`lines.${linesToDelete[k]}.segments`, { type: 'insertPoint', scope: scopeArray, editable: true })
+                }
+            }
+  
+        }
+  
+        /*****************************
+        * Event and observer callbacks
+        ******************************/
+  
+        _selectSegment (e) {
+            e.stopPropagation();
+            // Update current selection
+            e.currentTarget.id.replace(/(l)(\d*)(-s)(\d*)/, (match, p1, lineIndex, p2, segmentIndex) => {
+                this.currentLine = parseInt(lineIndex);
+                this.currentSegment = parseInt(segmentIndex);
+            });
+            while (!this._getCurrentSegment().editable) {
+                this.moveCursor();
+            }
+        }
+  
+        _selectLine (e) {
+            this.currentLine = e.model.lineIndex;
+            this.currentSegment = this.lines[this.currentLine].segments.length - 1;
+        }
+  
+        _onLineNumberTapped (e) {
+            this.currentLine = e.model.lineIndex;
+            let copyFrom = this._doesLineCloseBlock(this.currentLine) ? -1 : 0;
+            this._insertLine(copyFrom, 0);
+        }
+  
+        // This is not simply insert an empty line in, but insert a line with indentation and
+        // then put in an insert point with the current scope
+  
+        _insertLine (from, to) {
+            let lineIndex = this.currentLine + from,
+                lineCopy = JSON.parse(JSON.stringify(this.lines[lineIndex])),
+                allScope = lineCopy.segments.map(segment => segment.scope),
+                currentScope = [].concat.apply([], allScope);
+            currentScope = this._dedupArray(currentScope);
+  
+            if (typeof to === 'undefined') {
+                to = from;
+            }
+  
+            for (var j = lineCopy.segments.length - 1; j >= 0; j--) {
+                if (lineCopy.segments[j].type !== 'indentation') {
+                    lineCopy.segments.splice(j, 1);
+                }
+            }
+            lineCopy.segments.push({ type: 'insertPoint', scope: currentScope, editable: true });  
+            this.splice('lines', this.currentLine + to, 0, lineCopy)
+        }
+  
+        _onSegmentSelectionChanged () {
+            const selected = this._getCurrentSegment();
+            this.editingStarted = false;
+            if (!selected || (!selected.editable && selected.type !== 'lineEnd')) {
+                return;
+            }
+            this.dispatchEvent(
+                new CustomEvent('edit-request', {
+                    bubbles: true,
+                    composed: true,
+                    detail: selected
+                })
+            );
+  
+            if (typeof selected.value !== 'undefined') {
+                this.editedValue = selected.value;
+            }
+        
+        }
+        _onEditingStarted (started) {
+            if (started) {
+  
+            }
+        }
+  
+        _onLinesChanged () {
+            this._debouncer = Polymer.Debouncer.debounce(
+               this._debouncer,
+               Polymer.Async.timeOut.after(20),
+               this.runCode.bind(this)
+            );
+  
+        }
+  
+        /******************
+        * Data-bind helpers
+        *******************/
+  
+        _calculateSegmentClass (type, currentLine, currentSegment, lineIndex, segmentIndex) {
+            if (currentLine === lineIndex && currentSegment === segmentIndex) {
+                return `segment ${type} highlight`;
+            } else {
+                return `segment ${type}`;
+            }
+        }
+  
+        _computeEditableId (lineIndex, segmentIndex) {
+            return `l${lineIndex}-s${segmentIndex}`
+        }
+  
+        _getLineIndex (index) {
+            return index + 1;
+        }
+  
+        /****************
+        * Private helpers
+        ******************/
+  
+        _computeScopeId (name) {
+            this.instanceTracker[name] = this.instanceTracker[name] || 0;
+            this.instanceTracker[name]++;
+            return `${name}-${this.instanceTracker[name]}`;
+        }
+  
+        _getLineSegments (lineIndex=this.currentLine) {
+            return this.get(`lines.${lineIndex}.segments`);
+        }
+  
+        _doesLineCloseBlock (index) {
+            let endingTokens = this.lines[index].segments.filter(s => s.value === '}');
+            return Boolean(endingTokens.length);
+        }
+  
+        _getInsertPoint() {
+            return { type: 'insertPoint', scope: this._getCurrentSegment().scope, editable: true };
+        }
+  
+        _dedupArray (arr) {
+            return [...new Set(arr)];
+        }
+  
+        _getCurrentSegment () {
+            const lineSegments = this._getLineSegments();
+            if (!lineSegments) {
+                return;
+            }
+            return lineSegments[this.currentSegment];
+        }
+  
+        clearLine (line) {
+  
+        }
 
     }
 

@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1 maximum-scale=1"">
+        <title>tap-code</title>
+
+        <style>
+            * {
+                -webkit-user-select: none;
+                -moz-user-select: none;
+                -ms-user-select: none;
+                user-select: none;
+            }
+            html, body {
+                min-height: 100%;
+                margin: 0;
+            }
+
+            #container {
+                height: 200px;
+                overflow: auto;
+                border: 1px solid blue;
+            }
+            
+            #content {
+                overflow: auto;
+            }
+
+        </style>
+    </head>
+    <body>
+        <div id="container">
+            <div id="content">
+                <h2>hello1</h2>
+                <h2>hello2</h2>
+                <h2>hello3</h2>
+                <h2>hello4</h2>
+                <h2>hello5</h2>
+                <h2>hello6</h2>
+                <h2>hello7</h2>
+                <h2>hello8</h2>
+                <h2>hello9</h2>
+                <h2>hello10</h2>
+                <h2>hello11</h2>
+            </div>
+        </div>
+        
+    </body>
+
+    <script>  
+    </script>
+</html>
+
+ 
+ 
+<!-- <!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1 maximum-scale=1"">
+        <title>tap-code</title>
+
+        <style>
+            * {
+                -webkit-user-select: none;
+                -moz-user-select: none;
+                -ms-user-select: none;
+                user-select: none;
+            }
+            html, body {
+                min-height: 100%;
+                margin: 0;
+                
+                -webkit-font-smoothing: antialiased;
+                -moz-osx-font-smoothing: grayscale;
+            }
+
+            #button {
+            	perspective: 1000px;
+            	backface-visibility: hidden;font-weight: bold;
+            	transition: background 300ms;
+            	backface-visibility: hidden;
+            	perspective: 1000px;
+            }
+
+        </style>
+    </head>
+    <body>
+        <canvas id="square" width="400" height="400" style="border:dotted 1px; -webkit-tap-highlight-color:rgba(0,0,0,0);" onclick="hitTest(event)"></canvas>
+        <button id="button">MUKSzIK</button>
+    </body>
+
+    <script>
+    	
+    	var canv = document.getElementById("square");
+    	var ctx = canv.getContext("2d");
+
+    	var cw = 100;
+    	var ch = 100;
+    	var cursorX = 50;
+    	var cursorY = 50;
+    	var s = 100;
+    	var r = 5;
+    	var rogueCounter = 0;
+
+    	// background definition
+    	// OPTION: look at the top-left pixel and assume == background
+    	//         then set these vars automatically
+    	var bkColor = {r:255, g:255, b:255};
+    	var bkFillColor="rgb("+bkColor.r+","+bkColor.g+","+bkColor.b+")";
+    	
+    	// ctx.fillStyle = "rgba(255,255,255,1)";
+    	// ctx.fillRect(0, 0, 10, 10);
+    	// ctx.fillStyle = bkFillColor;
+    	// ctx.fillRect(0, 0, 200, 200);
+    	//IF CIRCLE FIND THE LONGEST AND THAT WILL BE THE DIAGRAM
+    	ctx.fillStyle = "rgba(255,0,0,1)";
+    	ctx.beginPath();
+    	ctx.arc(cursorX, cursorY, r, 0, 2 * Math.PI, false);
+    	ctx.fill();
+
+    	// ctx.fillStyle = "rgba(255,0,0,1)";
+    	// ctx.fillRect(10, 10, 10, 10);
+
+	    function clipBox(pixels){
+	        var pos = findEdge(pixels);
+	        if (!pos.valid) {
+	        	return;
+	        }
+	        console.log('starting coord', pos);
+	        var bb = findBoundary(pos, pixels);
+	        console.log('baba', bb)
+	        // console.log('data', data)
+	        // clipToImage(bb.x,bb.y,bb.width,bb.height);
+	        // if(isTransparent){
+	        //     // clear the clipped area
+	        //     // plus a few pixels to clear any anti-aliasing
+	        //     ctx.clearRect(bb.x-2,bb.y-2,bb.width+4,bb.height+4);
+	        // }else{
+	        //     // fill the clipped area with the bkColor
+	        //     // plus a few pixels to clear any anti-aliasing
+	        //     ctx.fillStyle=bkFillColor;
+	        //     ctx.fillRect(bb.x-2,bb.y-2,bb.width+4,bb.height+4);
+	        // }
+	    }
+
+	    function visiblyDifferent (pixel){
+	        var r = pixel[0];
+	        var g = pixel[1];
+	        var b = pixel[2];
+	        var a = pixel[3];
+	        var deltaR = Math.abs(bkColor.r - r);
+	        var deltaG = Math.abs(bkColor.g - g);
+	        var deltaB = Math.abs(bkColor.b - b);
+	        // var deltaB = Math.abs(bkColor.b - b);
+	        // console.log(pixel)
+	        // debugger;
+	        // console.log(deltaR, deltaG, deltaB, a)
+	        return (deltaR  > 5 || deltaG > 5 || deltaB > 5) && a > 25;
+	        // return(r === 0 && g === 0 && b === 0)
+	    }
+
+	    function findEdge(pixels) {
+	        for (var y = 0; y < ch; y++) {
+		        for (var x = 0; x < cw; x++) {
+		            if (visiblyDifferent(pixels[cw * y + x])) {
+		            	rogueCounter++
+		                return( {x: x, y: y, valid: true} );
+		            }
+		        }
+	    	}
+	        return({x: -100, y:-100, valid:false});
+	    }
+
+	    function findBoundary(pos, pixels){
+	        var x0 = x1 = pos.x;
+	        var y0 = y1 = pos.y;
+	        while (y1 <= ch && visiblyDifferent(pixels[cw * y1 + x1])) {
+	        	y1++;
+	        }
+	        var x2 = x1;
+	        var y2 = y1 - 1;
+	        while (x2 <= cw && visiblyDifferent(pixels[cw * y2 + x2])) {
+	        	x2++;
+	        }
+	        return { x: x0, y: y0, width: x2 - x0, height: y2 - y0 + 1 };
+	    }
+
+	    function drawLine(x1,y1,x2,y2){
+	        ctx.beginPath();
+	        ctx.moveTo(x1,y1);
+	        ctx.lineTo(x2,y2);
+	        ctx.strokeStyle="red";
+	        ctx.lineWidth=0.50;
+	        ctx.stroke();
+	    }
+
+	    function clipToImage(x,y,w,h){
+	        // don't save anti-alias slivers
+	        if(w<3 || h<3){ return; }
+	        // save clipped area to an img element
+	        var tempCanvas=document.createElement("canvas");
+	        var tempCtx=tempCanvas.getContext("2d");
+	        tempCanvas.width=w;
+	        tempCanvas.height=h;
+	        tempCtx.drawImage(canvas,x,y,w,h,0,0,w,h);
+	        var image=new Image();
+	        image.width = w;
+	        image.height = h;
+	        image.src = tempCanvas.toDataURL();
+	        $("#clips").append(image);
+	    }
+
+	    document.getElementById('button').addEventListener('click', () => {
+	        var imgData = ctx.getImageData(0,0,cw,ch);
+	        var data = imgData.data;
+	        // console.log(data)
+	        var temparray,
+	        	mastArray = [];
+	        for (var i = 0, length = data.length; i < length; i += 4) {
+	            temparray = data.slice(i, i + 4);
+	            mastArray.push(temparray);
+	        }
+	        clipBox(mastArray);
+	    });   
+</script>
+</html>
+ -->

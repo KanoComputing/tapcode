@@ -1,0 +1,53 @@
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../elements/tapcode-ide/tapcode-ide.html">
+
+<dom-module id="tap-code-editor-view">
+
+    <template>
+  
+      <style is="custom-style" include="iron-flex iron-flex-alignment">
+  
+        :host {
+            display: block;
+            height: 100%;
+            width: 100%;
+            background-color: #33393d;
+        }
+
+        tapcode-ide {
+            height: 100%;
+            width: 100%;
+        }
+
+        [hidden] {
+            display: none !important;
+        }
+  
+      </style>
+      <tapcode-ide></tapcode-ide>
+    </template>
+
+    <script>
+
+      class TapCodeEditorView extends Polymer.GestureEventListeners(Polymer.Element) {
+        static get is() { 
+            return 'tap-code-editor-view';
+        }
+  
+        static get properties() {
+            return {
+            }
+        }
+  
+        constructor () {
+            super();
+            Polymer.RenderStatus.afterNextRender(this, () => {
+            });
+        }
+
+      }
+      customElements.define(TapCodeEditorView.is, TapCodeEditorView);
+    </script>
+
+</dom-module>
+
