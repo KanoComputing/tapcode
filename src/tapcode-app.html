@@ -1,9 +1,9 @@
-<link rel="import" href="./bower_components/polymer/polymer-element.html">
-<link rel="import" href="./bower_components/app-route/app-location.html">
-<link rel="import" href="./bower_components/app-route/app-route.html">
-<link rel="import" href="./bower_components/app-layout/app-drawer/app-drawer.html">
-<link rel="import" href="./bower_components/polymer/lib/mixins/gesture-event-listeners.html">
-<link rel="import" href="./bower_components/iron-flex-layout/iron-flex-layout-classes.html">
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../bower_components/app-route/app-location.html">
+<link rel="import" href="../bower_components/app-route/app-route.html">
+<link rel="import" href="../bower_components/app-layout/app-drawer/app-drawer.html">
+<link rel="import" href="../bower_components/polymer/lib/mixins/gesture-event-listeners.html">
+<link rel="import" href="../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
 <link rel="import" href="./elements/tapcode-icons.html">
 
 <dom-module id="tap-code-app">
@@ -156,7 +156,7 @@
             _pageChanged (page) {;
                 Polymer.importHref(
                     // Path to import
-                    this.resolveUrl('./views/tap-code-' + page + '-view.html'),
+                    this.resolveUrl('./views/tapcode-' + page + '-view.html'),
                     // Onloaded callback
                     this.onPageImported.bind(this),
                     // Fallback
@@ -179,7 +179,7 @@
 
                 // Stamp current view
                 template = document.createElement('template');
-                template.innerHTML = `<tap-code-${this.page}-view id="${this.page}"></tap-code-${this.page}-view>`;
+                template.innerHTML = `<tapcode-${this.page}-view id="${this.page}"></tapcode-${this.page}-view>`;
                 TemplateClass = Polymer.Templatize.templatize(template, this);
                 instance = new TemplateClass({});
                 this.$['view-container'].appendChild(instance.root);
