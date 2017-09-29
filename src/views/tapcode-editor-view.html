@@ -1,7 +1,7 @@
-<link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../../bower_components/polymer/polymer-element.html">
 <link rel="import" href="../elements/tapcode-ide/tapcode-ide.html">
 
-<dom-module id="tap-code-editor-view">
+<dom-module id="tapcode-editor-view">
 
     <template>
   
@@ -29,9 +29,9 @@
 
     <script>
 
-      class TapCodeEditorView extends Polymer.GestureEventListeners(Polymer.Element) {
+      class TapcodeEditorView extends Polymer.GestureEventListeners(Polymer.Element) {
         static get is() { 
-            return 'tap-code-editor-view';
+            return 'tapcode-editor-view';
         }
   
         static get properties() {
@@ -46,7 +46,7 @@
         }
 
       }
-      customElements.define(TapCodeEditorView.is, TapCodeEditorView);
+      customElements.define(TapcodeEditorView.is, TapcodeEditorView);
     </script>
 
 </dom-module>

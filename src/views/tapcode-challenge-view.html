@@ -1,7 +1,7 @@
-<link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../../bower_components/polymer/polymer-element.html">
 <link rel="import" href="../elements/tapcode-ide/tapcode-ide.html">
 
-<dom-module id="tap-code-challenge-view">
+<dom-module id="tapcode-challenge-view">
 
     <template>
   
@@ -29,9 +29,9 @@
 
     <script>
 
-      class TapCodeChallengeView extends Polymer.GestureEventListeners(Polymer.Element) {
+      class TapcodeChallengeView extends Polymer.GestureEventListeners(Polymer.Element) {
         static get is() { 
-            return 'tap-code-challenge-view';
+            return 'tapcode-challenge-view';
         }
   
         static get properties() {
@@ -93,7 +93,7 @@
             let creation,
                 steps;
 
-            fetch(`/assets/challenges/challenge-no1/challenge-no1.json`)
+            fetch(`/data/challenges/challenge-no1/challenge-no1.json`)
                 .then(r => r.json())
                 .then(data => {
                     this.steps = data.steps;
@@ -105,7 +105,7 @@
                     });
                 });
         
-            // fetch(`/assets/challenges/challenge-no1/challenge-no1.tapcode`)
+            // fetch(`/data/challenges/challenge-no1/challenge-no1.tapcode`)
             //     .then(r => r.json())
             //     .then(data => {
             //         creation = data;
@@ -209,7 +209,7 @@
         }
 
       }
-      customElements.define(TapCodeChallengeView.is, TapCodeChallengeView);
+      customElements.define(TapcodeChallengeView.is, TapcodeChallengeView);
     </script>
 
 </dom-module>
