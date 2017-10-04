@@ -1,0 +1,21 @@
+{
+    "lint": {
+        "rules": [
+            "polymer-2"
+        ]
+    },
+    "entrypoint": "index.html",
+    "shell": "src/tapcode-app.html",
+    "fragments": [
+        "src/views/tapcode-challenge-view.html",
+        "src/views/tapcode-editor-view.html"
+    ],
+    "sources": [
+        "src/**/*",
+        "assets/**/*"
+    ],
+    "extraDependencies": [
+        "bower_components/webcomponentsjs/**/*",
+        "data/**/*"
+    ]
+}
