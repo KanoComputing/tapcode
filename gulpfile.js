@@ -5,6 +5,7 @@ const cssSlam = require('css-slam').gulp;
 const uglify = require('gulp-uglify-es').default;
 const babel = require('gulp-babel');
 const htmlMinifier = require('gulp-html-minifier');
+const htmlReplace = require('gulp-html-replace');
 const htmlAutoprefixer = require('gulp-html-autoprefixer');
 
 const del = require('del');
@@ -40,6 +41,9 @@ function build() {
             .pipe(gulpIf(/\.js$/, uglify()))
             .pipe(gulpIf(/\.(css|html)$/, htmlAutoprefixer()))
             .pipe(gulpIf(/\.(css|html)$/, cssSlam()))
+            .pipe(gulpIf(/\.html$/, htmlReplace({
+                es5adapter: '<script src="./bower_components/webcomponentsjs/custom-elements-es5-adapter.js"></script>'
+            })))
             .pipe(gulpIf(/\.html$/, htmlMinifier({
                 removeComments: true,
                 collapseWhitespace: true
@@ -67,15 +71,11 @@ function build() {
             .pipe(depsSplit.rejoin());
 
         let build = mergeStream(src, deps)
-            .once('data', () => {
-                console.log('Building...');
-            })
             .pipe(project.bundler())
             .pipe(project.addPushManifest())
             .pipe(gulp.dest(targetDir));
 
         return waitFor(build).then(() => {
-            console.log('Generating the Service Worker...');
             return polymerBuild.addServiceWorker({
                 project: project,
                 buildRoot: targetDir,
@@ -83,13 +83,10 @@ function build() {
                 swPrecacheConfig: swPrecacheConfig
             });
         })
-        .then(() => {
-            console.log('Build complete!');
-            resolve();
-        })
+        .then(resolve)
         .catch((err) => {
             console.log(err);
-            reject();
+            reject(err);
         });
     });
 }
