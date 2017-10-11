@@ -32,19 +32,18 @@
                     // console.log(window.userCode);
                     window.userCode();
                 } catch (err) {
-                   console.log('err', err);
                 }
     	}
     }
 
     resetCanvas = function (size) {
-        cursorX = 500;
-        cursorY = 500;
+        cursorX = 250;
+        cursorY = 250;
         ctx.globalAlpha = 1;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.fillStyle = "#ff00ff";
         ctx.strokeStyle = "#00ffff";
-        ctx.lineWidth = 2;
+        ctx.lineWidth = 8;
     }
 
 })(window.Kano = window.Kano || {});

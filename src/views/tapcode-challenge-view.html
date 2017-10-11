@@ -181,7 +181,13 @@
             }
     
             _onTaskChanged (task) {
-                this.$.ide.$.editor.addComment(task.insert, task.text)
+                if (!task) {
+                    return;
+                }
+                this.$.ide.$.editor.scrollLineToView(task.insert)
+                    .then(() => {
+                        this.$.ide.$.editor.addComment(task.insert, task.text, task.cursorPosition)
+                    })
             }
             /**
              * Goes through all the defined validations and check them
@@ -215,13 +221,25 @@
             _addValidator (type, method) {
                 this.validators[type] = method;
             }
+            
+            arraysEqual (arr1, arr2) {
+                if(arr1.length !== arr2.length)
+                    return false;
+                for (var i = arr1.length; i--;) {
+                    if (arr1[i] !== arr2[i])
+                        return false;
+                }
+                return true;
+            }
     
             matchAddCode (validation, detail) {
-                if (typeof validation.paramIndex !== 'undefined') {
-                    return validation.name === detail.code.name && validation.paramIndex === detail.currentSegment.paramIndex;
-                } else {
-                    return validation.name === detail.code.name;
+                if (validation.scope && !this.arraysEqual(detail.currentSegment.scope, validation.scope)) {
+                    return;
                 }
+                if (typeof validation.paramIndex !== 'undefined' && validation.paramIndex !== detail.currentSegment.paramIndex) {
+                    return;
+                }
+                return validation.name === detail.code.name;
             }
     
             matchParamChange (validation, event) {

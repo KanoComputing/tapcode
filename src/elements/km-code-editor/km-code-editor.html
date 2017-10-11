@@ -24,15 +24,16 @@
                 cursor: pointer;
             }
             .line-segments {
+                position: relative;
                 font-size: 14px;
                 width: 60vw;
                 white-space: pre-line;
                 /*border: 1px solid purple;*/
             }
-            span.break {
+            div.break {
                 display: none;
             }
-            .sweet + span.break {
+            .sweet + div.break {
                 display: block;
                 height: 0;
             }
@@ -69,7 +70,7 @@
               background: #999;
             }
             .comment {
-                opacity: 0.5;
+                color: rgba(255, 255, 255, 0.5);
             }
             #delete-lines {
                 width: 24px;
@@ -87,17 +88,18 @@
 
         <template id="line-repeater" is="dom-repeat" items="[[lines]]" as="line" index-as="lineIndex">
             <div class="line horizontal layout" on-tap="_selectLine">
-                <span class="line-number" on-tap="_onLineNumberTapped">[[_getLineIndex(lineIndex)]]</span>
+                <div class="line-number" on-tap="_onLineNumberTapped">[[_getLineIndex(lineIndex)]]</div>
                 <div id$="[[_computeLineId(lineIndex)]]"
                     class="line-segments"><template id="segment-repeater"
                                                     is="dom-repeat"
                                                     items="{{line.segments}}"
                                                     as="segment"
-                                                    index-as="segmentIndex"><span id$="[[_computeEditableId(lineIndex, segmentIndex)]]"
+                                                    index-as="segmentIndex"><div id$="[[_computeEditableId(lineIndex, segmentIndex)]]"
                                                                                   class$="[[_calculateSegmentClass(segment.type, segment.breaking,
                                                                                           currentLine, currentSegment, lineIndex, segmentIndex)]]"
-                                                                                  on-tap="_selectSegment">[[segment.value]]</span><span class="break">
-                                                                                  </span class="break"></template></div>
+                                                                                  style$="[[_setMaxWidth(lineIndex, segmentIndex)]]"
+                                                                                  on-tap="_selectSegment">[[segment.value]]</div><div class="break">
+                                                                                  </div class="break"></template></div>
             </div>
         </template>
     </template>
@@ -159,6 +161,19 @@
                 this.reset();
             });
         }
+        
+        _setMaxWidth (lineIndex, segmentIndex) {
+            Polymer.RenderStatus.afterNextRender(this, () => {
+                let segmentEl = this.shadowRoot.querySelector(`#l${lineIndex}-s${segmentIndex}`);
+                // console.log('segmentEl', segmentEl.offsetParent)
+                console.log('segmentEl', segmentEl.offsetLeft)
+                console.log('segmentEl', segmentEl.parentElement.clientWidth);
+                let maxWidth = segmentEl.parentElement.clientWidth - segmentEl.offsetLeft;
+                // return 'max-width": `${maxWidth}px`
+                return segmentEl.style['max-width'] = `${maxWidth}px`;
+            });
+        }
+        
 
         _computeLineId (lineIndex) {
             return `l-${lineIndex}`;
@@ -223,27 +238,44 @@
                 this.set(`lines.${lineNumber}.segments.${segmentNumber}.value`, this.get(`lines.${lineNumber}.segments.${segmentNumber}.value`) + comment.shift());
                 if (comment.length > 0) { 
                     this.typeComment(comment, lineNumber, segmentNumber);
+                } else {
+                    this.scrollLineToView(lineNumber);
                 }
-            }, 40)
+            }, 1)
+            //used to be 40
         }; 
   
-        addComment (lineNumber, comment) {
-            this.splice('lines', lineNumber, 0, { segments: [{ type: 'insertPoint', scope: ['global'], editable: true }] });
-            if (lineNumber === this.lines.length - 1) {
+        addComment (lineNumber, comment, cursorPosition) {
+            // this.splice('lines', lineNumber, 0, { segments: [{ type: 'insertPoint', scope: ['global'], editable: true }] });
+            this._insertLine(lineNumber);
+            
+            if (cursorPosition) {
+                this.currentLine = cursorPosition.line;
+                this.currentSegment = cursorPosition.segment;
+                this.moveCursor();
             } else {
-              // this._insertLine(0, 0);
+                this.currentLine++;
             }
-            // FIXME it wont always be general scope
-            this.set(`lines.${lineNumber}.segments.0`,
+            // debugger;
+            
+            // Adding comment JS syntax
+            comment = '//' + comment;
+            // if (!this._getCurrentSegment().editable) {
+            //     this.moveCursor();
+            // }
+            let segs = this.lines[lineNumber].segments;
+            let commentInsert = segs.length - 1;
+            
+            this.set(`lines.${lineNumber}.segments.${commentInsert}`,
                 {
                     type: 'comment',
-                    value: `// `,
-                    scope: ['general']
+                    value: '',
+                    scope: ['global']
                 }
             );
             let commentArray = comment.split('');
-            this.typeComment(commentArray, lineNumber, 0);
-            this.moveLine();
+            this.typeComment(commentArray, lineNumber, commentInsert);
+            
         }
   
         addCode (code) {
@@ -264,14 +296,14 @@
   
             // Cursor sits at end of line -> insert new line
             if (currentSegment.type === 'lineEnd') {
-                this._insertLine(1);
+                this._insertLine(this.currentLine + 1);
                 this.moveCursor();
                 newLinesNeeded--;
             }
             
             // Insert new lines for code
             for (var i = 0; i < newLinesNeeded; i++) {
-                this._insertLine(0, 1);
+                this._insertLine(this.currentLine, this.currentLine + 1);
             }
   
             code.lines.forEach((line, index) => {
@@ -311,13 +343,14 @@
                 lines: this.lines
             }
             this.notifyChange('add-code', detail);
-
-            if (code.type === 'control') {
-                this.moveLine();
-                this.moveCursor();
-            } else {
-                this.moveCursor();
-            }
+            Polymer.RenderStatus.afterNextRender(this, () => {
+                if (code.type === 'control') {
+                    this.moveLine();
+                    this.moveCursor();
+                } else {
+                    this.moveCursor();
+                }
+            });
         }
   
         notifyChange (type, data={}) {
@@ -467,7 +500,6 @@
                 if (segmentTypes.length === 0) {
                     linesToDelete.push(i);
                 }
-                // debugger;
             }
   
             for (var k = linesToDelete.length - 1; k >= 0; k--) {
@@ -478,6 +510,38 @@
                 }
             }
   
+        }
+        
+        scrollLineToView (lineIndex) {
+            let target = this.shadowRoot.querySelector(`#l-${lineIndex}`),
+                toScroll = target ? target.offsetTop : this.clientHeight;
+            return new Promise((resolve, reject) => {
+                this._scrollTo(toScroll, 5).then(()=> {
+                    resolve(); 
+                });
+            });
+        }
+        
+        _scrollTo (targetOffset, increment) {
+            return new Promise((resolve, reject) => {
+                function scroll (targetOffset, increment) {
+                    if (Math.abs(this.scrollTop - targetOffset) < increment * 2 ||
+                            (targetOffset > this.scrollTop && this.scrollHeight - this.scrollTop === this.clientHeight)) {
+                        this.scrollTop = targetOffset;
+                        resolve();
+                        return;
+                    }
+                    this.scrollTop = targetOffset > this.scrollTop ? this.scrollTop + increment : this.scrollTop - increment;
+
+                    Polymer.RenderStatus.afterNextRender(this, () => {
+                        scroll(targetOffset, increment);
+                        
+                    });
+                }
+                scroll = scroll.bind(this);
+                scroll(targetOffset, increment);
+            });
+            // If diff is small or we scrolled all the way to the bottom  
         }
   
         /*****************************
@@ -506,7 +570,7 @@
   
         _onLineNumberTapped (e) {
             this.currentLine = e.model.lineIndex;
-            let copyFrom = this._doesLineCloseBlock(this.currentLine) ? -1 : 0;
+            let copyFrom = this._doesLineCloseBlock(this.currentLine) ? this.currentLine -1 : this.currentLine;
             this._insertLine(copyFrom, 0);
         }
   
@@ -514,7 +578,7 @@
         // then put in an insert point with the current scope
   
         _insertLine (from, to) {
-            let lineIndex = this.currentLine + from,
+            let lineIndex = from,
                 lineCopy = JSON.parse(JSON.stringify(this.lines[lineIndex])),
                 allScope = lineCopy.segments.map(segment => segment.scope),
                 currentScope = [].concat.apply([], allScope);
@@ -530,7 +594,7 @@
                 }
             }
             lineCopy.segments.push({ type: 'insertPoint', scope: currentScope, editable: true });  
-            this.splice('lines', this.currentLine + to, 0, lineCopy)
+            this.splice('lines', to, 0, lineCopy)
         }
   
         _onSegmentSelectionChanged () {
@@ -608,6 +672,10 @@
             arrayToProcess.sort((a, b) => {
                 return a.scope.length - b.scope.length;
             })
+            
+            if (!arrayToProcess || arrayToProcess.length === 0) {
+                return;
+            }
 
             // segments.forEach(s => {
             //     s.style['flex-basis'] = '0px';

@@ -3,40 +3,25 @@
         {
             "instructions": [
                 {
-                    "text": "Select moveBy",
+                    "text": "Greetings. First, we want to use a block that will repeat our code in a fast loop. It's a called function animate. Can you find it?",
                     "insert": 0,
                     "validation":
                         {
                             "add-code": {
-                                "name": "moveBy"
+                                "name": "animate"
                             }
                         }
                 },
                 {
-                    "text": "Change the first parameter to random",
-                    "insert": 1,
-                    "validation":
-                        {
-                            "add-code": {
-                                "name": "random",
-                                "paramIndex": 0
-                            }
-                        }
-                },
-                {
-                    "text": "Change the first parameter of random to -5",
+                    "text": "Now inside the animate block we want to use a command that will point to somewhere in the canvas before we start drawing. It's called 'moveBy'",
                     "insert": 2,
                     "validation":
                         {
-                            "param-value": {
-                                "id": "random-1-0",
-                                "value": -5
+                            "add-code": {
+                                "name": "moveBy",
+                                "scope": ["global", "animate-1"]
                             }
                         }
-                },
-                {
-                    "text": "well done",
-                    "insert": 4
                 }
             ]
         }
