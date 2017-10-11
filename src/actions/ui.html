@@ -1,0 +1,13 @@
+<link rel="import" href="../stores/app-store.html">
+
+<script>
+    (function () {
+        Kano.Tapcode.AppStore.addMutator(function (action) {
+            switch (action.type) {
+                case 'SET_FULLSCREEN':
+                    this.set('state.fullscreen', action.value);
+                    break;
+            }
+        });
+    })();
+</script>

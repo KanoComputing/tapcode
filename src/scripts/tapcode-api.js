@@ -1,8 +1,8 @@
 (function (Kano) {
 
-    Kano.TapCode = Kano.TapCode || {};
-    Kano.TapCode.loop,
-    Kano.TapCode.api = [
+    Kano.Tapcode = Kano.Tapcode || {};
+    Kano.Tapcode.loop,
+    Kano.Tapcode.api = [
         {
             name: 'moveBy',
             type: 'drawing',

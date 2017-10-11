@@ -1,63 +1,44 @@
 {
-  "steps": [
-    {
-      "insert": 0,
-      "instructions": [
+    "steps": [
         {
-          "text": "Use moveTo",
-          "insert": 0,
-          "validation":
-            {
-              "add-code": {
-                "name": "moveTo"
-              }
-            }
-        },
-        {
-          "text": "Change the first parameter to 20",
-          "insert": 1,
-          "validation":
-            {
-              "add-code": {
-                "name": "random",
-                "paramIndex": 0
-              }
-            }
-        },
-        {
-          "text": "Well done",
-          "insert": 3,
-          "validation":
-            {
-              "add-code": {
-                "name": "moveTo"
-              }
-            }
+            "instructions": [
+                {
+                    "text": "Select moveBy",
+                    "insert": 0,
+                    "validation":
+                        {
+                            "add-code": {
+                                "name": "moveBy"
+                            }
+                        }
+                },
+                {
+                    "text": "Change the first parameter to random",
+                    "insert": 1,
+                    "validation":
+                        {
+                            "add-code": {
+                                "name": "random",
+                                "paramIndex": 0
+                            }
+                        }
+                },
+                {
+                    "text": "Change the first parameter of random to -5",
+                    "insert": 2,
+                    "validation":
+                        {
+                            "param-value": {
+                                "id": "random-1-0",
+                                "value": -5
+                            }
+                        }
+                },
+                {
+                    "text": "well done",
+                    "insert": 4
+                }
+            ]
         }
-      ]
-    },
-    {
-      "insert": 3,
-      "instructions": [
-        {
-          "text": "Well done",
-          "validation":
-            {
-              "add-code": {
-                "name": "moveToRandom"
-              }
-            }
-        },
-        {
-          "text": "Bonjour2",
-          "validation":
-            {
-              "add-code": {
-                "name": "moveToRandom"
-              }
-            }
-        }
-      ]
-    }
-  ]
+    ]
 }

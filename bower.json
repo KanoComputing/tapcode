@@ -24,7 +24,11 @@
     "app-layout": "PolymerElements/app-layout#^2.0.1",
     "iron-icons": "PolymerElements/iron-icons#^2.0.1",
     "app-route": "PolymerElements/app-route#^2.0.2",
-    "iron-pages": "PolymerElements/iron-pages#^2.0.0"
+    "iron-pages": "PolymerElements/iron-pages#^2.0.0",
+    "flow-down": "KanoComputing/flow-down#^1.0.0-rc6",
+    "paper-dialog": "PolymerElements/paper-dialog#^2.0.0",
+    "web-animations-js": "^2.3.1",
+    "paper-spinner": "PolymerElements/paper-spinner#^2.0.0"
   },
   "devDependencies": {
     "iron-component-page": "^3.0.1"

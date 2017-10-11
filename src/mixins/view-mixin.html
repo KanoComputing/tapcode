@@ -1,0 +1,71 @@
+<link rel="import" href="../../bower_components/polymer/lib/utils/boot.html">
+<link rel="import" href="../../bower_components/polymer/lib/utils/mixin.html">
+<link rel="import" href="../stores/tapcode-state-manager.html">
+<link rel="import" href="../actions/code.html">
+<link rel="import" href="../actions/ui.html">
+
+<script>
+    ((Kano) => {
+        Kano.Tapcode = Kano.Tapcode || {};
+        
+        Kano.Tapcode.ViewMixin = Polymer.dedupingMixin((parent) => {
+        
+            return class extends Kano.Tapcode.AppStore.StateReceiver(parent) {
+                constructor () {
+                    super();
+                    this._onCodeChanged = this._onCodeChanged.bind(this);
+                    this._onFullscreenChanged = this._onFullscreenChanged.bind(this);
+                }
+                
+                static get properties() {
+                    return {
+                        code: {
+                            type: Array,
+                            linkState: 'code.lines'
+                        },
+                        fullscreen: {
+                            type: Boolean,
+                            linkState: 'fullscreen',
+                            reflectToAttribute: true
+                        }
+                    }
+                }
+                
+                connectedCallback () {
+                    super.connectedCallback();
+                    if (!this.$.ide) {
+                        return;
+                    }
+                    this.$.ide.addEventListener('code-changed', this._onCodeChanged);
+                    this.$.ide.addEventListener('fullscreen-changed', this._onFullscreenChanged);
+                }
+
+                disconnectedCallback () {
+                    super.disconnectedCallback();
+                    if (!this.$.ide) {
+                        return;
+                    }
+                    this.$.ide.removeEventListener('code-changed', this._onCodeChanged);
+                    this.$.ide.removeEventListener('fullscreen-changed', this._onFullscreenChanged);
+                }
+                
+                _onCodeChanged (e) {
+                    // TODO throttle, but make sure that the last change is triggering
+                    this.dispatch({
+                        type: 'SET_CODE',
+                        data: {
+                            lines: e.detail.lines
+                        }
+                    });
+                }
+                
+                _onFullscreenChanged (e) {
+                    this.dispatch({
+                        type: 'SET_FULLSCREEN',
+                        value: e.detail.value
+                    });
+                }
+            }
+        })
+    })(window.Kano = window.Kano || {});
+</script>

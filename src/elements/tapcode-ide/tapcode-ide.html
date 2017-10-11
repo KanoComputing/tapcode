@@ -8,10 +8,8 @@
 <link rel="import" href="../tapcode-icons.html">
 
 <dom-module id="tapcode-ide">
-
     <template>
-  
-        <style is="custom-style" include="iron-flex iron-flex-alignment">
+        <style include="iron-flex iron-flex-alignment">
     
             :host {
                 display: flex;
@@ -30,15 +28,30 @@
                 flex: 1 1 55%;
                 background: #2b3035;
                 position: relative;
-                top: 0;
-                left: 0;
-                overflow: auto;
             }
     
             #toolbox {
                 position: relative;
                 flex: 1 1 45%;
                 background: #33393d;
+            }
+            
+            .to-right,
+            .to-bottom,
+            .to-left {
+                transition: transform 0.3s;
+            }
+            
+            :host([fullscreen]) .to-right {
+                transform: translateX(100%);
+            }
+            
+            :host([fullscreen]) .to-bottom {
+                transform: translateY(100%);
+            }
+            
+            :host([fullscreen]) .to-left {
+                transform: translateX(-100%);
             }
             
             #code-visibility-btn {
@@ -58,7 +71,7 @@
             #editor {
                 display: block;
                 width: 100%;
-                min-height: 100%;
+                height: 100%;
                 position: absolute;
                 top: 0;
                 left: 0;
@@ -88,7 +101,8 @@
                 display: inline-block;
                 cursor: pointer;
                 opacity: 0.5;
-                transition: opacity 0.3s ease-in;
+                transition: opacity 0.3s ease-in, transform 0.3s;
+                z-index: 10;
             }
     
             .clear-and-refresh>div:hover {
@@ -102,11 +116,15 @@
                 height: 48px;
                 width: 48px;
             }
+            
     
             .left-and-right-arrow {
                 position: absolute;
                 bottom: 8px;
-                right: 8px;
+                right: 0;
+                width: 120px;
+                text-align: right;
+                padding-right: 8px;
             }
     
             .arrow-area {
@@ -212,22 +230,21 @@
       
         </style>
         
+        
+
         <div class="code-and-canvas">
-            <canvas id="canvas" width="1000" height="1000"></canvas>
-            <km-code-editor id="editor" on-edit-request="_onEditRequest" edited-value="{{editedValue}}" on-run-code="runCode"></km-code-editor>
-    
             <div class="clear-and-refresh vertical layout justified">
-                <div id="refresh-tap-area" class="layout horizontal center-center" on-tap="resetAndRun">
+                <div id="refresh-tap-area" class="layout horizontal center-center to-right" on-tap="resetAndRun">
                     <iron-icon id="menu-icon" icon="tapcode:refresh"></iron-icon>
                 </div>
-                <div id="delete-tap-area" class="layout horizontal center-center" on-tap="clearCode">
+                <div id="delete-tap-area" class="layout horizontal center-center to-right" on-tap="clearCode">
                     <iron-icon id="delete-icon" icon="tapcode:delete"></iron-icon>
                 </div>
-                <div id="fullscreen-tap-area" class="layout horizontal center-center" on-tap="onTrack">
+                <div id="fullscreen-tap-area" class="layout horizontal center-center" on-tap="_toggleFullscreen">
                     <iron-icon icon="tapcode:fullscreen"></iron-icon>
                 </div>
             </div>
-            <div class="left-and-right-arrow">
+            <div class="left-and-right-arrow to-right">
                 <div class="arrow-area" on-tap="_moveLeft">
                     <img id="left-arrow" src="assets/arrow.svg"></img>
                 </div>
@@ -235,9 +252,11 @@
                     <img src="assets/arrow.svg"></img>
                 </div>
             </div>
-    
+            <canvas id="canvas" width="1000" height="1000"></canvas>
+            <km-code-editor id="editor" class="to-left" on-edit-request="_onEditRequest" edited-value="{{editedValue}}" on-run-code="runCode" lines="{{code}}"></km-code-editor>
         </div>
-        <div id="toolbox" class="flex vertical layout">
+
+        <div id="toolbox" class="flex vertical layout to-bottom">
             <div id="code-visibility-btn">
             </div>
             <div class="toolbox-bar layout horizontal center" hidden$="[[!_isEqual(inputType, 'newCode')]]">
@@ -250,9 +269,9 @@
                 <div class$="[[_computeTabClass(activeTab, inputType)]]" data-value$="[[inputType]]" on-tap="_selectMenuTab">[[inputType]]</div>
             </div>
             <div class="softkey-menu layout horizontal center" hidden$="[[!_needNumberControl(activeTab, showNumberControl)]]">
-                <div class="flex" on-tap="_toggleOperator" disabled$="[[!needOperator]]">
-                    <iron-icon icon="tapcode:add" hidden$="[[!_isEqual(operator, 'plus')]]"></iron-icon>
-                    <iron-icon icon="tapcode:remove" hidden$="[[!_isEqual(operator, 'minus')]]"></iron-icon>
+                <div class="flex" on-tap="_toggleOperator">
+                    <iron-icon icon="tapcode:add" hidden$="[[!_isEqual(operator, '+')]]"></iron-icon>
+                    <iron-icon icon="tapcode:remove" hidden$="[[!_isEqual(operator, '-')]]"></iron-icon>
                 </div>
                 <div class="flex" on-tap="spliceValue" disabled$="[[!needNumberDelete]]">
                     <iron-icon icon="tapcode:keyboard-backspace"></iron-icon>
@@ -285,6 +304,22 @@
   
         static get properties() {
             return {
+                code: {
+                    type: Array,
+                    notify: true
+                },
+                fullscreen: {
+                    type: Boolean,
+                    value: false,
+                    notify: true,
+                    reflectToAttribute: true
+                },
+                statements: {
+                    type: Array  
+                },
+                statementWhitelist: {
+                    type: Array
+                },
                 activeTab: {
                     type: String,
                     value: 'drawing'
@@ -299,7 +334,7 @@
                 },
                 operator: {
                     type: String,
-                    value: "minus"
+                    value: "-"
                 },
                 showNumberControl: {
                     type: Boolean,
@@ -313,10 +348,6 @@
                     type: Boolean,
                     value: false
                 },
-                needOperator: {
-                    type: Boolean,
-                    value: false
-                },
                 doneArray: {
                     type: Array,
                     value: () => []
@@ -327,10 +358,10 @@
         constructor () {
             super();
             Polymer.RenderStatus.afterNextRender(this, () => {
-                this.processApiStatements(Kano.TapCode.api);
+                this.processApiStatements(Kano.Tapcode.api);
                 //FIXME
                 canvas = this.$.canvas;
-                this.onTrack = this.onTrack.bind(this);
+                this._toggleFullscreen = this._toggleFullscreen.bind(this);
                 // Polymer.Gestures.addListener(this.$['code-visibility-btn'], 'tap', this.onTrack);
             });
         }
@@ -339,7 +370,6 @@
             this._onResize = this._onResize.bind(this);
             this._onResize();
             window.addEventListener('resize', this._onResize);
-            
         }
         
         disconnectedCallback () {
@@ -347,59 +377,16 @@
             // Polymer.Gestures.removeListener(this.$['code-visibility-btn'], 'tap', this.onTrack);
         }
         
-        onTrack (event) {
-            var elArray = ['toolbox', 'delete-tap-area', 'refresh-tap-area', 'editor'];
-            elArray.forEach(el => this.translateOffscreen(this.$[el]));
-        }
-        
-        translateOffscreen (el) {
-            if (this.doneArray.indexOf(el) !== -1) {
-                return;
+        _toggleFullscreen (event) {
+            let fullscreenBtn = this.$['fullscreen-tap-area'];
+            this.fullscreen = !this.fullscreen;
+            
+            if (this.fullscreen) {
+                let offset = fullscreenBtn.getBoundingClientRect().top;
+                fullscreenBtn.style.transform = `translateY(-${offset}px)`;
+            } else {
+                fullscreenBtn.style.transform = `translateY(0)`;
             }
-            
-            let rect = el.getBoundingClientRect();
-            let windowWidth = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
-            let windowHeight = Math.max(document.documentElement.clientHeight, window.innerHieght || 0);
-            let offset = {
-                top: rect.top + rect.height,
-                right: windowWidth - rect.right + rect.width,
-                bottom: windowHeight - rect.bottom + rect.height,
-                left: rect.left + rect.width
-            }
-            let arr = [
-                {
-                    direction: 'top',
-                    value: offset.top,
-                    translate: `0, -${offset.top}px`,
-                }, {
-                    direction: 'right',
-                    value: offset.right,
-                    translate: `${offset.right}px, 0`
-                }, {
-                    direction: 'bottom',
-                    value: offset.bottom,
-                    translate: `0, ${offset.bottom}px`
-                }, {
-                    direction: 'left',
-                    value: offset.left,
-                    translate: `-${offset.left}px, 0`
-                }
-            ]
-            let direction = arr.sort((a, b) => a.value - b.value)[0];
-            console.log('fof', direction);
-            
-            el.style.transition = 'all 0.3s ease';
-            el.style['box-sizing'] = 'border-box';
-            // el.style.display = 'none';
-            // toMove = direction.translate.replace('$', direction.value);
-            console.log('yos', direction);
-            
-            setTimeout(()=> {
-                el.style.transform = `translate(${direction.translate})`;
-                console.log("JJJJ", `translate(${direction.translate})`)
-                this.doneArray.push(el);
-            });
-            
         }
 
         runCode (e) {
@@ -411,7 +398,7 @@
 
         processApiStatements (statements) {
             let opts = {};
-            opts.statements = Kano.TapCode.api;
+            opts.statements = Kano.Tapcode.api;
             opts.ctx = this.$.canvas.getContext("2d");
             opts.canvas = this.$.canvas;
             let canvasOpts = {};
@@ -420,11 +407,6 @@
             this.CanvasDraw = new Kano.CanvasDraw(canvasOpts);
             this.prism = new Kano.Prism(opts);
             this.set('statements', this.prism.statements);
-            setTimeout(() => {
-                // this.$.editor.addCode(this.statements[2]);
-                // this.$.editor.moveLine();
-                // this.$.editor.addCode(this.statements[3]);
-            }, 100);
         }
   
         ready () {
@@ -444,8 +426,13 @@
             }
             this.$['menu-item-repeater'].render();
         }
+        
   
         _addStatement (e) {
+            if (this.whitelist && this.whitelist.indexOf(e.model.statement.name) === -1) {
+                console.log('not on whitelist');
+                return;
+            }
             this.$.editor.addCode(e.model.statement);
         }
   
@@ -477,7 +464,7 @@
 
         exportCode () {
             let a = document.createElement('a'),
-                file = new Blob([JSON.stringify(this.$.editor.lines)], {type: 'application/taptype'}),
+                file = new Blob([this.getCode()], {type: 'application/taptype'}),
                 url = URL.createObjectURL(file);
             document.body.appendChild(a);
             a.download = 'my-code.tapcode';
@@ -485,6 +472,10 @@
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
+        }
+        
+        getCode () {
+            return JSON.stringify(this.$.editor.lines);
         }
 
         _importCode () {
@@ -517,42 +508,32 @@
         }
 
         _toggleOperator () {
-            this.$.editor.toggleOperator();
-            this.operator = this.operator === 'minus' ? 'plus' : 'minus';
+            this.$.editor.toggleOperator(this.operator);
+            this.operator = this.operator === '-' ? '+' : '-';
         }
   
         clearCode () {
-            if (Kano.TapCode.loop) {
-                window.cancelAnimationFrame(Kano.TapCode.loop);
-                Kano.TapCode.loop = null;
+            if (Kano.Tapcode.loop) {
+                window.cancelAnimationFrame(Kano.Tapcode.loop);
+                Kano.Tapcode.loop = null;
             }
             this.$.editor.reset();
             this.resetCanvas();
         }
         
         resetAndRun () {
-            
             // this.resetCanvas();
-            
             this.$.editor.runCode();
         }
 
         resetCanvas () {
-            let codeArea =  this._getEditorDimensions(),
-                size;
-            if (codeArea.height >= codeArea.width) {
-                size = codeArea.width;
-            } else {
-                size = codeArea.height;
-            }
-            resetCanvas(size);
+            resetCanvas();
         }
 
         spliceValue () {
             //TODO refactor
             let ed = this.$.editor;
             let currentValue = ed.get(`lines.${ed.currentLine}.segments.${ed.currentSegment}.value`);
-            console.log('cs', currentValue.length)
             if (currentValue.length > 1) {
                 ed.set(`lines.${ed.currentLine}.segments.${ed.currentSegment}.value`, currentValue.slice(0, -1));
                 this.editedValue = currentValue.slice(0, -1);
@@ -570,8 +551,8 @@
             if (!isNaN(parseFloat(value))) {
                 this.showNumberControl = true;
                 this.needNumberDelete = value.length > 0;
-                this.needOperator = value !== '0';
-                this.operator = value < 0 ? 'plus' : 'minus' 
+                // this.needOperator = value !== '0';
+                this.operator = value < 0 ? '+' : '-' 
             }
         }
 
@@ -618,7 +599,6 @@
             
             window.cursorX = Math.round(size / 2);
             window.cursorY = Math.round(size / 2);
-            console.log('oksdoksodkoskods', window.cursorX);
         }
 
       }
