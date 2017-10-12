@@ -1,51 +1,52 @@
 {
-    "name": "taptype",
-    "version": "0.1.0",
-    "description": "Prototype of text coding for mobile",
-    "main": "app/index.js",
-    "scripts": {
-        "start": "http-server -p 80 ./www",
-        "serve": "http-server -p 4001 ./app",
-        "bower-setup": "rm -rf bower_components && bower cache clean && bower i",
-        "test": "cucumber-js tests",
-        "build": "gulp build"
-    },
-    "repository": {
-        "type": "git",
-        "url": "git+https://github.com/KanoComputing/taptype.git"
-    },
-    "author": "Viktor Dorozsmai <viktor@kano.me>",
-    "license": "UNLICENSED",
-    "bugs": {
-        "url": "https://github.com/KanoComputing/taptype/issues"
-    },
-    "homepage": "https://github.com/KanoComputing/taptype#readme",
-    "dependencies": {
-        "babel-core": "^6.26.0",
-        "babel-preset-es2015": "^6.24.1",
-        "connect": "^3.6.3",
-        "connect-history-api-fallback": "^1.3.0",
-        "css-slam": "^2.0.2",
-        "cucumber": "^3.0.1",
-        "del": "^3.0.0",
-        "gulp": "^3.9.1",
-        "gulp-babel": "^7.0.0",
-        "gulp-clean": "^0.3.2",
-        "gulp-html-autoprefixer": "0.0.1",
-        "gulp-html-minifier": "^0.1.8",
-        "gulp-html-replace": "^1.6.2",
-        "gulp-if": "^2.0.2",
-        "gulp-uglify-es": "^0.1.3",
-        "gulp-util": "^3.0.8",
-        "http-server": "^0.10.0",
-        "istanbul-lib-coverage": "^1.1.1",
-        "istanbul-lib-instrument": "^1.8.0",
-        "istanbul-lib-report": "^1.1.1",
-        "istanbul-reports": "^1.1.2",
-        "merge-stream": "^1.0.1",
-        "polymer-build": "^2.0.0",
-        "selenium-webdriver": "^3.5.0",
-        "serve-static": "^1.12.4",
-        "should": "^13.0.0"
-    }
+  "name": "taptype",
+  "version": "0.1.0",
+  "description": "Prototype of text coding for mobile",
+  "main": "app/index.js",
+  "scripts": {
+    "start": "http-server -p 80 ./www",
+    "serve": "http-server -p 4001 ./app",
+    "bower-setup": "rm -rf bower_components && bower cache clean && bower i",
+    "test": "cucumber-js tests",
+    "build": "gulp build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/KanoComputing/taptype.git"
+  },
+  "author": "Viktor Dorozsmai <viktor@kano.me>",
+  "license": "UNLICENSED",
+  "bugs": {
+    "url": "https://github.com/KanoComputing/taptype/issues"
+  },
+  "homepage": "https://github.com/KanoComputing/taptype#readme",
+  "dependencies": {
+    "babel-core": "^6.26.0",
+    "babel-preset-es2015": "^6.24.1",
+    "connect": "^3.6.3",
+    "connect-history-api-fallback": "^1.3.0",
+    "css-slam": "^2.0.2",
+    "cucumber": "^3.0.1",
+    "del": "^3.0.0",
+    "gulp": "^3.9.1",
+    "gulp-babel": "^7.0.0",
+    "gulp-clean": "^0.3.2",
+    "gulp-html-autoprefixer": "0.0.1",
+    "gulp-html-minifier": "^0.1.8",
+    "gulp-html-replace": "^1.6.2",
+    "gulp-if": "^2.0.2",
+    "gulp-strip-comments": "^2.5.1",
+    "gulp-uglify-es": "^0.1.3",
+    "gulp-util": "^3.0.8",
+    "http-server": "^0.10.0",
+    "istanbul-lib-coverage": "^1.1.1",
+    "istanbul-lib-instrument": "^1.8.0",
+    "istanbul-lib-report": "^1.1.1",
+    "istanbul-reports": "^1.1.2",
+    "merge-stream": "^1.0.1",
+    "polymer-build": "^2.0.0",
+    "selenium-webdriver": "^3.5.0",
+    "serve-static": "^1.12.4",
+    "should": "^13.0.0"
+  }
 }
