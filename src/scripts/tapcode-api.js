@@ -1,8 +1,8 @@
 (function (Kano) {
 
-    Kano.TapCode = Kano.TapCode || {};
-    Kano.TapCode.loop,
-    Kano.TapCode.api = [
+    Kano.Tapcode = Kano.Tapcode || {};
+    Kano.Tapcode.loop,
+    Kano.Tapcode.api = [
         {
             name: 'moveBy',
             type: 'drawing',
@@ -19,7 +19,7 @@
                     dataType: 'number'
                 }
             ],
-            body: `cursorX += x;\ncursorY += y;\n`
+            body: `cursorX += x * 2;\ncursorY += y * 2;\n`
         },
         {
             name: 'moveTo',
@@ -37,7 +37,7 @@
                     dataType: 'number'
                 }
             ],
-            body: `cursorX = x;\ncursorY = y;`
+            body: `cursorX = x * 2;\ncursorY = y * 2;`
         },
         {
             name: 'moveToRandom',
@@ -71,7 +71,7 @@
                     dataType: 'number'
                 }
             ],
-            body: `ctx.beginPath();\nctx.moveTo(startX, startY);\nctx.lineTo(endX, endY);\n
+            body: `ctx.beginPath();\nctx.moveTo(startX * 2, startY * 2);\nctx.lineTo(endX * 2, endY * 2);\n
                     ctx.stroke();`
         },
         {
@@ -81,11 +81,11 @@
             parameters: [
                 {
                     name: 'radius',
-                    value: '10',
+                    value: '50',
                     dataType: 'number'
                 }
             ],
-            body: `ctx.beginPath();\nctx.arc(cursorX, cursorY, radius, 0, 2 * Math.PI, false);\n
+            body: `ctx.beginPath();\nctx.arc(cursorX * 2, cursorY * 2, radius * 2, 0, 2 * Math.PI, false);\n
                     ctx.fill();\nctx.stroke();\nctx.closePath();`
         },
         {
@@ -95,13 +95,13 @@
             parameters: [
                 {
                     name: 'size',
-                    value: '20',
+                    value: '100',
                     dataType: 'number'
                 }
             ],
-            body: ` var startX = cursorX - (size / 2);\n var startY = cursorY - (size / 2);
-                    ctx.fillRect(startX, startY, size, size);\n
-                    ctx.strokeRect(startX, startY, size, size);\nctx.closePath();`
+            body: ` var startX = cursorX * 2 - size;\n var startY = cursorY * 2 - size;
+                    ctx.fillRect(startX, startY, size * 2, size * 2);\n
+                    ctx.strokeRect(startX, startY, size * 2, size * 2);\nctx.closePath();`
         },
         {
             name: 'background',
@@ -150,7 +150,7 @@
             parameters: [
                 {
                    name: 'thickness',
-                   value: '1',
+                   value: '8',
                    dataType: 'number'
                 },
                 {

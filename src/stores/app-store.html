@@ -1,0 +1,7 @@
+<link rel="import" href="../../bower_components/flow-down/flow-down.html">
+<script>
+    ((Kano) => {
+        Kano.Tapcode = Kano.Tapcode || {};
+        Kano.Tapcode.AppStore = FlowDown.createStore(JSON.parse(JSON.stringify(Kano.Tapcode.Config.INITIAL_STATE)));
+    })(window.Kano = window.Kano || {});
+</script>

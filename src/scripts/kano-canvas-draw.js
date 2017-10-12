@@ -21,39 +21,29 @@
         }
 
     	runCode (code) {
-                if (Kano.TapCode.loop) {
-                    window.cancelAnimationFrame(Kano.TapCode.loop);
-                    Kano.TapCode.loop = null;
+                if (Kano.Tapcode.loop) {
+                    window.cancelAnimationFrame(Kano.Tapcode.loop);
+                    Kano.Tapcode.loop = null;
                 }
             
                 try {
                     // code = 'ctx.beginPath()\n' + code
                     window.userCode = new Function(code);
-                    console.log(window.userCode);
+                    // console.log(window.userCode);
                     window.userCode();
                 } catch (err) {
-                   console.log('err', err);
                 }
     	}
     }
 
     resetCanvas = function (size) {
-        console.log('size')
-        // if (size) {
-            
-        // } else {
-        //     cursorX = 0;
-        //     cursorY = 0;
-        // }
-        cursorX = size / 2;
-        cursorY = size /2;
+        cursorX = 250;
+        cursorY = 250;
         ctx.globalAlpha = 1;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        // ctx.fillStyle = "#2b3035";
-        // ctx.fillRect(0, 0, size, size);
         ctx.fillStyle = "#ff00ff";
         ctx.strokeStyle = "#00ffff";
-        ctx.lineWidth = 2;
+        ctx.lineWidth = 8;
     }
 
 })(window.Kano = window.Kano || {});

@@ -1,0 +1,16 @@
+<link rel="import" href="../../bower_components/polymer/polymer-element.html">
+<link rel="import" href="./app-store.html">
+
+<script>
+    /**
+     * @customElement
+     * @polymer
+     */
+    class TapcodeStateManager extends Kano.Tapcode.AppStore.StateProvider(Polymer.Element) {
+        static get is() { return 'tapcode-state-manager'; }
+    }
+
+    // window.customElements.define(TapcodeStateManager.is, TapcodeStateManager);
+    // let sm = document.createElement('tapcode-state-manager');
+    // document.body.appendChild(sm);
+</script>

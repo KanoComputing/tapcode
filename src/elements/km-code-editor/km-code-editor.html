@@ -3,11 +3,8 @@
 <link rel="import" href="../../../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
 
 <dom-module id="km-code-editor">
-
     <template>
-
-        <style is="custom-style" include="iron-flex iron-flex-alignment">
-
+        <style include="iron-flex iron-flex-alignment">
             :host {
                 display: block;
                 background-color: #2b3035;
@@ -15,13 +12,9 @@
                 font-family: monospace;
                 overflow: auto;
             }
-
             .line {
-                /*padding-bottom: 12px;*/
                 line-height: 16px;
-                /*line-height: 28px;*/
             }
-
             .line-number {
                 width: 16px;
                 font-size: 14px;
@@ -30,85 +23,83 @@
                 margin-right: 16px;
                 cursor: pointer;
             }
-
             .line-segments {
+                position: relative;
                 font-size: 14px;
-                max-width: 60vw;
+                width: 70vw;
+                white-space: pre-line;
                 /*border: 1px solid purple;*/
             }
-            
+            div.break {
+                display: none;
+            }
+            .sweet + div.break {
+                display: block;
+                height: 0;
+            }
             .segment {
                 display: inline-block;
                 line-height: 16px;
                 background: rgba(43, 48, 53, 0.8);
                 margin-bottom: 12px;
             }
-            
             .line-break {
                 width: 90px;
                 height: 16px;
                 background: yellow;
             }
-
             .whitespace:before,
             .insertPoint:before,
             .lineEnd:before {
                 content: '\00a0';
             }
-
             .indentation:before {
                 content: '\00a0\00a0';
             }
-
             .parameter,
             .function {
                 color: #7dc6ba;
             }
-
             .token {
                 color: #e0915a;
             }
-
             .comma:after {
                 content: '\00a0';
             }
-
             .highlight {
               background: #999;
             }
-
             .comment {
-                opacity: 0.5;
+                color: rgba(255, 255, 255, 0.5);
             }
-            
             #delete-lines {
                 width: 24px;
             }
-            
             #bin-icon {
                 display: block;
                 height: 12px;
                 width: 12px;
                 margin: 0 auto;
             }
-
             [hidden] {
                 display: none !important;
             }
-
         </style>
-        <!-- shadow DOM-->
-        <template id="line-repeater" is="dom-repeat" items="{{lines}}" as="line" index-as="lineIndex">
+
+        <template id="line-repeater" is="dom-repeat" items="[[lines]]" as="line" index-as="lineIndex">
             <div class="line horizontal layout" on-tap="_selectLine">
-                <span class="line-number" on-tap="_onLineNumberTapped">[[_getLineIndex(lineIndex)]]</span>
-                <div class="line-segments horizontal layout wrap">
-                    <template id="segment-repeater" is="dom-repeat" items="{{line.segments}}" as="segment" index-as="segmentIndex">
-                        <div id$="[[_computeEditableId(lineIndex, segmentIndex)]]"
-                             class$="[[_calculateSegmentClass(segment.type, currentLine, currentSegment, lineIndex, segmentIndex)]]"
-                             on-tap="_selectSegment">[[segment.value]]</div>
-                        <div class$="[[_computeLinebreak(currentLine, currentSegment, lineIndex, segmentIndex, lines.*)]]"></div>
-                    </template>
-                </div>
+                <div class="line-number" on-tap="_onLineNumberTapped">[[_getLineIndex(lineIndex)]]</div>
+                <div id$="[[_computeLineId(lineIndex)]]"
+                    class="line-segments"><template id="segment-repeater"
+                                                    is="dom-repeat"
+                                                    items="{{line.segments}}"
+                                                    as="segment"
+                                                    index-as="segmentIndex"><div id$="[[_computeEditableId(lineIndex, segmentIndex)]]"
+                                                                                  class$="[[_calculateSegmentClass(segment.type, segment.breaking,
+                                                                                          currentLine, currentSegment, lineIndex, segmentIndex)]]"
+                                                                                  style$="[[_setMaxWidth(lineIndex, segmentIndex)]]"
+                                                                                  on-tap="_selectSegment">[[segment.value]]</div><div class="break">
+                                                                                  </div class="break"></template></div>
             </div>
         </template>
     </template>
@@ -123,7 +114,7 @@
             return {
                 lines: {
                     type: Array,
-                    value: () => []
+                    notify: true
                 },
                 currentLine: {
                     type: Number,
@@ -132,6 +123,9 @@
                 currentSegment: {
                     type: Number,
                     value: 0
+                },
+                selected: {
+                    type: Object  
                 },
                 instanceTracker: {
                     type: Object,
@@ -147,6 +141,9 @@
                 editedValue: {
                     type: 'String',
                     notify: true
+                },
+                test: {
+                    type: Object
                 }
             }
         }
@@ -165,15 +162,23 @@
             });
         }
         
-        _computeLinebreak (l, s, lineIndex, segmentIndex) {
-            if (this.shadowRoot.querySelector(`#l${lineIndex}-s${segmentIndex}`)) {
-                let line = this.shadowRoot.querySelector(`#l${lineIndex}-s${segmentIndex}`).parentNode;
-                console.log('line width', line.getBoundingClientRect().width)
-                // console.log('parent', this.shadowRoot.querySelector(`#l${lineIndex}-s${segmentIndex}`).parentNode);
-            }
-            // return 'sweet';
+        _setMaxWidth (lineIndex, segmentIndex) {
+            Polymer.RenderStatus.afterNextRender(this, () => {
+                let segmentEl = this.shadowRoot.querySelector(`#l${lineIndex}-s${segmentIndex}`);
+                if (!segmentEl) {
+                    console.log('NULL', lineIndex, segmentIndex)
+                    return;
+                }
+                console.log('calc', lineIndex, segmentIndex)
+                let maxWidth = segmentEl.parentElement.clientWidth - segmentEl.offsetLeft;
+                return segmentEl.style['max-width'] = `${maxWidth}px`;
+            });
         }
-  
+
+        _computeLineId (lineIndex) {
+            return `l-${lineIndex}`;
+        }
+
         getCode (beginning, end) {
             let lines;
             // It's okay if end is undefined for the last chunk
@@ -187,12 +192,10 @@
                 let line = this.transformLine(l);
                 return code + line + '\n';
             }, '')
-            // console.log('code', code)
             return code;
         }
   
         transformLine (line) {
-            // console.log('line', line)
             return line.segments.reduce((acc, s) => {
                 if (s.type === 'comma') {
                     acc += ', ';
@@ -208,7 +211,7 @@
                     acc += '    ';
                 } else if (s.value === '}' && /animate/.test(s.scope[s.scope.length -1])) {
                     // Special animate function case
-                    acc += `Kano.TapCode.loop = requestAnimationFrame(animate)\n})();`;
+                    acc += `Kano.Tapcode.loop = requestAnimationFrame(animate)\n})();`;
                     return acc;
                 }
   
@@ -235,27 +238,44 @@
                 this.set(`lines.${lineNumber}.segments.${segmentNumber}.value`, this.get(`lines.${lineNumber}.segments.${segmentNumber}.value`) + comment.shift());
                 if (comment.length > 0) { 
                     this.typeComment(comment, lineNumber, segmentNumber);
+                } else {
+                    this.scrollLineToView(lineNumber);
                 }
-            }, 40)
+            }, 1)
+            //used to be 40
         }; 
   
-        addComment (lineNumber, comment) {
-            this.splice('lines', lineNumber, 0, { segments: [{ type: 'insertPoint', scope: ['global'], editable: true }] });
-            if (lineNumber === this.lines.length - 1) {
+        addComment (lineNumber, comment, cursorPosition) {
+            // this.splice('lines', lineNumber, 0, { segments: [{ type: 'insertPoint', scope: ['global'], editable: true }] });
+            this._insertLine(lineNumber);
+            
+            if (cursorPosition) {
+                this.currentLine = cursorPosition.line;
+                this.currentSegment = cursorPosition.segment;
+                this.moveCursor();
             } else {
-              // this._insertLine(0, 0);
+                this.currentLine++;
             }
-            // FIXME it wont always be general scope
-            this.set(`lines.${lineNumber}.segments.0`,
+            // debugger;
+            
+            // Adding comment JS syntax
+            comment = '//' + comment;
+            // if (!this._getCurrentSegment().editable) {
+            //     this.moveCursor();
+            // }
+            let segs = this.lines[lineNumber].segments;
+            let commentInsert = segs.length - 1;
+            
+            this.set(`lines.${lineNumber}.segments.${commentInsert}`,
                 {
                     type: 'comment',
-                    value: `// `,
-                    scope: ['general']
+                    value: '',
+                    scope: ['global']
                 }
             );
             let commentArray = comment.split('');
-            this.typeComment(commentArray, lineNumber, 0);
-            this.moveLine();
+            this.typeComment(commentArray, lineNumber, commentInsert);
+            
         }
   
         addCode (code) {
@@ -276,14 +296,14 @@
   
             // Cursor sits at end of line -> insert new line
             if (currentSegment.type === 'lineEnd') {
-                this._insertLine(1);
+                this._insertLine(this.currentLine + 1);
                 this.moveCursor();
                 newLinesNeeded--;
             }
             
             // Insert new lines for code
             for (var i = 0; i < newLinesNeeded; i++) {
-                this._insertLine(0, 1);
+                this._insertLine(this.currentLine, this.currentLine + 1);
             }
   
             code.lines.forEach((line, index) => {
@@ -293,7 +313,7 @@
   
                 // Assign scope
                 line.segments.forEach(segment => {
-                    segment.scope = currentScope;
+                    segment.scope = JSON.parse(JSON.stringify(currentScope));
   
                     if (segment.type === 'parameter') {
                         segment.value = segment.defaultValue;
@@ -315,19 +335,22 @@
                 insertPoint = currentSegment.type === 'control' ? this.currentSegment - 2 : this.currentSegment;
   
                 this.splice(`lines.${this.currentLine + index}.segments`, insertPoint, 1, ...line.segments);
+                
             });
             let detail = {
                 code: code,
-                currentSegment: currentSegment
+                currentSegment: currentSegment,
+                lines: this.lines
             }
-            this.notifyChange('add-code', { detail });
-
-            if (code.type === 'control') {
-                this.moveLine();
-                this.moveCursor();
-            } else {
-                this.moveCursor();
-            }
+            this.notifyChange('add-code', detail);
+            Polymer.RenderStatus.afterNextRender(this, () => {
+                if (code.type === 'control') {
+                    this.moveLine();
+                    this.moveCursor();
+                } else {
+                    this.moveCursor();
+                }
+            });
         }
   
         notifyChange (type, data={}) {
@@ -367,17 +390,31 @@
         }
   
         concludeEdit () {
-            let currentSegment = this._getCurrentSegment();
+            let currentSegment = this._getCurrentSegment(),
+                value;
+                
+            if (!currentSegment) {
+                return;
+            }
+            
+            value = currentSegment.value;
             this.notifyChange('param-change', { currentSegment });
+            // Purge value
+            if (currentSegment.value === '-') {
+                this._setCurrentSegmentValue(0);
+            } else {
+                this._setCurrentSegmentValue(parseFloat(value).toString());
+            }
             this.moveCursor();
+            this.notifyPath('lines');
         }
   
         processInput (newValue) {
             const currentSegment = this._getCurrentSegment();
+            let needOverwrite;
             if (!currentSegment) {
                 return;
             }
-            // console.log('processing newVAlue', newValue)
             // Cursor sits on existing code -> replace exisiting code
             if (currentSegment.returns) {
                 this.deleteScope(currentSegment.scope[currentSegment.scope.length - 1]);
@@ -390,29 +427,41 @@
             }
   
             //it's a color!
-            if (isNaN(parseFloat(newValue))) {
-                console.log('its a color');
+            if (newValue !== '.' && isNaN(parseFloat(newValue))) {
                 this.set(`lines.${this.currentLine}.segments.${this.currentSegment}.value`,
                         `"${newValue}"`);
                 return;
             }
   
             //it's a number!
-            this.editedValue = this.editingStarted ? currentSegment.value + newValue : newValue;
-            this.set(`lines.${this.currentLine}.segments.${this.currentSegment}.value`,
-                    this.editingStarted ? currentSegment.value + newValue : newValue);
+            needOverwrite = !this.editingStarted || (currentSegment.value === '0' && newValue != 0);
+            // needOverwrite = !this.editingStarted;
+            if (needOverwrite) {
+                if (newValue === '.') {
+                    this.editedValue = '0.';
+                } else {
+                    this.editedValue = newValue;
+                }
+            } else {
+                this.editedValue = currentSegment.value + newValue;
+            }
+            this.set(`lines.${this.currentLine}.segments.${this.currentSegment}.value`, this.editedValue );
             this.notifyChange('param-value', { currentSegment });
             this.editingStarted = true;
         }
   
-        toggleOperator () {
-            const currentSegmentValue = this._getCurrentSegment().value;
-            if (currentSegmentValue[0] === '-') {
+        toggleOperator (value) {
+            const currentSegment = this._getCurrentSegment();
+            if (!this.editingStarted || currentSegment.value === '-' || currentSegment.value === '-0') {
+                this.set(`lines.${this.currentLine}.segments.${this.currentSegment}.value`, value === '-' ? '-' : 0);
+            } else if (currentSegment.value[0] === '-') {
                 this.set(`lines.${this.currentLine}.segments.${this.currentSegment}.value`,
-                        currentSegmentValue.substr(1));
+                        currentSegment.value.substr(1));
             } else {
-                this.set(`lines.${this.currentLine}.segments.${this.currentSegment}.value`, '-' + currentSegmentValue);
+                this.set(`lines.${this.currentLine}.segments.${this.currentSegment}.value`, '-' + currentSegment.value);
             }
+            this.editingStarted = true;
+            this.notifyChange('param-value', { currentSegment });
         }
   
         /**
@@ -451,7 +500,6 @@
                 if (segmentTypes.length === 0) {
                     linesToDelete.push(i);
                 }
-                // debugger;
             }
   
             for (var k = linesToDelete.length - 1; k >= 0; k--) {
@@ -463,6 +511,38 @@
             }
   
         }
+        
+        scrollLineToView (lineIndex) {
+            let target = this.shadowRoot.querySelector(`#l-${lineIndex}`),
+                toScroll = target ? target.offsetTop : this.clientHeight;
+            return new Promise((resolve, reject) => {
+                this._scrollTo(toScroll, 5).then(()=> {
+                    resolve(); 
+                });
+            });
+        }
+        
+        _scrollTo (targetOffset, increment) {
+            return new Promise((resolve, reject) => {
+                function scroll (targetOffset, increment) {
+                    if (Math.abs(this.scrollTop - targetOffset) < increment * 2 ||
+                            (targetOffset > this.scrollTop && this.scrollHeight - this.scrollTop === this.clientHeight)) {
+                        this.scrollTop = targetOffset;
+                        resolve();
+                        return;
+                    }
+                    this.scrollTop = targetOffset > this.scrollTop ? this.scrollTop + increment : this.scrollTop - increment;
+
+                    Polymer.RenderStatus.afterNextRender(this, () => {
+                        scroll(targetOffset, increment);
+                        
+                    });
+                }
+                scroll = scroll.bind(this);
+                scroll(targetOffset, increment);
+            });
+            // If diff is small or we scrolled all the way to the bottom  
+        }
   
         /*****************************
         * Event and observer callbacks
@@ -470,6 +550,9 @@
   
         _selectSegment (e) {
             e.stopPropagation();
+            if (this._getCurrentSegment().type === 'parameter') {
+                this.concludeEdit();
+            }
             // Update current selection
             e.currentTarget.id.replace(/(l)(\d*)(-s)(\d*)/, (match, p1, lineIndex, p2, segmentIndex) => {
                 this.currentLine = parseInt(lineIndex);
@@ -487,7 +570,7 @@
   
         _onLineNumberTapped (e) {
             this.currentLine = e.model.lineIndex;
-            let copyFrom = this._doesLineCloseBlock(this.currentLine) ? -1 : 0;
+            let copyFrom = this._doesLineCloseBlock(this.currentLine) ? this.currentLine -1 : this.currentLine;
             this._insertLine(copyFrom, 0);
         }
   
@@ -495,7 +578,7 @@
         // then put in an insert point with the current scope
   
         _insertLine (from, to) {
-            let lineIndex = this.currentLine + from,
+            let lineIndex = from,
                 lineCopy = JSON.parse(JSON.stringify(this.lines[lineIndex])),
                 allScope = lineCopy.segments.map(segment => segment.scope),
                 currentScope = [].concat.apply([], allScope);
@@ -511,11 +594,14 @@
                 }
             }
             lineCopy.segments.push({ type: 'insertPoint', scope: currentScope, editable: true });  
-            this.splice('lines', this.currentLine + to, 0, lineCopy)
+            this.splice('lines', to, 0, lineCopy)
         }
   
         _onSegmentSelectionChanged () {
             const selected = this._getCurrentSegment();
+            if (!selected) {
+                return;
+            }
             this.editingStarted = false;
             if (!selected || (!selected.editable && selected.type !== 'lineEnd')) {
                 return;
@@ -540,12 +626,14 @@
         }
   
         _onLinesChanged () {
+            Polymer.RenderStatus.afterNextRender(this, () => {
+                this._breakLine(0);
+            });
             this._debouncer = Polymer.Debouncer.debounce(
                this._debouncer,
                Polymer.Async.timeOut.after(20),
                this.runCode.bind(this)
             );
-  
         }
   
         /******************
@@ -558,6 +646,107 @@
             } else {
                 return `segment ${type}`;
             }
+        }
+        
+        _breakLine (lineIndex) {
+            let i = 0;
+            if (this.lines.length === 0) {
+                return;
+            }
+            let line = this.shadowRoot.querySelector(`#l-${lineIndex}`);
+            if (!line) {
+                return;
+            }
+            let segments = line.querySelectorAll('.segment');
+
+            let textContent = line.textContent.replace(/\s/g,'');
+
+            // let arrayToProcess = JSON.parse(JSON.stringify([...this.lines[lineIndex].segments]));
+            let arrayToProcess = [...this.lines[lineIndex].segments];
+            arrayToProcess = arrayToProcess.map((s, index) => {
+                // Storing index to point to them later
+                s.id = index;
+                return s;
+            });
+            arrayToProcess = arrayToProcess.filter(s => s.type === 'comma');
+            arrayToProcess.sort((a, b) => {
+                return a.scope.length - b.scope.length;
+            })
+            
+            if (!arrayToProcess || arrayToProcess.length === 0) {
+                return;
+            }
+
+            // segments.forEach(s => {
+            //     s.style['flex-basis'] = '0px';
+            // });
+            if (textContent.split('').length < 26) {
+                // segments.forEach(s => {
+                //     s.style['flex-basis'] = '0px';
+                // });
+                segments.forEach(s => {
+                    this.toggleClasssegment
+                });
+                return;
+            } else {
+                Polymer.RenderStatus.afterNextRender(this, () => {
+                    // while (this._lineNeedsBreaking(segments) && i < arrayToProcess.length) {
+
+                        let seg = arrayToProcess[i];
+                        let segIndex = seg.id
+                        let el = this.shadowRoot.querySelector(`#l${lineIndex}-s${segIndex}`);
+                        let leftOffset = el.getBoundingClientRect().left - line.getBoundingClientRect().left;
+                        let spaceToFill = line.getBoundingClientRect().width - leftOffset;
+                        el.classList.add('sweet');
+                        // el.style['flex-basis'] = `${spaceToFill-2}px`;
+
+                        this.set(`lines.${lineIndex}.segments.${segIndex}.breaking`, true);
+                        i++;
+                });
+            }
+
+        }
+
+        _lineNeedsBreaking (segments) {
+            for (var i = segments.length - 1; i > -1; i--) {
+                //fixme hardcoded
+                if (segments[i].getBoundingClientRect().x > 270) {
+                    return true;
+                }
+            }
+        }
+        
+        _calculateSegmentClass (type, breaking, currentLine, currentSegment, lineIndex, segmentIndex) {
+            let classString = '';
+            let lineWidth,
+                segmentModel,
+                line,
+                really,
+                noway;
+        
+            if (this.shadowRoot.querySelector(`#l0-s0`)) {
+        
+                let segmentEl = this.shadowRoot.querySelector(`#l0-s0`);
+                    line = segmentEl.parentNode;
+                    lineWidth = line.getBoundingClientRect().width;
+                    segmentModel = this.shadowRoot.querySelector('#segment-repeater').modelForElement(segmentEl);
+                }
+        
+            if (!line) {
+                return;
+            }
+            
+            if (breaking) {
+                classString += 'sweet ';
+            }
+        
+            if (currentLine === lineIndex && currentSegment === segmentIndex) {
+                    classString += `segment ${type} highlight`;
+            } else {
+                classString += `segment ${type}`;
+            }
+
+            return classString;
         }
   
         _computeEditableId (lineIndex, segmentIndex) {
@@ -602,9 +791,25 @@
             }
             return lineSegments[this.currentSegment];
         }
+        
+        _getCurrentSegmentPath () {
+            return `lines.${this.currentLine}.segments.${this.currentSegment}`;
+        }
+        
+        _getCurrentSegmentValue () {
+            return this.get(`lines.${this.currentLine}.segments.${this.currentSegment}.value`, value);
+        }
+        
+        _setCurrentSegmentValue (value) {
+            this.set(`lines.${this.currentLine}.segments.${this.currentSegment}.value`, value);
+        }
   
         clearLine (line) {
   
+        }
+        
+        _hideSegments (segments) {
+            return true;
         }
 
     }

@@ -1,105 +1,109 @@
+<!-- External dependencies -->
 <link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../bower_components/polymer/lib/mixins/gesture-event-listeners.html">
 <link rel="import" href="../bower_components/app-route/app-location.html">
 <link rel="import" href="../bower_components/app-route/app-route.html">
-<link rel="import" href="../bower_components/app-layout/app-drawer/app-drawer.html">
-<link rel="import" href="../bower_components/polymer/lib/mixins/gesture-event-listeners.html">
 <link rel="import" href="../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
+<link rel="import" href="../bower_components/paper-dialog/paper-dialog.html">
+<link rel="import" href="../bower_components/neon-animation/web-animations.html">
+<link rel="import" href="../bower_components/neon-animation/animations/scale-up-animation.html">
+<link rel="import" href="../bower_components/neon-animation/animations/fade-out-animation.html">
+<link rel="import" href="../bower_components/paper-spinner/paper-spinner-lite.html">
+<!-- Kano dependency -->
+<link rel="import" href="../bower_components/flow-down/flow-down.html">
+<!-- App dependency -->
 <link rel="import" href="./elements/tapcode-icons.html">
+<!-- Load the app shell content -->
+<link rel="import" href="./stores/tapcode-state-manager.html">
 
 <dom-module id="tap-code-app">
-
     <template>
-
-        <style is="custom-style" include="iron-flex iron-flex-alignment">
-        
+        <style include="iron-flex iron-flex-alignment">
             :host {
                 display: block;
                 overflow: hidden;
             }
-            
             #view-container {
-                height: calc(100% - 56px);
+                height: 100%;
             }
-  
             tap-code-editor-view,
             tap-code-challenge-view {
                 height: 100%;
                 overflow: hidden;
                 box-sizing: border-box;
             }
-  
-            .topbar {
-                background-color: #33393d;
-                padding: 0 16px;
-            }
-  
-            #kano-logo {
-                height: 18px;
-                padding: 20px 0 18px;
-            }
-  
-            #menu-icon {
-                fill: rgba(255,255,255,0.25);
-                vertical-align: middle;
-            }
-  
-            #drawer {
-                z-index: 1;
-                --app-drawer-content-container: {
-                    background: #2b3035;
-                }
-            }
-  
-            .menu-tab {
-                text-align: left;
-                padding-left: 24px;
-                width: 100%;
-                line-height: 56px;
-                font-family: monospace;
-                font-size: 16px;
+            #save-dialog {
+                width: 90vw;
+                height: 80vh;
+                background: #33393d;
                 color: #fff;
+                margin: 0;
             }
-            
-            .menu-closing-row>iron-icon {
-                padding: 16px;
+            #save-dialog-loader,
+            #save-dialog-content {
+                margin: 0;
             }
-            
+            #save-dialog-loader>paper-spinner-lite {
+                --paper-spinner-color: #fff;
+                opacity: 0.5
+            }
+            .save-dialog-panel {
+                text-align: center;
+                font-family: monospace;
+                border-bottom: 1px solid #2b3035;
+            }
+            h4 {
+                font-size: 14px;
+            }
+            .url-slug {
+                height: 24px;
+                width: 180px;
+                background: #1a2024;   
+            }
+            button.share-dialog-btn {
+                background: none;
+                color: inherit;
+                font-family: inherit;
+                cursor: pointer;
+                font-size: 16px;
+                line-height: normal;
+                border: 0;
+            }
+            button.share-dialog-btn:focus {
+                outline: 0;
+            }
             [hidden] {
                 display: none !important;
             }
-  
         </style>
-  
-        <app-location route="{{route}}"></app-location>
-        <app-route
-            route="{{route}}"
-            pattern="/:page"
-            data="{{routeData}}"
-            tail="{{subroute}}">
-        </app-route>
-        <app-route
-            route="{{subroute}}"
-            pattern="/:id"
-            data="{{subrouteData}}">
-        </app-route>
 
-        <app-drawer id="drawer" class="vertical layout" align="end">
-            <div class="menu-closing-row">
-                <iron-icon id="menu-icon" icon="tapcode:close"></iron-icon>
+        <app-location route="{{route}}"></app-location>
+        <app-route route="{{route}}"
+                   pattern="/:page"
+                   data="{{routeData}}"
+                   tail="{{subroute}}"></app-route>
+        
+        <paper-dialog id="save-dialog"
+                      class="vertical layout"
+                      entry-animation="scale-up-animation"
+                      exit-animation="fade-out-animation">
+            <div id="save-dialog-loader" class="no-padding flex vertical layout center-center" hidden$="[[_saveUrl]]">
+                <paper-spinner-lite active class="thick"></paper-spinner-lite>
             </div>
-            <div class="menu-tab" on-tap="_toggleView">[[_computeViewLabel(page)]]</div>
-            <div class="menu-tab">Save</div>
-            <div class="menu-tab">Share</div>
-            <div class="menu-tab">More from Kano</div>
-        </app-drawer>
+            <div id="save-dialog-content" class="no-padding flex vertical layout" hidden$="[[!_saveUrl]]">
+                <div class="save-dialog-panel flex vertical layout center-center no-padding">
+                    <h4>Keep this URL safe to<br>come back to your creation later</h4>
+                    <div id="save-url" class="url-slug">[[_saveUrl]]</div>
+                </div>
+                <div class="save-dialog-panel flex vertical layout center-center no-padding">
+                    <h4>You're on your way to becoming<br>a master coder. Tell the world!</h4>
+                    <div id="share-url" class="url-slug">[[_saveUrl]]</div>
+                </div>
+                <button type="button" class="share-dialog-btn">Got it</button>
+            </div>
+        </paper-dialog>
         
-        <div class="topbar horizontal layout center justified">
-            <img id="kano-logo" src="assets/kano.svg">
-            <iron-icon id="menu-icon" icon="tapcode:menu" on-tap="_openDrawer"></iron-icon>
-        </div>
-        
-        <div id="view-container">
-            
+        <div id="view-container" on-open-save="_openSave">
             <!-- TODO 404 -->
             <!-- <tapcode-404 name="404"></tapcode-404> -->
         </div>
@@ -113,7 +117,7 @@
     </template>
 
     <script>
-      class TapCodeApp extends Polymer.GestureEventListeners(Polymer.Element) {
+      class TapCodeApp extends Kano.Tapcode.AppStore.StateProvider(Polymer.GestureEventListeners(Polymer.Element)) {
             static get is() { 
                 return 'tap-code-app';
             }
@@ -122,7 +126,6 @@
                 return {
                     page: {
                         type: String,
-                        value: 'editor',
                         observer: '_pageChanged',
                     },
                     views: {
@@ -134,7 +137,7 @@
             
             static get observers() {
                 return [
-                    '_routePageChanged(routeData.page)'
+                    '_routePageChanged(routeData.*)'
                 ]
             }
   
@@ -143,14 +146,25 @@
                 Polymer.RenderStatus.afterNextRender(this, function() {
                 });
             }
-  
-            _openDrawer () {
-                this.$.drawer.open();
-            }
             
             _routePageChanged (page) {
-                this.page = page || 'editor';
-                this.$.drawer.close();
+                let queryParams = this.subroute.__queryParams;
+                let creationId = queryParams.hasOwnProperty('c'),
+                    mode = queryParams.hasOwnProperty('m');
+                if (creationId) {
+                    creationId = queryParams.c;
+                    fetch(Kano.Tapcode.Config.API_URL + '/tapcode/' + creationId)
+                        .then(res => res.json())
+                        .then(savedCode => {
+                            Kano.Tapcode.AppStore.dispatch({
+                                type: 'SET_CODE',
+                                data: {
+                                    lines: JSON.parse(savedCode.attachment)
+                                }
+                            });
+                    });
+                }
+                this.page = this.routeData.page || 'editor';
              }
              
             _pageChanged (page) {;
@@ -159,9 +173,26 @@
                     this.resolveUrl('./views/tapcode-' + page + '-view.html'),
                     // Onloaded callback
                     this.onPageImported.bind(this),
-                    // Fallback
+                    // Fallback page
                     this._showPage404.bind(this),
                     true);
+            }
+            
+            _openSave () {
+                let payload = { attachment: JSON.stringify(this.state.code.lines) };
+                this.$['save-dialog'].open();
+                let headers = new Headers();
+                headers.append('Content-Type', 'application/json');
+                fetch(Kano.Tapcode.Config.API_URL + '/tapcode', {
+                    method: 'POST',
+                    headers,
+                    body: JSON.stringify(payload)
+                }).then(r => {
+                    return r.json()
+                })
+                .then(r => {
+                    this._saveUrl = r.id;
+                });
             }
             
             onPageImported () {
@@ -195,7 +226,7 @@
             
             _computeViewLabel (view) {
                 if (view === 'editor') {
-                    return 'Show me a challenge';
+                    return 'Challenges';
                 } else {
                     return 'Playground';
                 }
@@ -210,4 +241,3 @@
     </script>
 
 </dom-module>
-
