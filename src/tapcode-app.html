@@ -5,9 +5,6 @@
 <link rel="import" href="../bower_components/app-route/app-route.html">
 <link rel="import" href="../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
 <link rel="import" href="../bower_components/paper-dialog/paper-dialog.html">
-<link rel="import" href="../bower_components/neon-animation/web-animations.html">
-<link rel="import" href="../bower_components/neon-animation/animations/scale-up-animation.html">
-<link rel="import" href="../bower_components/neon-animation/animations/fade-out-animation.html">
 <link rel="import" href="../bower_components/paper-spinner/paper-spinner-lite.html">
 <!-- Kano dependency -->
 <link rel="import" href="../bower_components/flow-down/flow-down.html">
@@ -84,9 +81,7 @@
                    tail="{{subroute}}"></app-route>
         
         <paper-dialog id="save-dialog"
-                      class="vertical layout"
-                      entry-animation="scale-up-animation"
-                      exit-animation="fade-out-animation">
+                      class="vertical layout">
             <div id="save-dialog-loader" class="no-padding flex vertical layout center-center" hidden$="[[_saveUrl]]">
                 <paper-spinner-lite active class="thick"></paper-spinner-lite>
             </div>
