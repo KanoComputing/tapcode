@@ -8,7 +8,10 @@
     "serve": "http-server -p 4001 ./app",
     "bower-setup": "rm -rf bower_components && bower cache clean && bower i",
     "test": "cucumber-js tests",
-    "build": "gulp build"
+    "build": "gulp build",
+    "deploy-staging": "kart archive www -a releases.kano.me -r . --channel staging --name tapcode",
+    "deploy-rc": "kart archive www -a releases.kano.me -r . --channel rc --name tapcode",
+    "deploy-production": "kart archive www -a releases.kano.me -r . --channel production --name tapcode"
   },
   "repository": {
     "type": "git",
@@ -43,6 +46,7 @@
     "istanbul-lib-instrument": "^1.8.0",
     "istanbul-lib-report": "^1.1.1",
     "istanbul-reports": "^1.1.2",
+    "kart": "^0.3.3",
     "merge-stream": "^1.0.1",
     "polymer-build": "^2.0.0",
     "selenium-webdriver": "^3.5.0",

@@ -26,6 +26,12 @@ pipeline {
                 run_build()
             }
         }
+
+        stage('deploy') {
+            steps {
+                deploy(env.BRANCH_NAME)
+            }
+        }
     }
 }
 
@@ -45,5 +51,15 @@ def run_build () {
 def install_dep () {
     sh "npm i"
     sh "npm run bower-setup"
+}
+
+def deploy(branch) {
+    def channel = "production"
+
+    if (branch == "master") {
+        channel = "staging"
+    }
+
+    sh "npm run deploy-${channel}"
 }
 
