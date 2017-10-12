@@ -6,6 +6,7 @@
     "scripts": {
         "start": "http-server -p 80 ./www",
         "serve": "http-server -p 4001 ./app",
+        "bower-setup": "rm -rf bower_components && bower cache clean && bower i",
         "test": "cucumber-js tests"
     },
     "repository": {

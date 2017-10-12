@@ -1,17 +1,26 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
     <head>
         <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <base href="/">
+        <meta name="viewport" content="width=device-width, minimum-scale=1, initial-scale=1, user-scalable=yes">
         <meta name="apple-mobile-web-app-capable" content="yes">
+
         <title>Tapcode</title>
+
+        <meta name="description" content="Tapcode">
+        
+        <meta name="twitter:card" content="summary">
+        <meta name="twitter:site" content="@TeamKano">
+        <meta property="og:type" content="website">
+        <meta property="og:site_name" content="Tapcode">
+        <meta name="theme-color" content="#2b3035">
+        <link rel="manifest" href="./manifest.json">
+        
         <!-- build:es5adapter -->
         <!-- endbuild -->
+        
         <script src="./bower_components/webcomponentsjs/webcomponents-loader.js"></script>
-        <script src="./src/scripts/tapcode-api.js"></script>
-        <script src="./src/scripts/kano-prism.js"></script>
-        <script src="./src/scripts/kano-canvas-draw.js"></script>
-        <link rel="import" href="./bower_components/polymer/polymer.html">
         <script>
             window.Kano = window.Kano || {};
             window.Kano.Tapcode = window.Kano.Tapcode || {};
@@ -20,7 +29,6 @@
         <!-- build:config -->
         <link rel="import" href="./src/config/development.html">
         <!-- endbuild -->
-
         <link rel="import" href="./src/tapcode-app.html">
         <style>
             html, body {

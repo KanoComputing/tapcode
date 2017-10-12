@@ -10,8 +10,18 @@
         "src/views/tapcode-challenge-view.html",
         "src/views/tapcode-editor-view.html"
     ],
+    "builds": [{
+      "bundle": true,
+      "js": {
+        "compile": true,
+        "minify": true
+      },
+      "css": {"minify": true},
+      "html": {"minify": true}
+    }],
     "sources": [
-        "src/**/*",
+        "src/config/**/*",
+        "data/**/*",
         "assets/**/*"
     ],
     "extraDependencies": [

@@ -3,6 +3,9 @@
 <link rel="import" href="../../../bower_components/polymer/lib/mixins/gesture-event-listeners.html">
 <link rel="import" href="../../../bower_components/kwc-color-picker/kwc-color-picker.html">
 <link rel="import" href="../../../bower_components/iron-resizable-behavior/iron-resizable-behavior.html">
+<link rel="import" href="../../scripts/kano-canvas-draw.html">
+<link rel="import" href="../../scripts/kano-prism.html">
+<link rel="import" href="../../scripts/tapcode-api.html">
 <link rel="import" href="../km-code-editor/km-code-editor.html">
 <link rel="import" href="../km-softkeys/km-softkeys.html">
 <link rel="import" href="../tapcode-icons.html">
@@ -517,7 +520,7 @@
         }
 
         resetCanvas () {
-            resetCanvas();
+            window.resetCanvas();
         }
 
         spliceValue () {
