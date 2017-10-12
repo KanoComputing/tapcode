@@ -26,7 +26,7 @@
             .line-segments {
                 position: relative;
                 font-size: 14px;
-                width: 60vw;
+                width: 70vw;
                 white-space: pre-line;
                 /*border: 1px solid purple;*/
             }
@@ -165,15 +165,15 @@
         _setMaxWidth (lineIndex, segmentIndex) {
             Polymer.RenderStatus.afterNextRender(this, () => {
                 let segmentEl = this.shadowRoot.querySelector(`#l${lineIndex}-s${segmentIndex}`);
-                // console.log('segmentEl', segmentEl.offsetParent)
-                console.log('segmentEl', segmentEl.offsetLeft)
-                console.log('segmentEl', segmentEl.parentElement.clientWidth);
+                if (!segmentEl) {
+                    console.log('NULL', lineIndex, segmentIndex)
+                    return;
+                }
+                console.log('calc', lineIndex, segmentIndex)
                 let maxWidth = segmentEl.parentElement.clientWidth - segmentEl.offsetLeft;
-                // return 'max-width": `${maxWidth}px`
                 return segmentEl.style['max-width'] = `${maxWidth}px`;
             });
         }
-        
 
         _computeLineId (lineIndex) {
             return `l-${lineIndex}`;

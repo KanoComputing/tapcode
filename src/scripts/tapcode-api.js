@@ -150,7 +150,7 @@
             parameters: [
                 {
                    name: 'thickness',
-                   value: '1',
+                   value: '8',
                    dataType: 'number'
                 },
                 {

@@ -36,7 +36,7 @@
                 vertical-align: middle;
             }
             #drawer {
-                z-index: 1;
+                z-index: 20;
                 --app-drawer-content-container: {
                     background: #2b3035;
                 }
@@ -72,7 +72,7 @@
             <div class="menu-tab">More from Kano</div>
         </app-drawer>
               
-        <tapcode-ide id="ide" on-change="_lineChanged"></tapcode-ide>
+        <tapcode-ide id="ide" on-change="_lineChanged" no-delete></tapcode-ide>
     </template>
 
     <script>
@@ -230,6 +230,14 @@
                         return false;
                 }
                 return true;
+            }
+            
+            _openDrawer () {
+                this.$.drawer.open();
+            }
+            
+            _closeDrawer () {
+                this.$.drawer.close();
             }
     
             matchAddCode (validation, detail) {
