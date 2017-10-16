@@ -131,19 +131,21 @@
                 position: absolute;
                 bottom: 8px;
                 right: 0;
-                width: 120px;
                 text-align: right;
                 padding-right: 8px;
                 z-index: 10;
             }
-    
+
             .arrow-area {
                 height: 48px;
                 width: 48px;
-                display: inline-block;
                 cursor: pointer;
                 border-radius: 3px;
                 background-color: #33393d;
+            }
+
+            .arrow-area:last-child {
+                margin-left: 8px;
             }
     
             .arrow-area > img {
@@ -258,7 +260,7 @@
                     <iron-icon icon="tapcode:fullscreen"></iron-icon>
                 </div>
             </div>
-            <div class="left-and-right-arrow to-right">
+            <div class="left-and-right-arrow to-right horizontal layout">
                 <div class="arrow-area" on-tap="_moveLeft">
                     <img id="left-arrow" src="assets/arrow.svg"></img>
                 </div>
