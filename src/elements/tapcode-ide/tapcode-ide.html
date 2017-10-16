@@ -41,7 +41,8 @@
             
             .to-right,
             .to-bottom,
-            .to-left {
+            .to-left,
+            #canvas {
                 transition: transform 0.3s;
             }
             
@@ -72,12 +73,10 @@
             }
     
             #canvas {
-                position: fixed;
-                top: 56px;
-                left: 0;
+                position: absolute;
+                /*we compute and inline top and left properties */
                 width: 100vw;
                 border-radius: 6px;
-                /*border: 1px dashed white;*/
             }
     
             .clear-and-refresh {
@@ -103,12 +102,30 @@
             #fullscreen-tap-area {
                 height: 48px;
                 width: 48px;
+                position: relative;
+            }
+            
+            #fullscreen-tap-area>span {
+                position: absolute;
+                top: 0;
+                left: 0;
+                white-space: nowrap;
+                line-height: 48px;
+                transition: transform 300ms;
+                opacity: 0;
+                transform: translateX(0);
+            }
+            
+            :host([fullscreen]) #fullscreen-tap-area>span {
+                transform: translateX(-60px);
+                transition: transform 300ms, opacity 200ms ease 50ms;
+                opacity: 1;
             }
             
             .clear-and-refresh iron-icon {
                 background: rgba(43, 48, 53, 0.8);
+                border-radius: 3px;
             }
-            
     
             .left-and-right-arrow {
                 position: absolute;
@@ -117,6 +134,7 @@
                 width: 120px;
                 text-align: right;
                 padding-right: 8px;
+                z-index: 10;
             }
     
             .arrow-area {
@@ -236,6 +254,7 @@
                     <iron-icon id="delete-icon" icon="tapcode:delete"></iron-icon>
                 </div>
                 <div id="fullscreen-tap-area" class="layout horizontal center-center" on-tap="_toggleFullscreen">
+                    <span>show code</span>
                     <iron-icon icon="tapcode:fullscreen"></iron-icon>
                 </div>
             </div>
@@ -348,6 +367,10 @@
                 noDelete: {
                     type: Boolean,
                     value: false
+                },
+                viewport: {
+                    type: String,
+                    value: 'Portrait'
                 }
             }
         }
@@ -373,15 +396,24 @@
         }
         
         _toggleFullscreen (event) {
-            let fullscreenBtn = this.$['fullscreen-tap-area'];
+            let fullscreenBtn = this.$['fullscreen-tap-area'],
+                canvas = this.$.canvas,
+                canvasRect,
+                canvasToCentered,
+                fullscreenBtnTop;
             this.fullscreen = !this.fullscreen;
             
             if (this.fullscreen) {
-                let offset = fullscreenBtn.getBoundingClientRect().top;
-                fullscreenBtn.style.transform = `translateY(-${offset}px)`;
+                canvasRect = canvas.getBoundingClientRect();
+                canvasToCentered = Math.abs(window.innerHeight / 2 - canvasRect.height / 2 - canvasRect.top);
+                canvas.style.transform = `translate(0, ${canvasToCentered}px)`;
+                fullscreenBtnTop = fullscreenBtn.getBoundingClientRect().top;
+                fullscreenBtn.style.transform = `translateY(-${fullscreenBtnTop}px)`;
             } else {
                 fullscreenBtn.style.transform = `translateY(0)`;
+                canvas.style.transform = `translate(0, 0)`;
             }
+
         }
 
         runCode (e) {
@@ -573,18 +605,21 @@
             let codeArea =  this._getEditorDimensions(),
                 size;
             
-            // Portrait
+            // The canvas is a square and takes the size of the code workspace minus 8px margin
+            // The available space has a portrait aspect ratio
             if (codeArea.height >= codeArea.width) {
-                size = codeArea.width;
-                
+                this.viewport = 'portrait';
+                size = codeArea.width - 16;
                 this.$.canvas.style.width = this.$.canvas.style.height = `${size}px`
-                this.$.canvas.style.top = `${56 + codeArea.height / 2 - (size / 2)}px`;
-                this.$.canvas.style.left = `0`;
-                
+                this.$.canvas.style.top = `${codeArea.height / 2 - (size / 2)}px`;
+                this.$.canvas.style.left = `8px`;
+             
+            // It's landscape  
             } else {
-                size = codeArea.height;
+                this.viewport = 'landscape';
+                size = codeArea.height - 16;
                 this.$.canvas.style.width = this.$.canvas.style.height = `${size}px`
-                this.$.canvas.style.top = '56px';
+                this.$.canvas.style.top = '8px';
                 this.$.canvas.style.left = `${codeArea.width / 2 - (size / 2)}px`;
             }
             
