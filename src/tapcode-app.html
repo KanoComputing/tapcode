@@ -12,6 +12,8 @@
 <link rel="import" href="./elements/tapcode-icons.html">
 <!-- Load the app shell content -->
 <link rel="import" href="./stores/tapcode-state-manager.html">
+<link rel="import" href="./actions/code.html">
+<link rel="import" href="./actions/ui.html">
 
 <dom-module id="tap-code-app">
     <template>
@@ -30,7 +32,7 @@
                 box-sizing: border-box;
             }
             #save-dialog {
-                width: 90vw;
+                width: 98vw;
                 height: 80vh;
                 background: #33393d;
                 color: #fff;
@@ -48,14 +50,15 @@
                 text-align: center;
                 font-family: monospace;
                 border-bottom: 1px solid #2b3035;
+                padding: 0 16px;
             }
             h4 {
                 font-size: 14px;
             }
             .url-slug {
-                height: 24px;
-                width: 180px;
-                background: #1a2024;   
+                background: #1a2024;
+                padding: 8px 16px;
+                user-select: text;
             }
             button.share-dialog-btn {
                 background: none;
@@ -65,6 +68,7 @@
                 font-size: 16px;
                 line-height: normal;
                 border: 0;
+                padding: 16px 0;
             }
             button.share-dialog-btn:focus {
                 outline: 0;
@@ -81,34 +85,29 @@
                    tail="{{subroute}}"></app-route>
         
         <paper-dialog id="save-dialog"
-                      class="vertical layout">
-            <div id="save-dialog-loader" class="no-padding flex vertical layout center-center" hidden$="[[_saveUrl]]">
+                      class="vertical layout"
+                      with-backdrop>
+            <div id="save-dialog-loader" class="no-padding flex vertical layout center-center" hidden$="[[saveUrl]]">
                 <paper-spinner-lite active class="thick"></paper-spinner-lite>
             </div>
-            <div id="save-dialog-content" class="no-padding flex vertical layout" hidden$="[[!_saveUrl]]">
+            <div id="save-dialog-content" class="no-padding flex vertical layout" hidden$="[[!saveUrl]]">
                 <div class="save-dialog-panel flex vertical layout center-center no-padding">
                     <h4>Keep this URL safe to<br>come back to your creation later</h4>
-                    <div id="save-url" class="url-slug">[[_saveUrl]]</div>
+                    <div id="save-url" class="url-slug">[[saveUrl]]</div>
                 </div>
                 <div class="save-dialog-panel flex vertical layout center-center no-padding">
                     <h4>You're on your way to becoming<br>a master coder. Tell the world!</h4>
-                    <div id="share-url" class="url-slug">[[_saveUrl]]</div>
+                    <div id="share-url" class="url-slug">[[shareUrl]]</div>
                 </div>
-                <button type="button" class="share-dialog-btn">Got it</button>
+                <button type="button" class="share-dialog-btn" dialog-confirm>Got it</button>
             </div>
         </paper-dialog>
         
-        <div id="view-container" on-open-save="_openSave">
+        <div id="view-container" on-open-save="_openSave" on-change-view="changeView">
             <!-- TODO 404 -->
             <!-- <tapcode-404 name="404"></tapcode-404> -->
         </div>
         
-        <template id="editor-template">
-            <tap-code-editor-view id="editor"></tap-code-editor-view>
-        </template>
-        <template id="challenge-template">
-            <tap-code-challenge-view id="challenge"></tap-code-challenge-view>
-        </template>
     </template>
 
     <script>
@@ -126,6 +125,14 @@
                     views: {
                         type: Array,
                         value: () => ['editor', 'challenge']
+                    },
+                    saveUrl: {
+                        type: String,
+                        value: null
+                    },
+                    shareUrl: {
+                        type: String,
+                        value: null
                     }
                 }
             }
@@ -142,12 +149,18 @@
                 });
             }
             
-            _routePageChanged (page) {
-                let queryParams = this.subroute.__queryParams;
-                let creationId = queryParams.hasOwnProperty('c'),
-                    mode = queryParams.hasOwnProperty('m');
-                if (creationId) {
-                    creationId = queryParams.c;
+            _routePageChanged () {
+                const page = this.routeData.page;
+                let creationId;
+                if (page === 'challenge') {
+                    this.page = 'challenge';
+                    this._loadChallenge(this.subroute.path.substr(1));
+                    setTimeout(() => {
+                        // this._loadChallenge(this.subroute.path.substr(1));
+                    }, 500);
+                } else if (page === 'share' && /^[23456789abdegjkmnpqrvwxyz]{8}$/.test(this.subroute.path.substr(1))) {
+                    this.page = 'editor';
+                    creationId = this.subroute.path.substr(1);
                     fetch(Kano.Tapcode.Config.API_URL + '/tapcode/' + creationId)
                         .then(res => res.json())
                         .then(savedCode => {
@@ -158,18 +171,31 @@
                                 }
                             });
                     });
+                } else if (/^[23456789abdegjkmnpqrvwxyz]{8}$/.test(page)) {
+                    this.page = 'editor';
+                    creationId = page;
+                    fetch(Kano.Tapcode.Config.API_URL + '/tapcode/' + creationId)
+                        .then(res => res.json())
+                        .then(savedCode => {
+                            Kano.Tapcode.AppStore.dispatch({
+                                type: 'SET_CODE',
+                                data: {
+                                    lines: JSON.parse(savedCode.attachment)
+                                }
+                            });
+                    });
+                } else {
+                    this.page = page;
                 }
-                this.page = this.routeData.page || 'editor';
-             }
-             
-            _pageChanged (page) {;
+            }
+            _pageChanged (page) {
                 Polymer.importHref(
                     // Path to import
                     this.resolveUrl('./views/tapcode-' + page + '-view.html'),
                     // Onloaded callback
                     this.onPageImported.bind(this),
                     // Fallback page
-                    this._showPage404.bind(this),
+                    this.loadEditor.bind(this),
                     true);
             }
             
@@ -186,7 +212,8 @@
                     return r.json()
                 })
                 .then(r => {
-                    this._saveUrl = r.id;
+                    this.saveUrl = Kano.Tapcode.Config.ROOT_URL.substr(8) + '/' + r.id;
+                    this.shareUrl = Kano.Tapcode.Config.ROOT_URL.substr(8) + '/share/' + r.id;
                 });
             }
             
@@ -211,12 +238,49 @@
                 this.$['view-container'].appendChild(instance.root);
             }
             
-            _showPage404 () {
-                this.page = 'view404';
+            changeView (e) {
+                if (e.detail === 'challenge') {
+                    this._redirectToChallenge();
+                } else {
+                    this.loadEditor();
+                }
             }
             
-            _toggleView () {
-                this.page = this.page === 'editor' ? 'challenge' : 'editor';
+            setUrlToRoot () {
+                window.history.replaceState(null, null, '');
+            }
+            
+            _redirectToChallenge () {
+                this._loadChallenge('random_squares');
+            }
+            
+            loadEditor () {
+                this.page = 'editor';
+                this.setUrlToRoot();
+            }
+            
+            _loadChallenge (name) {
+                Polymer.RenderStatus.afterNextRender(this, function() {
+                    let view = this.shadowRoot.querySelector('#challenge');
+                    fetch(`/data/challenges/${name}/${name}.json`)
+                        .then(r => r.json())
+                        .then(data => {
+                            Kano.Tapcode.AppStore.dispatch({
+                                type: 'SET_CHALLENGE',
+                                data: {
+                                    tasks: this.flattenTasks(data.steps)
+                                }
+                            });
+                        })
+                        .catch(() => {
+                            this.loadEditor();
+                        });
+                });
+            }
+            
+            flattenTasks (steps) {
+                let tasks;
+                return [].concat.apply([], steps.map(s => s.instructions));
             }
             
             _computeViewLabel (view) {
@@ -226,6 +290,7 @@
                     return 'Playground';
                 }
             }
+            
   
             _isEq (view, instance) {
                 return view === instance;

@@ -1,8 +1,6 @@
 <link rel="import" href="../../bower_components/polymer/lib/utils/boot.html">
 <link rel="import" href="../../bower_components/polymer/lib/utils/mixin.html">
 <link rel="import" href="../stores/tapcode-state-manager.html">
-<link rel="import" href="../actions/code.html">
-<link rel="import" href="../actions/ui.html">
 
 <script>
     ((Kano) => {
@@ -49,12 +47,12 @@
                     this.$.ide.removeEventListener('fullscreen-changed', this._onFullscreenChanged);
                 }
                 
-                _onCodeChanged (e) {
+                _onCodeChanged () {
                     // TODO throttle, but make sure that the last change is triggering
                     this.dispatch({
                         type: 'SET_CODE',
                         data: {
-                            lines: e.detail.lines
+                            lines: this.$.ide.code
                         }
                     });
                 }
@@ -63,6 +61,42 @@
                     this.dispatch({
                         type: 'SET_FULLSCREEN',
                         value: e.detail.value
+                    });
+                }
+                
+                _openDrawer () {
+                    this.$.drawer.open();
+                }
+                
+                _closeDrawer () {
+                    this.$.drawer.close();
+                }
+                
+                _openSave () {
+                    this._closeDrawer();
+                    this.dispatchEvent(
+                        new CustomEvent('open-save', {
+                            bubbles: true,
+                            composed: true
+                        })
+                    );
+                }
+                
+                _launchShare () {
+                    let code = { attachment: this.$.ide.getCode() };
+                    return new Promise(function (resolve, reject) {
+                        let headers = new Headers();
+                        headers.append('Content-Type', 'application/json');
+                        fetch(`https://api-staging.kano.me/tapcode`, {
+                            method: 'POST',
+                            headers,
+                            body: JSON.stringify(code)
+                        }).then(r => {
+                            return r.json()
+                        })
+                        .then(r => {
+                            resolve(r);
+                        });
                     });
                 }
             }

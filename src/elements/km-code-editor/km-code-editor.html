@@ -156,12 +156,11 @@
   
         constructor() {
             super();
-            Polymer.RenderStatus.afterNextRender(this, () => {
-                this.reset();
-            });
         }
         
         connectedCallback () {
+            this.currentLine = 0;
+            this.currentSegment = 0;
             this.selectLastEditable = this.selectLastEditable.bind(this);
             Polymer.Gestures.addListener(this, 'tap', this.selectLastEditable);
         }

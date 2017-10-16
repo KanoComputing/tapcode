@@ -2,10 +2,12 @@
     ((Kano) => {
         Kano.Tapcode = Kano.Tapcode || {};
         Kano.Tapcode.Config = {
-            KANO_SHOP_URL: "https://www.kano.me",
             INITIAL_STATE: {
                 code: {
-                    lines: []
+                    lines: [{ segments: [{ type: 'insertPoint', scope: ['global'], editable: true }] }]
+                },
+                challenge: {
+                    tasks: []
                 }
             }
         }
