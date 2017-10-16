@@ -9,8 +9,8 @@
     "bower-setup": "rm -rf bower_components && bower cache clean && bower i",
     "test": "cucumber-js tests",
     "build": "gulp build",
-    "deploy-staging": "kart archive www -a releases.kano.me -r . --channel staging --name tapcode",
-    "deploy-rc": "kart archive www -a releases.kano.me -r . --channel rc --name tapcode",
+    "deploy-staging": "kart archive www -a releases.kano.me -r . --channel staging --name tapcode --release",
+    "deploy-rc": "kart archive www -a releases.kano.me -r . --channel rc --name tapcode --release",
     "deploy-production": "kart archive www -a releases.kano.me -r . --channel production --name tapcode"
   },
   "repository": {
