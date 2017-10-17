@@ -41,7 +41,17 @@
                     background: #2b3035;
                 }
             }
-            .menu-tab {
+            #drawer a:link,
+            #drawer a:visited,
+            #drawer a:hover,
+            #drawer a:focus,
+            #drawer a:active {
+                display: block;
+                text-decoration: none;
+                color: #fff;
+                outline: none;
+            }
+            #drawer .drawer-tab {
                 text-align: left;
                 padding-left: 24px;
                 width: 100%;
@@ -49,6 +59,7 @@
                 font-family: monospace;
                 font-size: 16px;
                 color: #fff;
+                cursor: pointer;
             }
             .close-drawer>iron-icon {
                 padding: 16px;
@@ -67,12 +78,12 @@
             <div class="close-drawer" on-tap="_closeDrawer">
                 <iron-icon id="menu-icon" icon="tapcode:close"></iron-icon>
             </div>
-            <div class="menu-tab" on-tap="_toggleView">Start a challenge</div>
-            <div class="menu-tab" on-tap="_openSave">Save</div>
-            <div class="menu-tab">More from Kano</div>
+            <div class="drawer-tab" on-tap="_openSave">Save</div>
+            <div class="drawer-tab" on-tap="_goPlayground">Playground</div>
+            <a href="https://kano.me/" class="drawer-tab" target="_blank">More from Kano</a>
         </app-drawer>
               
-        <tapcode-ide id="ide" on-change="_lineChanged" no-delete></tapcode-ide>
+        <tapcode-ide id="ide" on-change="_lineChanged" code="[[code]]" no-delete></tapcode-ide>
     </template>
 
     <script>
@@ -84,15 +95,9 @@
       
             static get properties() {
                 return {
-                    steps: {
+                    tasks: {
                         type: Array,
-                        value: () => []
-                    },
-                    step: {
-                        type: Object,
-                        value: () => {
-                            return {}
-                        }
+                        linkState: 'challenge.tasks'
                     },
                     stepIndex: {
                         type: Number,
@@ -100,7 +105,7 @@
                     },
                     task: {
                         type: Object,
-                        computed: 'computeTask(taskIndex)',
+                        computed: 'computeTask(taskIndex, tasks.*)',
                         observer: '_onTaskChanged'
                     },
                     taskIndex: {
@@ -117,8 +122,6 @@
     
             static get observers() {
                 return [
-                    '_onStepsChanged(steps)',
-                    '_onStepChanged(step)'
                 ]
             }
       
@@ -128,25 +131,7 @@
                     this._addValidator('add-code', 'matchAddCode');
                     this._addValidator('param-change', 'matchParamChange');
                     this._addValidator('param-value', 'matchParamValue');
-                    this.loadChallenge();
                 });
-            }
-    
-            loadChallenge () {
-                let creation,
-                    steps;
-    
-                fetch(`/data/challenges/challenge-no1/challenge-no1.json`)
-                    .then(r => r.json())
-                    .then(data => {
-                        this.steps = data.steps;
-                        this.tasks = this.flattenTasks(this.steps);
-                        this.taskIndex = 0;
-                        this.steps.forEach((step, index, steps) => {
-                            // TODO Multi-line instructions
-                            // this.$.editor.addComment(step.insert, step.instructions[0]);
-                        });
-                    });
             }
     
             _lineChanged (e) {
@@ -156,27 +141,8 @@
                 this._checkEvent(this.task.validation, e.detail);
             }
     
-            flattenTasks (steps) {
-                let tasks;
-                return [].concat.apply([], steps.map(s => s.instructions));
-            }
-    
-            _onStepsChanged (steps) {
-                if (!steps) {
-                    return;
-                }
-                this.step = steps[1];
-            }
-    
-            _onStepChanged (step) {
-                // this.task = step.instructions
-            }
-    
-            computeSelectedStep () {
-    
-            }
-    
             computeTask (taskIndex) {
+                this.taskIndex = typeof this.taskIndex === 'undefined' ? 0 : this.taskIndex; 
                 return this.tasks[taskIndex];
             }
     
@@ -264,6 +230,17 @@
                 let realId = scope + '-' + paramIndex;
                 return validation.id === realId && validation.value === parseFloat(event.currentSegment.value);
             }
+            
+            _goPlayground () {
+                this.dispatchEvent(
+                    new CustomEvent('change-view', {
+                        bubbles: true,
+                        composed: true,
+                        detail: 'editor'
+                    })
+                );
+            }
+            
         }
         customElements.define(TapcodeChallengeView.is, TapcodeChallengeView);
     </script>

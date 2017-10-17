@@ -44,7 +44,17 @@
                 background: #2b3035;
             }
         }
-        .menu-tab {
+        #drawer a:link,
+        #drawer a:visited,
+        #drawer a:hover,
+        #drawer a:focus,
+        #drawer a:active {
+            display: block;
+            text-decoration: none;
+            color: #fff;
+            outline: none;
+        }
+        #drawer .drawer-tab {
             text-align: left;
             padding-left: 24px;
             width: 100%;
@@ -52,6 +62,7 @@
             font-family: monospace;
             font-size: 16px;
             color: #fff;
+            cursor: pointer;
         }
         .close-drawer>iron-icon {
             padding: 16px;
@@ -70,12 +81,13 @@
           <div class="close-drawer" on-tap="_closeDrawer">
               <iron-icon id="menu-icon" icon="tapcode:close"></iron-icon>
           </div>
-          <div class="menu-tab" on-tap="_toggleView">Start a challenge</div>
-          <div class="menu-tab" on-tap="_openSave">Save</div>
-          <div class="menu-tab">More from Kano</div>
+          <div class="drawer-tab" on-tap="_startNew">New</div>
+          <div class="drawer-tab" on-tap="_openSave">Save</div>
+          <div class="drawer-tab" on-tap="_goPlayground">Start a challenge</div>
+          <a href="https://kano.me/" class="drawer-tab" target="_blank">More from Kano</a>
       </app-drawer>
 
-      <tapcode-ide id="ide"></tapcode-ide>
+      <tapcode-ide id="ide" code="[[code]]" no-delete></tapcode-ide>
     </template>
 
     <script>
@@ -91,39 +103,18 @@
             });
         }
         
-        _openDrawer () {
-            this.$.drawer.open();
+        _startNew () {
+            this.$.ide.clearCode();
         }
         
-        _closeDrawer () {
-            this.$.drawer.close();
-        }
-        
-        _openSave () {
+        _goPlayground () {
             this.dispatchEvent(
-                new CustomEvent('open-save', {
+                new CustomEvent('change-view', {
                     bubbles: true,
-                    composed: true
+                    composed: true,
+                    detail: 'challenge'
                 })
             );
-        }
-        
-        _launchShare () {
-            let code = { attachment: this.$.ide.getCode() };
-            return new Promise(function (resolve, reject) {
-                let headers = new Headers();
-                headers.append('Content-Type', 'application/json');
-                fetch(`https://api-staging.kano.me/tapcode`, {
-                    method: 'POST',
-                    headers,
-                    body: JSON.stringify(code)
-                }).then(r => {
-                    return r.json()
-                })
-                .then(r => {
-                    resolve(r);
-                });
-            });
         }
 
       }
