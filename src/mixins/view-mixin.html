@@ -45,6 +45,20 @@
                     }
                     this.$.ide.removeEventListener('code-changed', this._onCodeChanged);
                     this.$.ide.removeEventListener('fullscreen-changed', this._onFullscreenChanged);
+                    
+                    this.dispatch({
+                        type: 'SET_CODE',
+                        data: {
+                            lines: JSON.parse(JSON.stringify(Kano.Tapcode.Config.INITIAL_STATE.code.lines))
+                        }
+                    });
+                    
+                    this.dispatch({
+                        type: 'SET_CHALLENGE',
+                        data: {
+                            tasks: []
+                        }
+                    });
                 }
                 
                 _onCodeChanged () {

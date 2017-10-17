@@ -78,8 +78,8 @@
             <div class="close-drawer" on-tap="_closeDrawer">
                 <iron-icon id="menu-icon" icon="tapcode:close"></iron-icon>
             </div>
-            <div class="drawer-tab" on-tap="_goPlayground">Playground</div>
             <div class="drawer-tab" on-tap="_openSave">Save</div>
+            <div class="drawer-tab" on-tap="_goPlayground">Playground</div>
             <a href="https://kano.me/" class="drawer-tab" target="_blank">More from Kano</a>
         </app-drawer>
               
@@ -97,9 +97,7 @@
                 return {
                     tasks: {
                         type: Array,
-                        linkState: 'challenge.tasks',
-                        observer: 'onTasksSet'
-                          
+                        linkState: 'challenge.tasks'
                     },
                     stepIndex: {
                         type: Number,
@@ -107,7 +105,7 @@
                     },
                     task: {
                         type: Object,
-                        computed: 'computeTask(taskIndex)',
+                        computed: 'computeTask(taskIndex, tasks.*)',
                         observer: '_onTaskChanged'
                     },
                     taskIndex: {
@@ -143,9 +141,8 @@
                 this._checkEvent(this.task.validation, e.detail);
             }
     
-
-    
             computeTask (taskIndex) {
+                this.taskIndex = typeof this.taskIndex === 'undefined' ? 0 : this.taskIndex; 
                 return this.tasks[taskIndex];
             }
     
@@ -235,7 +232,6 @@
             }
             
             _goPlayground () {
-                console.log('open playground');
                 this.dispatchEvent(
                     new CustomEvent('change-view', {
                         bubbles: true,
@@ -245,9 +241,6 @@
                 );
             }
             
-            onTasksSet () {
-                this.taskIndex = 0;
-            }
         }
         customElements.define(TapcodeChallengeView.is, TapcodeChallengeView);
     </script>

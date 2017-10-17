@@ -154,10 +154,6 @@
                 let creationId;
                 if (page === 'challenge') {
                     this.page = 'challenge';
-                    this._loadChallenge(this.subroute.path.substr(1));
-                    setTimeout(() => {
-                        // this._loadChallenge(this.subroute.path.substr(1));
-                    }, 500);
                 } else if (page === 'share' && /^[23456789abdegjkmnpqrvwxyz]{8}$/.test(this.subroute.path.substr(1))) {
                     this.page = 'editor';
                     creationId = this.subroute.path.substr(1);
@@ -220,7 +216,8 @@
             onPageImported () {
                 let template,
                     TemplateClass,
-                    instance;
+                    instance,
+                    challenge;
 
                 // Remove unused views
                 this.views.forEach(id => {
@@ -236,6 +233,11 @@
                 TemplateClass = Polymer.Templatize.templatize(template, this);
                 instance = new TemplateClass({});
                 this.$['view-container'].appendChild(instance.root);
+                
+                if (this.page === 'challenge') {
+                    challenge = this.subroute.path.substr(1) || 'random_squares';
+                    this._loadChallenge(challenge);
+                }
             }
             
             changeView (e) {
@@ -251,7 +253,8 @@
             }
             
             _redirectToChallenge () {
-                this._loadChallenge('random_squares');
+                this.page = 'challenge';
+                window.history.pushState(null, null, '/challenge/random_squares');
             }
             
             loadEditor () {
@@ -260,22 +263,20 @@
             }
             
             _loadChallenge (name) {
-                Polymer.RenderStatus.afterNextRender(this, function() {
-                    let view = this.shadowRoot.querySelector('#challenge');
-                    fetch(`/data/challenges/${name}/${name}.json`)
-                        .then(r => r.json())
-                        .then(data => {
-                            Kano.Tapcode.AppStore.dispatch({
-                                type: 'SET_CHALLENGE',
-                                data: {
-                                    tasks: this.flattenTasks(data.steps)
-                                }
-                            });
-                        })
-                        .catch(() => {
-                            this.loadEditor();
+                let view = this.shadowRoot.querySelector('#challenge');
+                fetch(`/data/challenges/${name}/${name}.json`)
+                    .then(r => r.json())
+                    .then(data => {
+                        Kano.Tapcode.AppStore.dispatch({
+                            type: 'SET_CHALLENGE',
+                            data: {
+                                tasks: this.flattenTasks(data.steps)
+                            }
                         });
-                });
+                    })
+                    .catch(() => {
+                        this.loadEditor();
+                    });
             }
             
             flattenTasks (steps) {
@@ -289,8 +290,7 @@
                 } else {
                     return 'Playground';
                 }
-            }
-            
+            }   
   
             _isEq (view, instance) {
                 return view === instance;

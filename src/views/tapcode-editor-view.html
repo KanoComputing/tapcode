@@ -81,12 +81,13 @@
           <div class="close-drawer" on-tap="_closeDrawer">
               <iron-icon id="menu-icon" icon="tapcode:close"></iron-icon>
           </div>
-          <div class="drawer-tab" on-tap="_goPlayground">Start a challenge</div>
+          <div class="drawer-tab" on-tap="_startNew">New</div>
           <div class="drawer-tab" on-tap="_openSave">Save</div>
+          <div class="drawer-tab" on-tap="_goPlayground">Start a challenge</div>
           <a href="https://kano.me/" class="drawer-tab" target="_blank">More from Kano</a>
       </app-drawer>
 
-      <tapcode-ide id="ide" code="[[code]]"></tapcode-ide>
+      <tapcode-ide id="ide" code="[[code]]" no-delete></tapcode-ide>
     </template>
 
     <script>
@@ -100,6 +101,10 @@
             super();
             Polymer.RenderStatus.afterNextRender(this, () => {
             });
+        }
+        
+        _startNew () {
+            this.$.ide.clearCode();
         }
         
         _goPlayground () {
