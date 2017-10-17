@@ -123,9 +123,6 @@
                         );
     		        }
         		});
-                if (method.name === 'repeat') {
-                    // console.log("VOILA PARAMSWITHCOMMAS", paramsWithCommas)
-                }
         		return paramsWithCommas;
         	}
 
@@ -155,7 +152,6 @@
                     s = 'n'
                 } else {
                     segmentType = this.templates[s];
-                    // console.log('format', segmentType)
     	    		switch (segmentType) {
     	    			case 'handler':
     	    			    s = this.getHandler(method);
