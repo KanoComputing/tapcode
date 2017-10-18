@@ -43,11 +43,21 @@
             .segment {
                 display: inline-block;
                 line-height: 24px;
-                background: rgba(43, 48, 53, 0.8);
+                background: rgba(41, 47, 53, 0.8);
+                color: #ff6157;
             }
-            .insertPoint {
+            .insertPoint, .lineEnd {
                 height: 16px;
-                margin-top: 4px;
+                position: relative;
+                top: 4px;
+                left: 0;
+            }
+            .insertPoint.highlight,
+            .lineEnd.highlight {
+                animation: blink 1200ms infinite cubic-bezier(1,0,0,1);
+            }
+            .semi-colon {
+                color: #fff;
             }
             .line-break {
                 width: 90px;
@@ -61,12 +71,20 @@
             .indentation:before {
                 content: '\00a0\00a0';
             }
-            .parameter,
+            .parameter-number {
+                color: #00baf4;
+            }
+            .parameter-color {
+                color: #ff70af;
+            }
             .function {
-                color: #7dc6ba;
+                color: #00baf4;
             }
             .token {
-                color: #e0915a;
+                color: #00b36a;
+            }
+            .comma {
+                color: #fff;
             }
             .comma:after {
                 content: '\00a0';
@@ -85,6 +103,12 @@
                 height: 12px;
                 width: 12px;
                 margin: 0 auto;
+            }
+            @keyframes blink {
+                0% { opacity: 1; }
+                50% {opacity: 1; }
+                51% {opacity: 0; }
+                99% {opacity: 0; }
             }
             [hidden] {
                 display: none !important;
@@ -322,7 +346,7 @@
                 line.segments.forEach(segment => {
                     segment.scope = JSON.parse(JSON.stringify(currentScope));
   
-                    if (segment.type === 'parameter') {
+                    if (/parameter/.test(segment.type)) {
                         segment.value = segment.defaultValue;
                     }
                 });
@@ -330,7 +354,7 @@
                 // Add semi-colon
                 if (this.selected.type !== 'parameter' && !this.selected.returns
                     && code.type !== 'control') {
-                    line.segments.push({ value: ';', type: 'token', scope: currentScope });
+                    line.segments.push({ value: ';', type: 'semi-colon', scope: currentScope });
                 }
   
                 // Mark end of line

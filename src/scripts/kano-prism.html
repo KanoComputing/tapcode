@@ -85,11 +85,9 @@
                 });
                 
                 
-                
                 lines = lines.map(l => {
                     return {segments: l}
                 });
-                
                 
                 return lines;
         	}
@@ -107,7 +105,7 @@
                         value: p.name,
                         defaultValue: p.value,
                         paramIndex: i,
-                        type: 'parameter',
+                        type: `parameter-${p.dataType}`,
                         dataType: p.dataType,
                         editable: true
                     }
@@ -138,7 +136,7 @@
 
         	formatSegment (method, s) {
         		let segmentType;
-        		if (/[(]|[)]|[{]|[}]|[)]/.test(s)) {
+        		if (/[(]|[)]|[{]|[}]/.test(s)) {
     				s = {
     					value: s,
     					type: 'token'	
