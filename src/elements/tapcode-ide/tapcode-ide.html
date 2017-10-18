@@ -13,37 +13,111 @@
 <dom-module id="tapcode-ide">
     <template>
         <style include="iron-flex iron-flex-alignment">
-    
             :host {
-                display: flex;
-                flex-direction: column;
+                display: block;
                 height: 100%;
                 width: 100%;
                 box-sizing: border-box;
-                background-color: #2b3035;
+                background: #292f35;
                 color: #fff;
-                font-size: 12px;
-                font-family: monospace;
+                font-family: 'Space Mono', monospace;
                 font-weight: bold;
+            }
+            .topbar {
+                background: #1e2329;
+                position: relative;
+                border-bottom: 1px solid #13171b;
+            }
+            .workspace {
+                height: calc(100% - 56px);
+            }
+            img#kano-logo {
+                display: block;
+                height: 48px;
+                padding: 4px;
+                margin: 0 auto;
+            }
+            .clear-and-refresh {
+                position: absolute;
+                top: 0;
+                right: 8px;
+            }
+            #menu-tap-area {
+                position: absolute;
+                top: 0;
+                left: 8px;
+            }
+            #drawer {
+                z-index: 20;
+                --app-drawer-content-container: {
+                    background: #2b3035;
+                }
+            }
+            ::slotted(div.drawer-tab),
+            ::slotted(a) {
+                text-align: left;
+                padding-left: 16px;
+                width: 100%;
+                line-height: 56px;
+                font-family: 'Space Mono', monospace;
+                font-size: 14px;
+                font-weight: 400;
+                color: #fff;
+                cursor: pointer;
+            }
+            ::slotted(a:link),
+            ::slotted(a:visited),
+            ::slotted(a:hover),
+            ::slotted(a:focus),
+            ::slotted(a:active) {
+                display: block;
+                text-decoration: none;
+                color: #fff;
+                outline: none;
+            }
+            iron-icon {
+                --iron-icon-width: 28px;
+                --iron-icon-height: 28px;
+                padding: 6px;
+                fill: rgba(255, 255, 255, 0.5);
+            }
+            .topbar iron-icon,
+            .code-and-canvas iron-icon {
+                margin: 8px 4px;
+            }
+            iron-icon:active {
+                fill: rgba(255, 255, 255, 1);
+            }
+            .topbar iron-icon {
+                border-radius: 3px;
+                background: #13171b;
+            }
+            .close-drawer iron-icon {
+                margin-left: 2px;
             }
 
             .code-and-canvas {
                 flex: 1 1 55%;
-                background: #2b3035;
+                background: #292f35;
                 position: relative;
             }
     
             #toolbox {
                 position: relative;
                 flex: 1 1 45%;
-                background: #33393d;
+                background: #22272d;
             }
             
             .to-right,
             .to-bottom,
             .to-left,
+            .to-top,
             #canvas {
                 transition: transform 0.3s;
+            }
+            
+            :host([fullscreen]) .to-top {
+                transform: translateY(-100%);
             }
             
             :host([fullscreen]) .to-right {
@@ -67,41 +141,21 @@
                 left: 0;
                 color: #fff;
                 box-sizing: border-box;
-                padding: 24px 8px 24px 4px;
+                padding: 24px 0 24px 4px;
                 background: transparent;
                 overflow: auto;
             }
     
             #canvas {
                 position: absolute;
-                /*we compute and inline top and left properties */
+                /* Top and left properties are computed */
                 width: 100vw;
                 border-radius: 6px;
             }
     
-            .clear-and-refresh {
-                position: absolute;
-                top: 24px;
-                right: 4px;
-            }
-    
-            .clear-and-refresh>div {
-                display: inline-block;
-                cursor: pointer;
-                opacity: 0.5;
-                transition: opacity 0.3s ease-in, transform 0.3s;
-                z-index: 10;
-            }
-    
-            .clear-and-refresh>div:hover {
-                opacity: 1;
-            }
-            
             #refresh-tap-area,
             #delete-tap-area,
             #fullscreen-tap-area {
-                height: 48px;
-                width: 48px;
                 position: relative;
             }
             
@@ -109,22 +163,20 @@
                 position: absolute;
                 top: 0;
                 left: 0;
+                font-size: 14px;
+                font-weight: 400;
                 white-space: nowrap;
-                line-height: 48px;
+                line-height: 14px;
+                margin: 21px 0;
                 transition: transform 300ms;
                 opacity: 0;
                 transform: translateX(0);
             }
             
             :host([fullscreen]) #fullscreen-tap-area>span {
-                transform: translateX(-60px);
+                transform: translateX(-88px);
                 transition: transform 300ms, opacity 200ms ease 50ms;
                 opacity: 1;
-            }
-            
-            .clear-and-refresh iron-icon {
-                background: rgba(43, 48, 53, 0.8);
-                border-radius: 3px;
             }
     
             .left-and-right-arrow {
@@ -132,7 +184,7 @@
                 bottom: 8px;
                 right: 0;
                 text-align: right;
-                padding-right: 8px;
+                padding-right: 12px;
                 z-index: 10;
             }
 
@@ -141,7 +193,7 @@
                 width: 48px;
                 cursor: pointer;
                 border-radius: 3px;
-                background-color: #33393d;
+                background: #13171b;
             }
 
             .arrow-area:last-child {
@@ -179,27 +231,49 @@
             .softkey-menu {
                 width: 100%;
                 font-size: 14px;
-                background-color: #33393d;
-                border-bottom: 1px solid #2b3035;
+                font-weight: 400px;
+                background: #1e2329;
                 box-sizing: border-box;
                 flex-shrink: 0;
-                padding: 0 16px;
+            }
+            
+            .softkey-menu:first-of-type {
+                border-top: 1px solid #13171b;
+            }
+            .softkey-menu:last-of-type {
+                border-bottom: 1px solid #13171b;
+            }
+            .toolbox-bar {
+                padding: 12px 16px 0;
+                border-top: 1px solid #13171b;
+                border-bottom: 1px solid #13171b;
             }
     
-            .toolbox-bar>div,
-            .softkey-menu>div {
-                display: inline-block;
+            .toolbox-tab {
                 text-align: center;
-                color: #ffffff;
-                font-family: monospace;
+                color: #9fa4a8;
+                font-family: 'Space Mono', monospace;
+                font-weight: 400;
             }
             
-            .toolbox-bar>div {
-                padding: 20px 0 18px;
+            .toolbox-bar .toolbox-tab {
+                width: 30vw;
+                margin: 0 8px;
+                border-radius: 6px 6px 0 0;
+                background: #22272d;
+                border: 1px solid #13171b;
+                border-bottom: 0;
+                padding: 12px 0;
             }
             
-            .softkey-menu>div {
-                padding: 14px 0 12px;
+            .softkey-menu .toolbox-tab {
+                flex: 1 1 50%;
+                padding: 12px 0;
+                border-bottom: 1px solid #33393d;
+            }
+            
+            .softkey-menu>div:last-child {
+                border-left: 1px solid #33393d;
             }
             
             .softkey-menu iron-icon {
@@ -208,20 +282,29 @@
             }
     
             .toolbox-tab.selected {
-                text-decoration: underline;
+                color: #fff;
+            }
+            
+            .toolbox-bar .toolbox-tab.selected {
+                position: relative;
+                top: 1px;
+                left: 0;
+                padding-top: 13px;
             }
     
             .menu-selected {
-                text-decoration: underline;
+                /*text-decoration: underline;*/
             }
     
             .toolbox-item {
                 background-color: #23272b;
                 color: #fff;
                 border-radius: 3px;
-                font-family: monospace;
-                font-weight: bold;
+                font-family: 'Space Mono', monospace;
+                font-size: 14px;
+                font-weight: 400;
                 cursor: pointer;
+                border: 1px solid #13171b;
                 padding: 10px 10px 8px;
                 margin: 0 8px 16px 0;
             }
@@ -229,7 +312,7 @@
             .whitespace:before {
                 content: '\00a0';
             }
-    
+
             .comma:after {
                 content: '\00a0';
             }
@@ -238,6 +321,11 @@
                 opacity: 0.5;
                 pointer-events: none;
             }
+            
+            @keyframes highlight {
+                0% { fill: rgba(255, 255, 255, 1); }
+                100% { fill: rgba(255, 255, 255, 0.5); }
+            }
     
             [hidden] {
                 display: none !important;
@@ -245,66 +333,76 @@
       
         </style>
         
-        
-
-        <div class="code-and-canvas">
-            <div class="clear-and-refresh vertical layout justified">
-                <div id="refresh-tap-area" class="layout horizontal center-center to-right" on-tap="resetAndRun">
+        <div class="topbar to-top">
+            <div id="menu-tap-area" on-tap="_openDrawer">
+                <iron-icon id="menu-icon" icon="tapcode:menu"></iron-icon>
+            </div>
+            <img id="kano-logo" src="assets/kano-logo.svg">
+            <div class="clear-and-refresh horizontal layout center-center">
+                <div id="refresh-tap-area" class="layout horizontal center-center to-right" on-tap="runCode">
                     <iron-icon id="menu-icon" icon="tapcode:refresh"></iron-icon>
                 </div>
-                <div id="delete-tap-area" class="layout horizontal center-center to-right" on-tap="clearCode" hidden$="[[noDelete]]">
-                    <iron-icon id="delete-icon" icon="tapcode:delete"></iron-icon>
-                </div>
-                <div id="fullscreen-tap-area" class="layout horizontal center-center" on-tap="_toggleFullscreen">
+                <div id="fullscreen-tap-area" class="layout horizontal center-center to-bottom" on-tap="_toggleFullscreen">
                     <span>show code</span>
-                    <iron-icon icon="tapcode:fullscreen"></iron-icon>
+                    <iron-icon icon$="[[_computeFullscreenIcon(fullscreen)]]"></iron-icon>
                 </div>
             </div>
-            <div class="left-and-right-arrow to-right horizontal layout">
-                <div class="arrow-area" on-tap="_moveLeft">
-                    <img id="left-arrow" src="assets/arrow.svg"></img>
-                </div>
-                <div class="arrow-area" on-tap="_moveRight">
-                    <img src="assets/arrow.svg"></img>
-                </div>
-            </div>
-            <canvas id="canvas" width="1000" height="1000"></canvas>
-            <km-code-editor id="editor" class="to-left" on-edit-request="_onEditRequest" edited-value="{{editedValue}}" on-run-code="runCode" lines="{{code}}"></km-code-editor>
         </div>
 
-        <div id="toolbox" class="flex vertical layout to-bottom">
-            <div class="toolbox-bar layout horizontal center" hidden$="[[!_isEqual(inputType, 'newCode')]]">
-                <div class$="[[_computeTabClass(activeTab, 'drawing')]]" data-value="drawing" on-tap="_selectMenuTab">drawing</div>
-                <div class$="[[_computeTabClass(activeTab, 'style')]]" data-value="style" on-tap="_selectMenuTab">style</div>
-                <div class$="[[_computeTabClass(activeTab, 'control')]]" data-value="control" on-tap="_selectMenuTab">control</div>
+        <app-drawer id="drawer" class="vertical layout" align="start">
+            <div class="close-drawer" on-tap="_closeDrawer">
+                <iron-icon id="menu-icon" icon="tapcode:close"></iron-icon>
             </div>
-            <div class="softkey-menu layout horizontal center" hidden$="[[_isEqual(inputType, 'newCode')]]">
-                <div class$="[[_computeTabClass(activeTab, 'expressions')]]" data-value="expressions" on-tap="_selectMenuTab">code</div>
-                <div class$="[[_computeTabClass(activeTab, inputType)]]" data-value$="[[inputType]]" on-tap="_selectMenuTab">[[inputType]]</div>
-            </div>
-            <div class="softkey-menu layout horizontal center" hidden$="[[!_needNumberControl(activeTab, showNumberControl)]]">
-                <div class="flex" on-tap="_toggleOperator">
-                    <iron-icon icon="tapcode:add" hidden$="[[!_isEqual(operator, '+')]]"></iron-icon>
-                    <iron-icon icon="tapcode:remove" hidden$="[[!_isEqual(operator, '-')]]"></iron-icon>
-                </div>
-                <div class="flex" on-tap="spliceValue" disabled$="[[!needNumberDelete]]">
-                    <iron-icon icon="tapcode:keyboard-backspace"></iron-icon>
-                </div>
-            </div>
-            <km-softkeys id="number-input" class="flex vertical layout" hidden$="[[!_isEqual(activeTab, 'number')]]" on-key-tapped="_processInput"></km-softkeys>
-            <kwc-color-picker id="color-input" class="flex" hidden$="[[!_isEqual(activeTab, 'color')]]" row-size="5" on-change="_processInput"></kwc-color-picker>
-            <div id="snippet-library" class="flex layout horizontal start start-aligned wrap" hidden$="[[!_needCodeTray(inputType,   activeTab)]]">
-                <template id="menu-item-repeater" is="dom-repeat" items="{{statements}}" as="statement" filter="_filterMenuItem">
-                    <div class="toolbox-item horizontal layout" on-tap="_addStatement">
-                        <template id="line-repeater" is="dom-repeat" items="{{statement.lines}}" as="line">
-                            <div class="horizontal layout">
-                                <template id="segment-repeater" is="dom-repeat" items="{{line.segments}}" as="segment">
-                                    <div class$="[[_calculateSegmentClass(segment.type)]]">[[segment.value]]</div>
-                                </template>
-                            </div>
-                        </template>
+            <slot name="drawer"></slot>
+        </app-drawer>
+        <div class="workspace vertical layout">
+            <div class="code-and-canvas">
+                <div class="left-and-right-arrow to-right horizontal layout">
+                    <div class="arrow-area horizontal layout center-center" on-tap="_moveLeft">
+                        <iron-icon icon="tapcode:keyboard-arrow-left"></iron-icon>
                     </div>
-                </template>
+                    <div class="arrow-area horizontal layout center-center" on-tap="_moveRight">
+                        <iron-icon icon="tapcode:keyboard-arrow-right"></iron-icon>
+                    </div>
+                </div>
+                <canvas id="canvas" width="1000" height="1000"></canvas>
+                <km-code-editor id="editor" class="to-left" on-edit-request="_onEditRequest" edited-value="{{editedValue}}" on-run-code="runCode" lines="{{code}}"></km-code-editor>
+            </div>
+
+            <div id="toolbox" class="flex vertical layout to-bottom">
+                <div class="toolbox-bar layout horizontal center-center" hidden$="[[!_isEqual(inputType, 'newCode')]]">
+                    <div class$="[[_computeTabClass(activeTab, 'drawing')]]" data-value="drawing" on-tap="_selectMenuTab">Drawing</div>
+                    <div class$="[[_computeTabClass(activeTab, 'style')]]" data-value="style" on-tap="_selectMenuTab">Style</div>
+                    <div class$="[[_computeTabClass(activeTab, 'control')]]" data-value="control" on-tap="_selectMenuTab">Control</div>
+                </div>
+                <div class="softkey-menu layout horizontal center-center" hidden$="[[_isEqual(inputType, 'newCode')]]">
+                    <div class$="[[_computeTabClass(activeTab, 'expressions')]]" data-value="expressions" on-tap="_selectMenuTab">code</div>
+                    <div class$="[[_computeTabClass(activeTab, inputType)]]" data-value$="[[inputType]]" on-tap="_selectMenuTab">[[inputType]]</div>
+                </div>
+                <div class="softkey-menu layout horizontal center" hidden$="[[!_needNumberControl(activeTab, showNumberControl)]]">
+                    <div class="flex horizontal layout center-center" on-tap="_toggleOperator">
+                        <iron-icon icon="tapcode:add" class="toolbox-tab" hidden$="[[!_isEqual(operator, '+')]]"></iron-icon>
+                        <iron-icon icon="tapcode:remove" class="toolbox-tab" hidden$="[[!_isEqual(operator, '-')]]"></iron-icon>
+                    </div>
+                    <div class="flex horizontal layout center-center" on-tap="spliceValue" disabled$="[[!needNumberDelete]]">
+                        <iron-icon icon="tapcode:keyboard-backspace" class="toolbox-tab"></iron-icon>
+                    </div>
+                </div>
+                <km-softkeys id="number-input" class="flex vertical layout" hidden$="[[!_isEqual(activeTab, 'number')]]" on-key-tapped="_processInput"></km-softkeys>
+                <kwc-color-picker id="color-input" class="flex" hidden$="[[!_isEqual(activeTab, 'color')]]" row-size="5" on-change="_processInput"></kwc-color-picker>
+                <div id="snippet-library" class="flex layout horizontal start start-aligned wrap" hidden$="[[!_needCodeTray(inputType,   activeTab)]]">
+                    <template id="menu-item-repeater" is="dom-repeat" items="{{statements}}" as="statement" filter="_filterMenuItem">
+                        <div class="toolbox-item horizontal layout" on-tap="_addStatement">
+                            <template id="line-repeater" is="dom-repeat" items="{{statement.lines}}" as="line">
+                                <div class="horizontal layout">
+                                    <template id="segment-repeater" is="dom-repeat" items="{{line.segments}}" as="segment">
+                                        <div class$="[[_calculateSegmentClass(segment.type)]]">[[segment.value]]</div>
+                                    </template>
+                                </div>
+                            </template>
+                        </div>
+                    </template>
+                </div>
             </div>
         </div>
     </template>
@@ -397,7 +495,10 @@
             window.removeEventListener('resize', this._onResize);
         }
         
-        _toggleFullscreen (event) {
+        _toggleFullscreen () {
+            // setTimeout(() => {
+            //     e.currentTarget.blur();
+            // }, 2000);
             let fullscreenBtn = this.$['fullscreen-tap-area'],
                 canvas = this.$.canvas,
                 canvasRect,
@@ -405,27 +506,35 @@
                 fullscreenBtnTop;
             this.fullscreen = !this.fullscreen;
             
-            if (this.fullscreen) {
-                canvasRect = canvas.getBoundingClientRect();
-                canvasToCentered = Math.abs(window.innerHeight / 2 - canvasRect.height / 2 - canvasRect.top);
-                canvas.style.transform = `translate(0, ${canvasToCentered}px)`;
-                fullscreenBtnTop = fullscreenBtn.getBoundingClientRect().top;
-                fullscreenBtn.style.transform = `translateY(-${fullscreenBtnTop}px)`;
-            } else {
-                fullscreenBtn.style.transform = `translateY(0)`;
-                canvas.style.transform = `translate(0, 0)`;
-            }
-
+            // if (this.fullscreen) {
+            //     canvasRect = canvas.getBoundingClientRect();
+            //     canvasToCentered = Math.abs(window.innerHeight / 2 - canvasRect.height / 2 - canvasRect.top);
+            //     canvas.style.transform = `translate(0, ${canvasToCentered}px)`;
+            //     fullscreenBtnTop = fullscreenBtn.getBoundingClientRect().top;
+            //     fullscreenBtn.style.transform = `translateY(-${fullscreenBtnTop}px)`;
+            // } else {
+            //     fullscreenBtn.style.transform = `translateY(0)`;
+            //     canvas.style.transform = `translate(0, 0)`;
+            // }
+        }  
+                    
+        _openDrawer () {
+            this.$.drawer.open();
+        }
+        
+        _closeDrawer () {
+            this.$.drawer.close();
         }
 
-        runCode (e) {
+        runCode () {
             if (this.CanvasDraw) {
                 this.resetCanvas();
-                this.CanvasDraw.runCode(e.detail);
+                this.CanvasDraw.runCode(this.$.editor.getCode());
             }
         }
 
         processApiStatements (statements) {
+            // debugger;
             let opts = {};
             opts.statements = Kano.Tapcode.api;
             opts.ctx = this.$.canvas.getContext("2d");
@@ -546,11 +655,8 @@
             }
             this.$.editor.reset();
             this.resetCanvas();
-        }
-        
-        resetAndRun () {
-            // this.resetCanvas();
-            this.$.editor.runCode();
+            this._closeDrawer();
+            
         }
 
         resetCanvas () {
@@ -588,7 +694,7 @@
         }
 
         _computeTabClass (activeTab, instance) {
-            return activeTab === instance ? 'toolbox-tab flex selected' : 'toolbox-tab flex';
+            return activeTab === instance ? 'toolbox-tab selected' : 'toolbox-tab';
         }
 
         _calculateSegmentClass (type) {
@@ -602,7 +708,14 @@
             }
         }
         
+        _computeFullscreenIcon (fullscreen) {
+            return fullscreen ? 'tapcode:from-fullscreen' : 'tapcode:to-fullscreen';
+        }
+        
         _onResize () {
+            if (!this.shadowRoot) {
+                return;
+            }
             // TODO DEBOUNCE
             let codeArea =  this._getEditorDimensions(),
                 size;

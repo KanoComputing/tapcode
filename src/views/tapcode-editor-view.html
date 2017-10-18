@@ -3,91 +3,39 @@
 <link rel="import" href="../../bower_components/polymer/lib/mixins/gesture-event-listeners.html">
 <link rel="import" href="../elements/tapcode-ide/tapcode-ide.html">
 <link rel="import" href="../mixins/view-mixin.html">
+<link rel="import" href="../tapcode-icons.html">
 
 <dom-module id="tapcode-editor-view">
 
     <template>
   
-      <style include="iron-flex iron-flex-alignment">
-  
-        :host {
-            display: block;
-            height: 100%;
-            width: 100%;
-            background: #2b3035;
-        }
-        tapcode-ide {
-            height: calc(100% - 56px);
-            width: 100%;
-        }
-        :host([fullscreen]) .to-top {
-            transform: translateY(-100%);
-        }
-        .to-top {
-            transition: transform 0.3s;
-        }
-        .topbar {
-            background-color: #33393d;
-            padding: 0 16px;
-        }
-        #kano-logo {
-            height: 18px;
-            padding: 20px 0 18px;
-        }
-        #menu-icon {
-            fill: rgba(255,255,255,0.25);
-            vertical-align: middle;
-        }
-        #drawer {
-            z-index: 20;
-            --app-drawer-content-container: {
-                background: #2b3035;
+        <style include="iron-flex iron-flex-alignment">
+            :host {
+                display: block;
+                height: 100%;
+                width: 100%;
+                background: #292f35;
             }
-        }
-        #drawer a:link,
-        #drawer a:visited,
-        #drawer a:hover,
-        #drawer a:focus,
-        #drawer a:active {
-            display: block;
-            text-decoration: none;
-            color: #fff;
-            outline: none;
-        }
-        #drawer .drawer-tab {
-            text-align: left;
-            padding-left: 24px;
-            width: 100%;
-            line-height: 56px;
-            font-family: monospace;
-            font-size: 16px;
-            color: #fff;
-            cursor: pointer;
-        }
-        .close-drawer>iron-icon {
-            padding: 16px;
-        }
-        [hidden] {
-            display: none !important;
-        }
-      </style>
-      
-      <div class="topbar horizontal layout center justified to-top">
-          <img id="kano-logo" src="assets/kano.svg">
-          <iron-icon id="menu-icon" icon="tapcode:menu" on-tap="_openDrawer"></iron-icon>
-      </div>
-
-      <app-drawer id="drawer" class="vertical layout" align="end">
-          <div class="close-drawer" on-tap="_closeDrawer">
-              <iron-icon id="menu-icon" icon="tapcode:close"></iron-icon>
-          </div>
-          <div class="drawer-tab" on-tap="_startNew">New</div>
-          <div class="drawer-tab" on-tap="_openSave">Save</div>
-          <div class="drawer-tab" on-tap="_goPlayground">Start a challenge</div>
-          <a href="https://kano.me/" class="drawer-tab" target="_blank">More from Kano</a>
-      </app-drawer>
-
-      <tapcode-ide id="ide" code="[[code]]" no-delete></tapcode-ide>
+            tapcode-ide {
+                height: 100%;
+                width: 100%;
+            }
+            :host([fullscreen]) .to-top {
+                transform: translateY(-100%);
+            }
+            .to-top {
+                transition: transform 0.3s;
+            }
+            [hidden] {
+                display: none !important;
+            }
+        </style>
+        <tapcode-ide id="ide" code="[[code]]" no-delete>
+            <div class="drawer-tab" slot="drawer" on-tap="_startNew">New</div>
+            <div class="drawer-tab" slot="drawer" on-tap="_openSave">Save</div>
+            <div class="drawer-tab" slot="drawer" on-tap="_goPlayground">Start a challenge</div>
+            <a href="https://kano.me/" slot="drawer" class="drawer-tab" target="_blank">More from Kano</a>
+        </tapcode-ide>
     </template>
 
     <script>

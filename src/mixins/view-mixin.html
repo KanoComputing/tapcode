@@ -78,16 +78,8 @@
                     });
                 }
                 
-                _openDrawer () {
-                    this.$.drawer.open();
-                }
-                
-                _closeDrawer () {
-                    this.$.drawer.close();
-                }
-                
                 _openSave () {
-                    this._closeDrawer();
+                    this.$.ide._closeDrawer();
                     this.dispatchEvent(
                         new CustomEvent('open-save', {
                             bubbles: true,

@@ -6,6 +6,7 @@
 <link rel="import" href="../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
 <link rel="import" href="../bower_components/paper-dialog/paper-dialog.html">
 <link rel="import" href="../bower_components/paper-spinner/paper-spinner-lite.html">
+<link rel="import" href="../bower_components/app-layout/app-drawer/app-drawer.html">
 <!-- Kano dependency -->
 <link rel="import" href="../bower_components/flow-down/flow-down.html">
 <!-- App dependency -->
@@ -21,7 +22,10 @@
             :host {
                 display: block;
                 overflow: hidden;
+                color: #fff;
+                background: #292f35;
             }
+            
             #view-container {
                 height: 100%;
             }
@@ -48,7 +52,7 @@
             }
             .save-dialog-panel {
                 text-align: center;
-                font-family: monospace;
+                font-family: 'Space Mono', monospace;
                 border-bottom: 1px solid #2b3035;
                 padding: 0 16px;
             }
@@ -66,6 +70,7 @@
                 font-family: inherit;
                 cursor: pointer;
                 font-size: 16px;
+                font-weight: 400;
                 line-height: normal;
                 border: 0;
                 padding: 16px 0;
@@ -102,7 +107,7 @@
                 <button type="button" class="share-dialog-btn" dialog-confirm>Got it</button>
             </div>
         </paper-dialog>
-        
+
         <div id="view-container" on-open-save="_openSave" on-change-view="changeView">
             <!-- TODO 404 -->
             <!-- <tapcode-404 name="404"></tapcode-404> -->
