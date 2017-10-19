@@ -8,7 +8,7 @@ const babel = require('gulp-babel');
 const cssSlam = require('css-slam').gulp;
 const htmlMinifier = require('gulp-html-minifier');
 const htmlReplace = require('gulp-html-replace');
-const htmlAutoprefixer = require('gulp-html-autoprefixer');
+const htmlAutoprefixer = require('gulp-autoprefixer-html');
 const strip = require('gulp-strip-comments');
 const uglify = require('gulp-uglify-es').default;
 
@@ -42,7 +42,7 @@ function build() {
                     presets: ['es2015']
                 }))
             )
-            // .pipe(gulpIf(/\.js$/, uglify()))
+            .pipe(gulpIf(/\.js$/, uglify()))
             .pipe(gulpIf(/\.(css|html)$/, htmlAutoprefixer()))
             .pipe(gulpIf(/\.(css|html)$/, cssSlam()))
             .pipe(gulpIf(/\.html$/, htmlReplace({
@@ -54,7 +54,6 @@ function build() {
                 removeComments: true,
                 collapseWhitespace: true
             })))
-
             .pipe(srcSplit.rejoin());
 
         let deps = project.dependencies()
@@ -69,7 +68,10 @@ function build() {
             )
             .pipe(gulpIf(/\.(html|css|js)$/, strip()))
             .pipe(gulpIf(/\.js$/, uglify()))
-            .pipe(gulpIf(/\.(css|html)$/, htmlAutoprefixer()))
+            .pipe(gulpIf(/\.(css|html)$/, htmlAutoprefixer({
+                recognizeSelfClosing: true,
+                xmlMode: true
+            })))
             .pipe(gulpIf(/\.(css|html)$/, cssSlam()))
             .pipe(gulpIf(/\.html$/, htmlMinifier({
                 removeComments: true,
