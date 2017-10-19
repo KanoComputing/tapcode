@@ -55,20 +55,9 @@
             .lineEnd.highlight {
                 animation: blink 1200ms infinite cubic-bezier(1,0,0,1);
             }
-            .semi-colon {
-                color: #fff;
-            }
             .line-break {
                 width: 90px;
                 height: 16px;
-            }
-            .whitespace:before,
-            .insertPoint:before,
-            .lineEnd:before {
-                content: '\00a0';
-            }
-            .indentation:before {
-                content: '\00a0\00a0';
             }
             .parameter-number {
                 color: #00baf4;
@@ -79,6 +68,9 @@
             .function {
                 color: #00baf4;
             }
+            .semi-colon {
+                color: #fff;
+            }
             .token {
                 color: #00b36a;
             }
@@ -87,6 +79,14 @@
             }
             .comma:after {
                 content: '\00a0';
+            }
+            .whitespace:before,
+            .insertPoint:before,
+            .lineEnd:before {
+                content: '\00a0';
+            }
+            .indentation:before {
+                content: '\00a0\00a0';
             }
             .highlight {
               background: #999;
@@ -516,7 +516,6 @@
                 // Delete segments with the given scope value starting from the end of a line
                 for (var j = lineSegments.length - 1; j >= 0; j--) {
                     if (lineSegments[j].scope.indexOf(scope) !== -1) {
-                        console.log(this.get(`lines.${i}.segments.${j}`));
                         this.splice(`lines.${i}.segments`, j, 1);
                     }
                 }
