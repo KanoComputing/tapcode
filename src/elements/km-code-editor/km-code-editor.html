@@ -351,7 +351,7 @@
                 });
   
                 // Add semi-colon
-                if (this.selected.type !== 'parameter' && !this.selected.returns
+                if (!/parameter/.test(this.selected.type) && !this.selected.returns
                     && code.type !== 'control') {
                     line.segments.push({ value: ';', type: 'semi-colon', scope: currentScope });
                 }
@@ -515,7 +515,8 @@
   
                 // Delete segments with the given scope value starting from the end of a line
                 for (var j = lineSegments.length - 1; j >= 0; j--) {
-                    if (lineSegments[j].scope.indexOf(scope) !== -1)  {
+                    if (lineSegments[j].scope.indexOf(scope) !== -1) {
+                        console.log(this.get(`lines.${i}.segments.${j}`));
                         this.splice(`lines.${i}.segments`, j, 1);
                     }
                 }
@@ -525,15 +526,18 @@
                     linesToDelete.push(i);
                 }
             }
-  
-            for (var k = linesToDelete.length - 1; k >= 0; k--) {
-                if (k !== 0) {
-                    this.splice('lines', linesToDelete[k], 1);
-                } else {
-                    this.push(`lines.${linesToDelete[k]}.segments`, { type: 'insertPoint', scope: scopeArray, editable: true })
+            
+            if (linesToDelete.length === 0) {
+                this.splice(`lines.${this.currentLine}.segments`, this.currentSegment, 0, { type: 'insertPoint', scope: scopeArray, editable: true });
+            } else {
+                for (var k = linesToDelete.length - 1; k >= 0; k--) {
+                    if (k !== 0) {
+                        this.splice('lines', linesToDelete[k], 1);
+                    } else {
+                        this.push(`lines.${linesToDelete[k]}.segments`, { type: 'insertPoint', scope: scopeArray, editable: true })
+                    }
                 }
             }
-  
         }
         
         scrollLineToView (lineIndex) {
