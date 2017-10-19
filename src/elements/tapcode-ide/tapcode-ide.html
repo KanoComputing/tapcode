@@ -93,7 +93,7 @@
                 fill: rgba(255, 255, 255, 1);
             }
             .close-drawer iron-icon {
-                margin-left: 2px;
+                padding: 16px 8px;
             }
 
             .code-and-canvas {
@@ -130,6 +130,29 @@
             
             :host([fullscreen]) .to-left {
                 transform: translateX(-100%);
+            }
+            
+            .segment {
+                color: #ff6157;    
+            }
+            
+            .parameter-number {
+                color: #00baf4;
+            }
+            .parameter-color {
+                color: #ff70af;
+            }
+            .function {
+                color: #00baf4;
+            }
+            .semi-colon {
+                color: #fff;
+            }
+            .token {
+                color: #00b36a;
+            }
+            .comma {
+                color: #fff;
             }
     
             #editor {
@@ -174,7 +197,7 @@
             }
             
             :host([fullscreen]) #fullscreen-tap-area>span {
-                transform: translateX(-88px);
+                transform: translateX(-80px);
                 transition: transform 300ms, opacity 200ms ease 50ms;
                 opacity: 1;
             }
@@ -349,7 +372,7 @@
 
         <app-drawer id="drawer" class="vertical layout" align="start">
             <div class="close-drawer" on-tap="_closeDrawer">
-                <iron-icon id="menu-icon" icon="tapcode:close"></iron-icon>
+                <iron-icon icon="tapcode:close"></iron-icon>
             </div>
             <slot name="drawer"></slot>
         </app-drawer>
