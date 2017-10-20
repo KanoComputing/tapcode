@@ -1,5 +1,3 @@
-'use strict';
-
 const env = process.env.NODE_ENV || 'staging';
 const gulp = require('gulp');
 const gulpIf = require('gulp-if');
@@ -20,7 +18,6 @@ const polymerJson = require('./polymer.json');
 const swPrecacheConfig = require('./sw-precache-config.js');
 const project = new polymerBuild.PolymerProject(polymerJson);
 const targetDir = 'www';
-
 
 function waitFor(stream) {
     return new Promise((resolve, reject) => {
@@ -63,7 +60,8 @@ function build() {
                     ignore: [
                         'bower_components/webcomponentsjs/custom-elements-es5-adapter.js'
                     ],
-                    presets: ['es2015']
+                    presets: ['es2015'],
+                    plugins: ['transform-remove-strict-mode']
                 }))
             )
             .pipe(gulpIf(/\.(html|css|js)$/, strip()))

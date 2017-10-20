@@ -13,17 +13,21 @@
                 overflow: auto;
             }
             .line {
-                line-height: 16px;
+                line-height: 20px;
+                margin-bottom: 4px;
             }
             .line-number {
                 width: 16px;
                 font-size: 14px;
                 font-weight: 400;
-                line-height: 24px;
                 color: #54595d;
                 text-align: right;
-                margin-right: 16px;
+                padding-right: 16px;
                 cursor: pointer;
+                background: rgba(41, 47, 53, 0.8);
+            }
+            .line-number.last-line {
+                background: transparent;
             }
             .line-segments {
                 position: relative;
@@ -41,15 +45,24 @@
             }
             .segment {
                 display: inline-block;
-                line-height: 24px;
                 background: rgba(41, 47, 53, 0.8);
                 color: #ff6157;
             }
+            .segment.last {
+                background: pink !important;
+            }
+            .insertPoint {
+                height: 18px;
+                position: relative;
+                top: 1px;
+                left: 2px;
+            }
             .insertPoint, .lineEnd {
-                height: 16px;
+                background: transparent;
+                /*height: 16px;
                 position: relative;
                 top: 4px;
-                left: 0;
+                left: 0;*/
             }
             .insertPoint.highlight,
             .lineEnd.highlight {
@@ -70,6 +83,10 @@
             }
             .semi-colon {
                 color: #fff;
+                border-radius: 0px 3px 3px 0;
+            }
+            .end {
+                border-radius: 0px 3px 3px 0;   
             }
             .token {
                 color: #00b36a;
@@ -85,7 +102,11 @@
             .lineEnd:before {
                 content: '\00a0';
             }
+            .indentation {
+                width: 17px;
+            }
             .indentation:before {
+                width: 17px;
                 content: '\00a0\00a0';
             }
             .highlight {
@@ -115,14 +136,14 @@
         </style>
         <template id="line-repeater" is="dom-repeat" items="[[lines]]" as="line" index-as="lineIndex">
             <div class="line horizontal layout" on-tap="_selectLine">
-                <div class="line-number" on-tap="_onLineNumberTapped">[[_getLineIndex(lineIndex)]]</div>
+                <div class$="[[computeLineNumberClass(line, lineIndex, lines.*)]]" on-tap="_onLineNumberTapped">[[_getLineIndex(lineIndex)]]</div>
                 <div id$="[[_computeLineId(lineIndex)]]"
                     class="line-segments"><template id="segment-repeater"
                                                     is="dom-repeat"
                                                     items="{{line.segments}}"
                                                     as="segment"
                                                     index-as="segmentIndex"><div id$="[[_computeEditableId(lineIndex, segmentIndex)]]"
-                                                                                 class$="[[_calculateSegmentClass(segment.type, segment.breaking,
+                                                                                 class$="[[_calculateSegmentClass(segment.type, segment.end, segment.breaking,
                                                                                           currentLine, currentSegment, lineIndex, segmentIndex)]]"
                                                                                   style$="[[_setMaxWidth(lineIndex, segmentIndex)]]"
                                                                                   on-tap="_selectSegment">[[segment.value]]</div><div class="break">
@@ -349,11 +370,18 @@
                         segment.value = segment.defaultValue;
                     }
                 });
-  
+                
                 // Add semi-colon
                 if (!/parameter/.test(this.selected.type) && !this.selected.returns
                     && code.type !== 'control') {
                     line.segments.push({ value: ';', type: 'semi-colon', scope: currentScope });
+                } else {
+                    // TODO Refactor
+                    if (line.segments[line.segments.length - 1].type === 'insertPoint') {
+                        line.segments[line.segments.length - 2].end = true;
+                    } else {
+                        line.segments[line.segments.length - 1].end = true;
+                    }
                 }
   
                 // Mark end of line
@@ -724,13 +752,11 @@
 
         }
         
-        _calculateSegmentClass (type, breaking, currentLine, currentSegment, lineIndex, segmentIndex) {
+        _calculateSegmentClass (type, end, breaking, currentLine, currentSegment, lineIndex, segmentIndex) {
                 let classString = '';
                 let lineWidth,
                     segmentModel,
-                    line,
-                    really,
-                    noway;
+                    line;
             
                 if (this.shadowRoot.querySelector(`#l0-s0`)) {
             
@@ -738,10 +764,14 @@
                         line = segmentEl.parentNode;
                         lineWidth = line.getBoundingClientRect().width;
                         segmentModel = this.shadowRoot.querySelector('#segment-repeater').modelForElement(segmentEl);
-                    }
+                }
                 
                 if (breaking) {
                     classString += 'sweet ';
+                }
+                
+                if (end) {
+                    classString += 'end ';
                 }
             
                 if (currentLine === lineIndex && currentSegment === segmentIndex) {
@@ -752,6 +782,10 @@
 
                 return classString;
             
+        }
+        
+        computeLineNumberClass (line, lineIndex) {
+            return lineIndex === this.lines.length - 1 ? 'line-number last-line' : 'line-number';
         }
   
         _computeEditableId (lineIndex, segmentIndex) {
