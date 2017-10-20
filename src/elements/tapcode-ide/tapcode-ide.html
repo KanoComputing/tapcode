@@ -3,6 +3,7 @@
 <link rel="import" href="../../../bower_components/polymer/lib/mixins/gesture-event-listeners.html">
 <link rel="import" href="../../../bower_components/kwc-color-picker/kwc-color-picker.html">
 <link rel="import" href="../../../bower_components/iron-resizable-behavior/iron-resizable-behavior.html">
+<link rel="import" href="../../../bower_components/web-animations-js/web-animations-next-lite.min.html">
 <link rel="import" href="../../scripts/kano-canvas-draw.html">
 <link rel="import" href="../../scripts/kano-prism.html">
 <link rel="import" href="../../scripts/tapcode-api.html">
@@ -173,7 +174,6 @@
                 position: absolute;
                 /* Top and left properties are computed */
                 width: 100vw;
-                border-radius: 6px;
             }
     
             #refresh-tap-area,
@@ -311,10 +311,7 @@
             }
             
             .toolbox-bar .toolbox-tab.selected {
-                position: relative;
-                top: 1px;
-                left: 0;
-                padding-top: 13px;
+                padding: 9px 0 10px;
             }
     
             .toolbox-item {
@@ -527,16 +524,16 @@
                 fullscreenBtnTop;
             this.fullscreen = !this.fullscreen;
             
-            // if (this.fullscreen) {
-            //     canvasRect = canvas.getBoundingClientRect();
-            //     canvasToCentered = Math.abs(window.innerHeight / 2 - canvasRect.height / 2 - canvasRect.top);
-            //     canvas.style.transform = `translate(0, ${canvasToCentered}px)`;
-            //     fullscreenBtnTop = fullscreenBtn.getBoundingClientRect().top;
-            //     fullscreenBtn.style.transform = `translateY(-${fullscreenBtnTop}px)`;
-            // } else {
-            //     fullscreenBtn.style.transform = `translateY(0)`;
-            //     canvas.style.transform = `translate(0, 0)`;
-            // }
+            if (this.fullscreen) {
+                canvasRect = canvas.getBoundingClientRect();
+                canvasToCentered = Math.abs(window.innerHeight / 2 - canvasRect.height / 2 - canvasRect.top);
+                canvas.style.transform = `translate(0, ${canvasToCentered}px)`;
+                // fullscreenBtnTop = fullscreenBtn.getBoundingClientRect().top;
+                // fullscreenBtn.style.transform = `translateY(-${fullscreenBtnTop}px)`;
+            } else {
+                // fullscreenBtn.style.transform = `translateY(0)`;
+                canvas.style.transform = `translate(0, 0)`;
+            }
         }  
                     
         _openDrawer () {

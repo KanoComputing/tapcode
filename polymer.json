@@ -8,7 +8,8 @@
     "shell": "src/tapcode-app.html",
     "fragments": [
         "src/views/tapcode-challenge-view.html",
-        "src/views/tapcode-editor-view.html"
+        "src/views/tapcode-editor-view.html",
+        "bower_components/kwc-color-picker/kwc-color-picker.html"
     ],
     "builds": [{
       "bundle": true,
