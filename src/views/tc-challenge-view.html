@@ -1,10 +1,10 @@
 <link rel="import" href="../../bower_components/polymer/polymer-element.html">
 <link rel="import" href="../../bower_components/app-layout/app-drawer/app-drawer.html">
 <link rel="import" href="../../bower_components/polymer/lib/mixins/gesture-event-listeners.html">
-<link rel="import" href="../elements/tapcode-ide/tapcode-ide.html">
+<link rel="import" href="../elements/tc-ide/tc-ide.html">
 <link rel="import" href="../mixins/view-mixin.html">
 
-<dom-module id="tapcode-challenge-view">
+<dom-module id="tc-challenge-view">
     <template>
         <style include="iron-flex iron-flex-alignment">  
             :host {
@@ -13,7 +13,7 @@
                 width: 100%;
                 background: #292f35;
             }
-            tapcode-ide {
+            #ide {
                 height: 100%;
                 width: 100%;
             }
@@ -22,18 +22,18 @@
             }
         </style>
         
-        <tapcode-ide id="ide" on-change="_lineChanged" code="[[code]]" no-delete>
+        <tc-ide id="ide" on-change="_lineChanged" code="[[code]]" no-delete>
             <div class="drawer-tab" slot="drawer" on-tap="_openSave">Save</div>
-            <div class="drawer-tab" slot="drawer" on-tap="_goPlayground">Playground</div>
+            <div class="drawer-tab" slot="drawer" on-tap="_goToPlayground">Playground</div>
             <a href="https://kano.me/" slot="drawer" class="drawer-tab" target="_blank">More from Kano</a>
-        </tapcode-ide>
+        </tc-ide>
     </template>
 
     <script>
 
-        class TapcodeChallengeView extends Kano.Tapcode.ViewMixin(Polymer.GestureEventListeners(Polymer.Element)) {
+        class TcChallengeView extends Kano.Tapcode.ViewMixin(Polymer.GestureEventListeners(Polymer.Element)) {
             static get is() { 
-                return 'tapcode-challenge-view';
+                return 'tc-challenge-view';
             }
       
             static get properties() {
@@ -62,11 +62,6 @@
                     }
                 }
             }
-    
-            static get observers() {
-                return [
-                ]
-            }
       
             constructor () {
                 super();
@@ -90,13 +85,15 @@
             }
     
             _onTaskChanged (task) {
-                if (!task) {
-                    return;
-                }
-                this.$.ide.$.editor.scrollLineToView(task.insert)
+                this.$.ide.scrollLineToView(task.insert)
                     .then(() => {
-                        this.$.ide.$.editor.addComment(task.insert, task.text, task.cursorPosition)
-                    })
+                        if (task.validation && task.validation['add-code']) {
+                            this.$.ide.set(`whitelist`, [task.validation['add-code'].name]);
+                        } else {
+                            this.$.ide.set(`whitelist`, []);
+                        }
+                        this.$.ide.addComment(task.insert, task.text, task.cursorPosition)
+                    });
             }
             /**
              * Goes through all the defined validations and check them
@@ -106,12 +103,7 @@
                     if (type !== detail.type) {
                     } else {
                         if (this._validateEvent(validation[type], type, detail)) {
-                            // TODO something like while if next step is also done
                             this.nextStep();
-                        }
-                        // The matching event didn't pass the checks, find a fallback
-                        else {
-                            // this._validateMatchFallback(validation[type], type, detail);
                         }
                     }
                 });
@@ -140,15 +132,7 @@
                 }
                 return true;
             }
-            
-            _openDrawer () {
-                this.$.drawer.open();
-            }
-            
-            _closeDrawer () {
-                this.$.drawer.close();
-            }
-    
+
             matchAddCode (validation, detail) {
                 if (validation.scope && !this.arraysEqual(detail.currentSegment.scope, validation.scope)) {
                     return;
@@ -162,19 +146,19 @@
             matchParamChange (validation, event) {
                 let paramIndex = event.currentSegment.paramIndex;
                 let scope = event.currentSegment.scope[event.currentSegment.scope.length - 1];
-                let realId = scope + '-' + paramIndex;
-                return validation.id === realId;
+                let instanceId = scope + '-' + paramIndex;
+                return validation.id === instanceId;
             }
     
             matchParamValue (validation, event) {
                 let paramIndex = event.currentSegment.paramIndex;
                 // Take its own scope
                 let scope = event.currentSegment.scope[event.currentSegment.scope.length - 1];
-                let realId = scope + '-' + paramIndex;
-                return validation.id === realId && validation.value === parseFloat(event.currentSegment.value);
+                let instanceId = scope + '-' + paramIndex;
+                return validation.id === instanceId && validation.value === parseFloat(event.currentSegment.value);
             }
             
-            _goPlayground () {
+            _goToPlayground () {
                 this.dispatchEvent(
                     new CustomEvent('change-view', {
                         bubbles: true,
@@ -185,7 +169,7 @@
             }
             
         }
-        customElements.define(TapcodeChallengeView.is, TapcodeChallengeView);
+        customElements.define(TcChallengeView.is, TcChallengeView);
     </script>
 
 </dom-module>

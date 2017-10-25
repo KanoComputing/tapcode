@@ -5,10 +5,10 @@
         ]
     },
     "entrypoint": "index.html",
-    "shell": "src/tapcode-app.html",
+    "shell": "src/tc-app.html",
     "fragments": [
-        "src/views/tapcode-challenge-view.html",
-        "src/views/tapcode-editor-view.html",
+        "src/views/tc-challenge-view.html",
+        "src/views/tc-editor-view.html",
         "bower_components/kwc-color-picker/kwc-color-picker.html"
     ],
     "builds": [{

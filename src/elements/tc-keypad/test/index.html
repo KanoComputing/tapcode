@@ -4,12 +4,12 @@
         <meta charset="utf-8">
         <script src="../../../../bower_components/webcomponentsjs/webcomponents-lite.js"></script>
         <script src="../../../../bower_components/web-component-tester/browser.js"></script>
-        <link rel="import" href="../km-softkeys.html">
+        <link rel="import" href="../tc-keypad.html">
     </head>
     <body>
         <test-fixture id="default">
             <template>
-                <km-softkeys></km-softkeys>
+                <tc-keypad></tc-keypad>
             </template>
         </test-fixture>
         <script>
@@ -30,7 +30,7 @@
             }
 
             /* globals suite, test, assert, setup, fixture */
-            suite('<km-softkeys>', () => {
+            suite('<tc-keypad>', () => {
                 let element;
                 setup(done => {
                     element = fixture('default');

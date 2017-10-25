@@ -4,12 +4,12 @@
         <meta charset="utf-8">
         <script src="../../../../bower_components/webcomponentsjs/webcomponents-lite.js"></script>
         <script src="../../../../bower_components/web-component-tester/browser.js"></script>
-        <link rel="import" href="../km-code-editor.html">
+        <link rel="import" href="../tc-editor.html">
     </head>
     <body>
         <test-fixture id="default">
             <template>
-                <km-code-editor></km-code-editor>
+                <tc-editor></tc-editor>
             </template>
         </test-fixture>
         <script>
@@ -68,7 +68,7 @@
             };
 
             /* globals suite, test, assert, setup, fixture */
-            suite('<km-code-editor>', () => {
+            suite('<tc-editor>', () => {
                 let editor;
                 setup(done => {
                     editor = fixture('default');

@@ -2,26 +2,7 @@
     (function (Kano) {
 
         Kano.Tapcode = Kano.Tapcode || {};
-        Kano.Tapcode.loop,
         Kano.Tapcode.api = [
-            {
-                name: 'moveBy',
-                type: 'drawing',
-                template: 'methodCall',
-                parameters: [
-                    {
-                        name: 'x',
-                        value: '10',
-                        dataType: 'number'
-                    },
-                    {
-                        name: 'y',
-                        value: '10',
-                        dataType: 'number'
-                    }
-                ],
-                body: `cursorX += x * 2;\ncursorY += y * 2;\n`
-            },
             {
                 name: 'moveTo',
                 type: 'drawing',
@@ -38,13 +19,40 @@
                         dataType: 'number'
                     }
                 ],
-                body: `cursorX = x * 2;\ncursorY = y * 2;`
+                method: function (x, y) {
+                    this.cursorX = x * 2;
+                    this.cursorY = y * 2;
+                }
+            },
+            {
+                name: 'moveBy',
+                type: 'drawing',
+                template: 'methodCall',
+                parameters: [
+                    {
+                        name: 'x',
+                        value: '10',
+                        dataType: 'number'
+                    },
+                    {
+                        name: 'y',
+                        value: '10',
+                        dataType: 'number'
+                    }
+                ],
+                method: function (x, y) {
+                    this.cursorX += x * 2;
+                    this.cursorY += y * 2;
+                }
             },
             {
                 name: 'moveToRandom',
                 type: 'drawing',
                 template: 'methodCall',
-                body: `cursorX = Math.random() * canvas.width;\ncursorY = Math.random() * canvas.height;`
+                method: function () {
+                    this.cursorX = Math.random() * 500;
+                    this.cursorY = Math.random() * 500;
+                }
             },
             {
                 name: 'lineTo',
@@ -72,8 +80,12 @@
                         dataType: 'number'
                     }
                 ],
-                body: `ctx.beginPath();\nctx.moveTo(startX * 2, startY * 2);\nctx.lineTo(endX * 2, endY * 2);\n
-                        ctx.stroke();`
+                method: function (startX, startY, endX, endY) {
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(startX * 2, startY * 2);
+                    this.ctx.lineTo(endX * 2, endY * 2);
+                    this.ctx.stroke();
+                }
             },
             {
                 name: 'circle',
@@ -86,8 +98,13 @@
                         dataType: 'number'
                     }
                 ],
-                body: `ctx.beginPath();\nctx.arc(cursorX * 2, cursorY * 2, radius * 2, 0, 2 * Math.PI, false);\n
-                        ctx.fill();\nctx.stroke();\nctx.closePath();`
+                method: function (radius) {
+                    this.ctx.beginPath();
+                    this.ctx.arc(this.cursorX * 2, this.cursorY * 2, radius * 2, 0, 2 * Math.PI, false);  
+                    this.ctx.fill();
+                    this.ctx.stroke();
+                    this.ctx.closePath();
+                }
             },
             {
                 name: 'square',
@@ -100,9 +117,13 @@
                         dataType: 'number'
                     }
                 ],
-                body: ` var startX = cursorX * 2 - size;\n var startY = cursorY * 2 - size;
-                        ctx.fillRect(startX, startY, size * 2, size * 2);\n
-                        ctx.strokeRect(startX, startY, size * 2, size * 2);\nctx.closePath();`
+                method: function (size) {
+                    var startX = this.cursorX * 2 - size;
+                    var startY = this.cursorY * 2 - size;
+                    this.ctx.fillRect(startX, startY, size * 2, size * 2);
+                    this.ctx.strokeRect(startX, startY, size * 2, size * 2);
+                    this.ctx.closePath();
+                }
             },
             {
                 name: 'background',
@@ -114,9 +135,13 @@
                         value: '"#ffffff"',
                         dataType: 'color'
                     }
-             ],
-             body: `var tmpColor = ctx.fillStyle;\nctx.fillStyle = color;\n
-                    ctx.fillRect(0, 0, canvas.width, canvas.height);\nctx.fillStyle = tmpColor;`
+                ],
+                method: function (color) {
+                    var tmpColor = this.ctx.fillStyle;
+                    this.ctx.fillStyle = color;
+                    this.ctx.fillRect(0, 0, 1000, 1000);
+                    this.ctx.fillStyle = tmpColor;
+                }
             },
             {
                 name: 'fillColor',
@@ -129,7 +154,9 @@
                         dataType: 'color'
                     }
                 ],
-             body: `ctx.fillStyle = color;`
+                method: function (color) {
+                    this.ctx.fillStyle = color;
+                }
             },
             {
                 name: 'opacity',
@@ -142,7 +169,9 @@
                         dataType: 'number'
                     }
                 ],
-                body: `ctx.globalAlpha = value;`
+                method: function (value) {
+                    this.ctx.globalAlpha = Math.min(100, Math.max(value / 100, 0));   
+                }
             },
             {
                 name: 'stroke',
@@ -160,7 +189,10 @@
                        dataType: 'color'
                     }
                 ],
-                body: `ctx.strokeStyle = color;\nctx.lineWidth = thickness;`
+                method: (thickness, color) => {
+                    this.ctx.strokeStyle = color;
+                    this.ctx.lineWidth = thickness;   
+                }
             },
             {
                 name: 'random',
@@ -178,18 +210,22 @@
                         dataType: 'number'
                     }
                 ],
-                body: `return Math.random() * (to - from) + from;`
+                method: (from, to) => {
+                    return Math.random() * (to - from) + from;   
+                }
             },
             {
                 name: 'randomColor',
                 returns: 'color',
                 template: 'methodCall',
-                body: `return colorPalette[Math.floor(Math.random() * colorPalette.length)];`
+                method: function () {
+                    return this.colorPalette[Math.floor(Math.random() * this.colorPalette.length)];   
+                }
             },
             {
                 name: 'animate',
                 type: 'control',
-                template: 'control',
+                template: 'animate',
                 body: ``
             },
             {
@@ -207,8 +243,12 @@
                         dataType: 'callback'
                     }
                 ],
-                body: `for(var i = 0; i < repetitions; i++) {\nloopSubject();}`
-            },
+                method: function (repetitions, loopSubject) {
+                    for (var i = 0; i < repetitions; i++) {
+                        loopSubject();
+                    }
+                }
+            }
             
         ]
     })(window.Kano = window.Kano || {});

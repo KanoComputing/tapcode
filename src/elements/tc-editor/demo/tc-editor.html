@@ -7,7 +7,7 @@
         <script src="../../../../bower_components/webcomponentsjs/webcomponents-lite.js"></script>
         <link rel="import" href="../../../../bower_components/iron-demo-helpers/demo-snippet.html">
         <link rel="import" href="../../../../bower_components/iron-demo-helpers/demo-pages-shared-styles.html">
-        <link rel="import" href="../km-code-editor.html">
+        <link rel="import" href="../tc-editor.html">
 
         <custom-style>
             <style is="custom-style" include="demo-pages-shared-styles">
@@ -35,7 +35,7 @@
     <body unresolved>
         <div class="centered">
             <div class="vertical-section-container">
-                <h3>km-code-editor</h3>
+                <h3>tc-editor</h3>
                 <demo-snippet class="vertical layout center-justified">
                     <template id="bind">
 
@@ -52,7 +52,7 @@
                             <button id="move-left" on-tap="_moveLeft"><-cursor</button>
                             <button id="move-right" on-tap="_moveRight">cursor-></button>
                         </div>
-                        <km-code-editor id="editor"></km-code-editor>
+                        <tc-editor id="editor"></tc-editor>
 
                         <script>
                             document.addEventListener('WebComponentsReady', () => {

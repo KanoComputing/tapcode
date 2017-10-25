@@ -13,41 +13,26 @@
         			'f': 'function',
                     'c': 'callback'
         		}
-        		this.instances = {};
         		this.statements = opts.statements.map(method => {
-        				return this.formatMethod(method);
+        			return this.formatMethod(method);
         		});
         	}
 
         	formatMethod (method) {
-        		let code = method,
-        		params;
-        		if (method.parameters) {
-        			params = method.parameters.map(p => p.name);
-        		}
-
-        		this.instances[method] = method;
-        		code.lines = this.getLines(method)
-        		//creating functions
-        		if (method.template !== 'control') {
-
-        			window[method.name] = new Function(params, method.body);
-        		}
-        		return code;
+        		method.lines = this.getLines(method);
+        		return method;
         	}
 
         	getLines (method) {
         		let lines = [],
                     lineProto,
-                    lineCounter = 1,
                     startIndex = 0;
+
         		switch (method.template) {
-        			case 'control':
-                        // lineProto = ['f_*_()_{', 'xo', '}'];
+        			case 'animate':
         			    lineProto = 'f_*_()_{nxon}';
         			    break;
                     case 'repeat':
-                        // lines =['*(p,_f()_{','xo','}']
                         lineProto = '*(p,_c_()_{nxon})';
                         break;
     	    		default:
@@ -57,19 +42,15 @@
                 lineProto = lineProto.split('');
                 
                 lineProto = lineProto.map(segment => {
-                    
-                    segment = this.formatSegment(method, segment);
-                    return segment;
-                    
+                    return this.formatSegment(method, segment);
                 });
                 
-                // if anything undefined (like no parameters), filter them out
+                // If anything undefined (like no parameters), filter them out
                 lineProto = lineProto.filter(l => typeof l !== 'undefined');
                 
                 lineProto = lineProto.reduce((sum, value) => {
                     return sum.concat(value);
                 }, []);
-                
                 
                 var checkArr = lineProto;
                 
@@ -84,12 +65,7 @@
                     }
                 });
                 
-                
-                lines = lines.map(l => {
-                    return {segments: l}
-                });
-                
-                return lines;
+                return lines.map(l => { return {segments: l} });
         	}
 
         	getParams (method) {

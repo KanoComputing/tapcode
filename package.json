@@ -5,7 +5,7 @@
   "main": "app/index.js",
   "scripts": {
     "start": "http-server -p 80 ./www",
-    "serve": "http-server -p 4001 ./app",
+    "serve": "polymer serve",
     "bower-setup": "rm -rf bower_components && bower cache clean && bower i",
     "test": "cucumber-js tests",
     "build": "gulp build",
@@ -50,6 +50,7 @@
     "kart": "^0.3.3",
     "merge-stream": "^1.0.1",
     "polymer-build": "^2.0.0",
+    "polymer-cli": "^1.5.7",
     "selenium-webdriver": "^3.5.0",
     "serve-static": "^1.12.4",
     "should": "^13.0.0"
