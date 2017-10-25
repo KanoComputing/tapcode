@@ -178,7 +178,7 @@
   
         static get observers() {
             return [
-                '_onSegmentSelectionChanged(selectedSegmentIndex, selectedLineIndex)',
+                '_updateSelection(selectedSegmentIndex, selectedLineIndex)',
                 '_onLinesChanged(lines.*)'
             ];
         }
@@ -546,6 +546,7 @@
             this.selectedLineIndex = e.model.lineIndex;
             let copyFrom = this._doesLineCloseBlock(this.selectedLineIndex) ? this.selectedLineIndex - 1 : this.selectedLineIndex;
             this._insertLine(copyFrom, this.selectedLineIndex);
+            this._updateSelection();
         }
   
         // This is not simply insert an empty line in, but insert a line with indentation and
@@ -573,7 +574,7 @@
             this.splice('lines', to, 0, lineCopy);
         }
   
-        _onSegmentSelectionChanged () {
+        _updateSelection () {
             this.selectedSegment = this._getLineSegments()[this.selectedSegmentIndex];
             if (!this.selectedSegment) {
                 return;
@@ -593,7 +594,6 @@
             if (typeof this.selectedSegment.value !== 'undefined') {
                 this.editedValue = this.selectedSegment.value;
             }
-        
         }
   
         _onLinesChanged () {
