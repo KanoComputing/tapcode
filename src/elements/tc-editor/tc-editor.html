@@ -312,7 +312,6 @@
                 }
   
                 insertPoint = this.selectedSegment.type === 'control' ? this.selectedSegmentIndex - 2 : this.selectedSegmentIndex;
-  
                 this.splice(`lines.${this.selectedLineIndex + index}.segments`, insertPoint, 1, ...line.segments);
                 
             });
@@ -751,6 +750,10 @@
             return Boolean(endingTokens.length);
         }
         
+        _getCurrentSegmentValue () {
+            return this.get(`lines.${this.selectedLineIndex}.segments.${this.selectedSegmentIndex}.value`);
+        }
+
         _setCurrentSegmentValue (value) {
             this.set(`lines.${this.selectedLineIndex}.segments.${this.selectedSegmentIndex}.value`, value);
         }

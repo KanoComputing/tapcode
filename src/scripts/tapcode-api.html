@@ -50,40 +50,30 @@
                 type: 'drawing',
                 template: 'methodCall',
                 method: function () {
-                    this.cursorX = Math.random() * 500;
-                    this.cursorY = Math.random() * 500;
+                    this.cursorX = Math.random() * 1000;
+                    this.cursorY = Math.random() * 1000;
                 }
             },
             {
-                name: 'lineTo',
+                name: 'line',
                 type: 'drawing',
                 template: 'methodCall',
                 parameters: [
                     {
-                        name: 'startX',
-                        value: '10',
+                        name: 'toX',
+                        value: '400',
                         dataType: 'number'
                     },
                     {
-                        name: 'startY',
-                        value: '10',
-                        dataType: 'number'
-                    },
-                    {
-                        name: 'endX',
-                        value: '110',
-                        dataType: 'number'
-                    },
-                    {
-                        name: 'endY',
-                        value: '10',
+                        name: 'toY',
+                        value: '400',
                         dataType: 'number'
                     }
                 ],
-                method: function (startX, startY, endX, endY) {
+                method: function (toX, toY) {
                     this.ctx.beginPath();
-                    this.ctx.moveTo(startX * 2, startY * 2);
-                    this.ctx.lineTo(endX * 2, endY * 2);
+                    this.ctx.moveTo(this.cursorX, this.cursorY);
+                    this.ctx.lineTo(toX * 2, toY * 2);
                     this.ctx.stroke();
                 }
             },
@@ -100,7 +90,7 @@
                 ],
                 method: function (radius) {
                     this.ctx.beginPath();
-                    this.ctx.arc(this.cursorX * 2, this.cursorY * 2, radius * 2, 0, 2 * Math.PI, false);  
+                    this.ctx.arc(this.cursorX, this.cursorY, radius * 2, 0, 2 * Math.PI, false);
                     this.ctx.fill();
                     this.ctx.stroke();
                     this.ctx.closePath();
@@ -118,8 +108,8 @@
                     }
                 ],
                 method: function (size) {
-                    var startX = this.cursorX * 2 - size;
-                    var startY = this.cursorY * 2 - size;
+                    var startX = this.cursorX - size;
+                    var startY = this.cursorY - size;
                     this.ctx.fillRect(startX, startY, size * 2, size * 2);
                     this.ctx.strokeRect(startX, startY, size * 2, size * 2);
                     this.ctx.closePath();
@@ -160,7 +150,7 @@
             },
             {
                 name: 'opacity',
-                type: 'drawing',
+                type: 'style',
                 template: 'methodCall',
                 parameters: [
                     {
@@ -189,9 +179,9 @@
                        dataType: 'color'
                     }
                 ],
-                method: (thickness, color) => {
+                method: function (thickness, color) {
                     this.ctx.strokeStyle = color;
-                    this.ctx.lineWidth = thickness;   
+                    this.ctx.lineWidth = Math.max(thickness, 0.001);
                 }
             },
             {
@@ -210,7 +200,7 @@
                         dataType: 'number'
                     }
                 ],
-                method: (from, to) => {
+                method: function (from, to) {
                     return Math.random() * (to - from) + from;   
                 }
             },
