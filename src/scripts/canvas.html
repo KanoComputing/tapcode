@@ -8,8 +8,8 @@
                 
                 // Set up the canvas
                 this.ctx = opts.ctx;
-                this.cursorX = 250;
-                this.cursorY = 250;
+                this.cursorX = 500;
+                this.cursorY = 500;
                 this.colorPalette = opts.colorPalette;
                 
                 // Set up the api
@@ -60,8 +60,8 @@
             }
             
             resetCanvas (size) {
-                this.cursorX = 250;
-                this.cursorY = 250;
+                this.cursorX = 500;
+                this.cursorY = 500;
                 this.ctx.globalAlpha = 1;
                 this.ctx.clearRect(0, 0, 1000, 1000);
                 this.ctx.fillStyle = "#ff00ff";

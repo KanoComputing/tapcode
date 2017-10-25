@@ -684,10 +684,6 @@
         }
   
         clearCode () {
-            if (this.canvasEngine.loop) {
-                window.cancelAnimationFrame(this.canvasEngine.loop);
-                this.canvasEngine.loop = null;
-            }
             this.$.editor.reset();
             this.resetCanvas();
             this._closeDrawer();
@@ -701,12 +697,12 @@
         spliceValue () {
             //TODO refactor
             let ed = this.$.editor;
-            let currentValue = ed.get(`lines.${ed.currentLine}.segments.${ed.currentSegment}.value`);
+            let currentValue = ed._getCurrentSegmentValue();
             if (currentValue.length > 1) {
-                ed.set(`lines.${ed.currentLine}.segments.${ed.currentSegment}.value`, currentValue.slice(0, -1));
+                ed._setCurrentSegmentValue(currentValue.slice(0, -1));
                 this.editedValue = currentValue.slice(0, -1);
             } else {
-                ed.set(`lines.${ed.currentLine}.segments.${ed.currentSegment}.value`, 0);
+                ed._getCurrentSegmentValue(0);
             }
         }
 
