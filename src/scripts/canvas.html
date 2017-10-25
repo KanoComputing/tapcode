@@ -1,0 +1,82 @@
+<link rel="import" href="./vm.html">
+<script>
+    (function (Kano) {
+
+        Kano.Canvas = class {
+        	constructor (opts) {
+                const context = {loop: this.loop.bind(this)};
+                
+                // Set up the canvas
+                this.ctx = opts.ctx;
+                this.cursorX = 250;
+                this.cursorY = 250;
+                this.colorPalette = opts.colorPalette;
+                
+                // Set up the api
+                this.api = opts.api;
+                this.api.forEach(statement => {
+                    // Refactor
+                    if (statement.name !== 'animate') {
+                        context[statement.name] = statement.method.bind(this);
+                    }
+                });
+                this.vm = new Kano.VM(context);
+            }
+
+        	runCode (lines) {
+                let code = lines.reduce((code, l) => {
+                    let line = this.processLine(l);
+                    return code + line;
+                }, '');
+
+                if (this.loopId) {
+                    window.cancelAnimationFrame(this.loopId);
+                    this.loopId = null;
+                }
+                
+                try {
+                    this.vm.runInContext(code);
+                } catch (err) {
+                    console.error(err);
+                }
+        	}
+            
+            processLine (line) {
+                return line.segments.reduce((acc, s) => {
+                    if (s.type === 'function') {
+                      acc = acc + 'function '
+                      return acc;
+                    } else if (s.value === '}' && /animate/.test(s.scope[s.scope.length -1])) {
+                        // Special animate function case
+                        acc += `}loop(animate);`;
+                        return acc;
+                    }
+                    
+                    if (typeof s.value !== 'undefined') {
+                        acc += s.value;
+                    }
+                    return acc;
+                }, '')
+            }
+            
+            resetCanvas (size) {
+                this.cursorX = 250;
+                this.cursorY = 250;
+                this.ctx.globalAlpha = 1;
+                this.ctx.clearRect(0, 0, 1000, 1000);
+                this.ctx.fillStyle = "#ff00ff";
+                this.ctx.strokeStyle = "#00ffff";
+                this.ctx.lineWidth = 8;
+            }
+            
+            loop (cb) {
+                if (!cb) {
+                    return;
+                }
+                cb();
+                this.loopId = requestAnimationFrame(() => {this.loop(cb)});
+            }
+        }
+
+    })(window.Kano = window.Kano || {});
+</script>

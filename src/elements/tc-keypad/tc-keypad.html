@@ -2,7 +2,7 @@
 <link rel="import" href="../../../bower_components/polymer/lib/mixins/gesture-event-listeners.html">
 <link rel="import" href="../../../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
 
-<dom-module id="km-softkeys">
+<dom-module id="tc-keypad">
 
     <template>
 
@@ -40,9 +40,9 @@
     </template>
 
     <script>
-    class KmSoftkeys extends Polymer.GestureEventListeners(Polymer.Element) {
+    class TcKeypad extends Polymer.GestureEventListeners(Polymer.Element) {
         static get is() {
-            return 'km-softkeys';
+            return 'tc-keypad';
         }
 
         static get properties() {
@@ -69,7 +69,7 @@
         }
       }
 
-      customElements.define(KmSoftkeys.is, KmSoftkeys);
+      customElements.define(TcKeypad.is, TcKeypad);
     </script>
 
 </dom-module>

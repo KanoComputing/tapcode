@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
     <head>
-        <title>Kano-mobile-softkeys demo</title>
+        <title>tc-keypad demo</title>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <script src="../../../../bower_components/webcomponentsjs/webcomponents-lite.js"></script>
         <link rel="import" href="../../../../bower_components/iron-demo-helpers/demo-snippet.html">
         <link rel="import" href="../../../../bower_components/iron-demo-helpers/demo-pages-shared-styles.html">
-        <link rel="import" href="../km-softkeys.html">
+        <link rel="import" href="../tc-keypad.html">
 
         <custom-style>
             <style is="custom-style" include="demo-pages-shared-styles">
@@ -34,31 +34,31 @@
     <body unresolved>
         <div class="centered">
             <div class="vertical-section-container">
-                <h3>km-softkeys</h3>
+                <h3>tc-keypad</h3>
                 <demo-snippet class="vertical layout center-justified">
                     <template id="bind">
                         <style>
-                            #softkeys {
+                            #keypad {
                                 height: 400px;
                             }
                         </style>
                         <div id="output">output</div>
-                        <km-softkeys id="softkeys"></km-softkeys>
+                        <tc-keypad id="keypad"></tc-keypad>
                         <p>Set new keys here with values separated by comma:</p>
                         <input id="input" type="text">
                         <button id="submit">Submit</button>
                         <script>
                             document.addEventListener('WebComponentsReady', () => {
-                                let softkeys = document.getElementById('softkeys'),
+                                let keypad = document.getElementById('keypad'),
                                     output = document.getElementById('output'),
                                     inputField = document.getElementById('input'),
                                     submit = document.getElementById('submit');
                                 submit.addEventListener('click', () => {
                                     let input = inputField.value;
                                     input = input.split(',');
-                                    softkeys.set('keys', input);
+                                    keypad.set('keys', input);
                                 });
-                                softkeys.addEventListener('key-tapped', e => {
+                                keypad.addEventListener('key-tapped', e => {
                                     output.innerHTML = e.detail;
                                 });
                             });

@@ -4,19 +4,22 @@
 <link rel="import" href="../bower_components/app-route/app-location.html">
 <link rel="import" href="../bower_components/app-route/app-route.html">
 <link rel="import" href="../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
+<link rel="import" href="../bower_components/iron-lazy-pages/iron-lazy-pages.html">
 <link rel="import" href="../bower_components/paper-dialog/paper-dialog.html">
 <link rel="import" href="../bower_components/paper-spinner/paper-spinner-lite.html">
 <link rel="import" href="../bower_components/app-layout/app-drawer/app-drawer.html">
 <!-- Kano dependency -->
 <link rel="import" href="../bower_components/flow-down/flow-down.html">
 <!-- App dependency -->
-<link rel="import" href="./elements/tapcode-icons.html">
+<link rel="import" href="./elements/tc-icons.html">
+<link rel="import" href="./views/tc-editor-view.html">
+<link rel="import" href="./views/tc-challenge-view.html">
 <!-- Load the app shell content -->
-<link rel="import" href="./stores/tapcode-state-manager.html">
+<link rel="import" href="./stores/app-store.html">
 <link rel="import" href="./actions/code.html">
 <link rel="import" href="./actions/ui.html">
 
-<dom-module id="tap-code-app">
+<dom-module id="tc-app">
     <template>
         <style include="iron-flex iron-flex-alignment">
             :host {
@@ -26,11 +29,11 @@
                 background: #292f35;
             }
             
-            #view-container {
+            #pager {
                 height: 100%;
             }
-            tap-code-editor-view,
-            tap-code-challenge-view {
+            tc-editor-view,
+            tc-challenge-view {
                 height: 100%;
                 overflow: hidden;
                 box-sizing: border-box;
@@ -107,25 +110,37 @@
                 <button type="button" class="share-dialog-btn" dialog-confirm>Got it</button>
             </div>
         </paper-dialog>
-
-        <div id="view-container" on-open-save="_openSave" on-change-view="changeView">
-            <!-- TODO 404 -->
-            <!-- <tapcode-404 name="404"></tapcode-404> -->
-        </div>
+        
+            <iron-lazy-pages
+                id="pager"
+                on-open-save="_openSave"
+                on-change-view="changeView"
+                attr-for-selected="data-route"
+                selected="{{page}}"
+                loading="{{loading}}"
+                hide-immediately>
+                <template is="dom-if" data-route="editor" restamp>
+                    <tc-editor-view id="editor"></tc-editor-view>
+                </template>
+                <template is="dom-if" data-route="challenge" restamp>
+                    <tc-challenge-view id="challenge"></tc-challenge-view>
+                </template>
+            </iron-lazy-pages>
         
     </template>
 
     <script>
-      class TapCodeApp extends Kano.Tapcode.AppStore.StateProvider(Polymer.GestureEventListeners(Polymer.Element)) {
+      class TcApp extends Kano.Tapcode.AppStore.StateProvider(Polymer.GestureEventListeners(Polymer.Element)) {
             static get is() { 
-                return 'tap-code-app';
+                return 'tc-app';
             }
             
             static get properties() {
                 return {
                     page: {
                         type: String,
-                        observer: '_pageChanged',
+                        value: 'editor',
+                        observer: '_pageChanged'
                     },
                     views: {
                         type: Array,
@@ -150,8 +165,6 @@
   
             constructor () {
                 super();
-                Polymer.RenderStatus.afterNextRender(this, function() {
-                });
             }
             
             _routePageChanged () {
@@ -186,18 +199,15 @@
                             });
                     });
                 } else {
-                    this.page = page;
+                    this.page = 'editor';
                 }
             }
             _pageChanged (page) {
-                Polymer.importHref(
-                    // Path to import
-                    this.resolveUrl('./views/tapcode-' + page + '-view.html'),
-                    // Onloaded callback
-                    this.onPageImported.bind(this),
-                    // Fallback page
-                    this.loadEditor.bind(this),
-                    true);
+                let challenge;
+                if (this.page === 'challenge') {
+                    challenge = this.subroute.path.substr(1) || 'random_squares';
+                    this._loadChallenge(challenge);
+                }
             }
             
             _openSave () {
@@ -218,32 +228,6 @@
                 });
             }
             
-            onPageImported () {
-                let template,
-                    TemplateClass,
-                    instance,
-                    challenge;
-
-                // Remove unused views
-                this.views.forEach(id => {
-                    let el = this.shadowRoot.querySelector(`#${id}`)
-                    if (el && id !== this.page) {
-                        el.parentNode.removeChild(el);
-                    }
-                });
-
-                // Stamp current view
-                template = document.createElement('template');
-                template.innerHTML = `<tapcode-${this.page}-view id="${this.page}"></tapcode-${this.page}-view>`;
-                TemplateClass = Polymer.Templatize.templatize(template, this);
-                instance = new TemplateClass({});
-                this.$['view-container'].appendChild(instance.root);
-                
-                if (this.page === 'challenge') {
-                    challenge = this.subroute.path.substr(1) || 'random_squares';
-                    this._loadChallenge(challenge);
-                }
-            }
             
             changeView (e) {
                 if (e.detail === 'challenge') {
@@ -269,7 +253,7 @@
             
             _loadChallenge (name) {
                 let view = this.shadowRoot.querySelector('#challenge');
-                fetch(`/data/challenges/${name}/${name}.json`)
+                fetch(`./data/challenges/${name}/${name}.json`)
                     .then(r => r.json())
                     .then(data => {
                         Kano.Tapcode.AppStore.dispatch({
@@ -302,7 +286,7 @@
             }
       }
 
-      customElements.define(TapCodeApp.is, TapCodeApp);
+      customElements.define(TcApp.is, TcApp);
     </script>
 
 </dom-module>

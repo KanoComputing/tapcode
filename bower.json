@@ -28,7 +28,8 @@
     "flow-down": "KanoComputing/flow-down#^1.0.0-rc6",
     "paper-dialog": "PolymerElements/paper-dialog#^2.0.0",
     "web-animations-js": "^2.3.1",
-    "paper-spinner": "PolymerElements/paper-spinner#^2.0.0"
+    "paper-spinner": "PolymerElements/paper-spinner#^2.0.0",
+    "iron-lazy-pages": "TimvdLippe/iron-lazy-pages#^2.1.1"
   },
   "devDependencies": {
     "iron-component-page": "^3.0.1"
