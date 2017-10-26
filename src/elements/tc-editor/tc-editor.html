@@ -307,7 +307,7 @@
   
                 // Mark end of line
                 if (line.segments[line.segments.length - 1].type !== 'insertPoint'
-                        && this.selectedSegmentIndex === this._getLineSegments().length - 1) {
+                        && !/parameter/.test(this.selectedSegment.type)) {
                     line.segments.push({ type: 'lineEnd', scope: currentScope });
                 }
   

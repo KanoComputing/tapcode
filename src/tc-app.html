@@ -62,10 +62,36 @@
             h4 {
                 font-size: 14px;
             }
-            .url-slug {
+            input.url-slug {
+                width: 280px;
                 background: #1a2024;
+                border-radius: 3px;
                 padding: 8px 16px;
+                margin-bottom: 16px;
                 user-select: text;
+                font-family: inherit;
+                font-size: 14px;
+                color: #fff;
+                border: 0;
+            }
+            input.url-slug:focus {
+                outline: none;
+            }
+            button.copy-btn {
+                font-family: inherit;
+                font-size: 14px;
+                user-select: none;
+                background: #1a2024;
+                border: 0;
+                color: #fff;
+                border-radius: 3px;
+                padding: 8px 16px;
+            }
+            button.copy-btn:hover {
+                background: #272d31;
+            }
+            button.copy-btn:focus {
+                outline: 0;
             }
             button.share-dialog-btn {
                 background: none;
@@ -95,17 +121,19 @@
         <paper-dialog id="save-dialog"
                       class="vertical layout"
                       with-backdrop>
-            <div id="save-dialog-loader" class="no-padding flex vertical layout center-center" hidden$="[[saveUrl]]">
+            <div id="save-dialog-loader" class="no-padding flex vertical layout center-center" hidden$="[[shareUrlReady]]">
                 <paper-spinner-lite active class="thick"></paper-spinner-lite>
             </div>
-            <div id="save-dialog-content" class="no-padding flex vertical layout" hidden$="[[!saveUrl]]">
+            <div id="save-dialog-content" class="no-padding flex vertical layout" hidden$="[[!shareUrlReady]]">
                 <div class="save-dialog-panel flex vertical layout center-center no-padding">
                     <h4>Keep this URL safe to<br>come back to your creation later</h4>
-                    <div id="save-url" class="url-slug">[[saveUrl]]</div>
+                    <input type="text" id="save-url" class="url-slug" value$="[[saveUrl]]" on-tap="copyLink">
+                    <button type="button" class="copy-btn" data-target="save" on-tap="copyLink">copy</button>
                 </div>
                 <div class="save-dialog-panel flex vertical layout center-center no-padding">
                     <h4>You're on your way to becoming<br>a master coder. Tell the world!</h4>
-                    <div id="share-url" class="url-slug">[[shareUrl]]</div>
+                    <input type="text" id="share-url" class="url-slug" value$="[[shareUrl]]">
+                    <button type="button" class="copy-btn" data-target="share" on-tap="copyLink">copy</button>
                 </div>
                 <button type="button" class="share-dialog-btn" dialog-confirm>Got it</button>
             </div>
@@ -147,12 +175,15 @@
                         value: () => ['editor', 'challenge']
                     },
                     saveUrl: {
-                        type: String,
-                        value: null
+                        type: String
                     },
                     shareUrl: {
                         type: String,
                         value: null
+                    },
+                    shareUrlReady: {
+                        type: Boolean,
+                        value: false
                     }
                 }
             }
@@ -211,8 +242,8 @@
             }
             
             _openSave () {
-                let payload = { attachment: JSON.stringify(this.state.code.lines) };
                 this.$['save-dialog'].open();
+                let payload = { attachment: JSON.stringify(this.state.code.lines) };
                 let headers = new Headers();
                 headers.append('Content-Type', 'application/json');
                 fetch(Kano.Tapcode.Config.API_URL + '/tapcode', {
@@ -225,6 +256,7 @@
                 .then(r => {
                     this.saveUrl = Kano.Tapcode.Config.ROOT_URL.substr(8) + '/' + r.id;
                     this.shareUrl = Kano.Tapcode.Config.ROOT_URL.substr(8) + '/share/' + r.id;
+                    this.shareUrlReady = true;
                 });
             }
             
@@ -284,6 +316,27 @@
             _isEq (view, instance) {
                 return view === instance;
             }
+
+            copyLink (e) {
+                e.preventDefault();
+                let type = e.currentTarget.getAttribute('data-target');
+                let urlToCopy = type === 'save' ? this.saveUrl : this.shareUrl;
+                if (navigator.share) {
+                    navigator.share({
+                        title: 'My Tapcode creation',
+                        text: 'Check out my code — it rocks!',
+                        url: urlToCopy,
+                    })
+                }
+                let inp = this.$[`${type}-url`];
+                inp.contentEditable = true;
+                inp.readOnly = true;
+                inp.focus();
+                inp.setSelectionRange(0, 999999);
+                inp.contentEditable = true;
+                document.execCommand('copy');
+            }
+
       }
 
       customElements.define(TcApp.is, TcApp);
