@@ -89,6 +89,7 @@
                 --iron-icon-width: 32px;
                 --iron-icon-height: 32px;
             }
+            button:active iron-icon,
             iron-icon:active,
             iron-icon:hover {
                 fill: rgba(255, 255, 255, 1);
@@ -211,10 +212,16 @@
                 z-index: 10;
             }
 
-            .arrow-area {
+            button.arrow-area {
                 height: 40px;
                 width: 40px;
+                color: inherit;
+                font-family: inherit;
                 cursor: pointer;
+                font-size: 16px;
+                font-weight: 400;
+                padding: 0;
+                border: 0;
                 border-radius: 3px;
                 background: #13171b;
             }
@@ -227,6 +234,10 @@
                 display: block;
                 height: 16px;
                 margin: 16px auto;
+            }
+
+            button.arrow-area:focus {
+                outline: none;
             }
     
             #left-arrow {
@@ -376,12 +387,12 @@
         <div class="workspace vertical layout">
             <div class="code-and-canvas">
                 <div class="left-and-right-arrow to-right horizontal layout">
-                    <div class="arrow-area horizontal layout center-center" on-tap="_moveLeft">
+                    <button type="bit" class="arrow-area" on-tap="_moveLeft">
                         <iron-icon icon="tapcode:keyboard-arrow-left"></iron-icon>
-                    </div>
-                    <div class="arrow-area horizontal layout center-center" on-tap="_moveRight">
+                    </button>
+                    <button class="arrow-area" on-tap="_moveRight">
                         <iron-icon icon="tapcode:keyboard-arrow-right"></iron-icon>
-                    </div>
+                    </button>
                 </div>
                 <canvas id="canvas" width="1000" height="1000"></canvas>
                 <tc-editor id="editor" class="to-left" on-edit-request="_onEditRequest" edited-value="{{editedValue}}" on-run-code="runCode" lines="{{code}}"></tc-editor>
@@ -670,11 +681,13 @@
             this.fileInput.click();
         }
   
-        _moveLeft () {
+        _moveLeft (e) {
+            e.preventDefault();
             this.$.editor.moveCursor(-1);
         }
   
-        _moveRight () {
+        _moveRight (e) {
+            e.preventDefault();
             this.$.editor.moveCursor(1);
         }
 
