@@ -60,13 +60,46 @@
                 template: 'methodCall',
                 parameters: [
                     {
+                        name: 'startX',
+                        value: '10',
+                        dataType: 'number'
+                    },
+                    {
+                        name: 'startY',
+                        value: '100',
+                        dataType: 'number'
+                    },
+                    {
+                        name: 'endX',
+                        value: '100',
+                        dataType: 'number'
+                    },
+                    {
+                        name: 'endY',
+                        value: '10',
+                        dataType: 'number'
+                    }
+                ],
+                method: function (startX, startY, endX, endY) {
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(startX * 2, startY * 2);
+                    this.ctx.lineTo(endX * 2, endY * 2);
+                    this.ctx.stroke();
+                }
+            },
+            {
+                name: 'lineTo',
+                type: 'drawing',
+                template: 'methodCall',
+                parameters: [
+                    {
                         name: 'toX',
-                        value: '400',
+                        value: '10',
                         dataType: 'number'
                     },
                     {
                         name: 'toY',
-                        value: '400',
+                        value: '10',
                         dataType: 'number'
                     }
                 ],
