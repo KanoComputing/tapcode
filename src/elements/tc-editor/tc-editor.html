@@ -254,7 +254,8 @@
         addCode (code) {
             let newLinesNeeded = code.lines.length - 1,
                 currentScope = this.selectedSegment.scope.concat([this._computeScopeId(code.name)]),
-                insertPoint;
+                insertPoint,
+                lastSegment;
   
             // Cursor sits on existing code -> replace exisiting code
             if (this.selectedSegment.handler) {
@@ -278,23 +279,26 @@
                 this._insertLine(this.selectedLineIndex, this.selectedLineIndex + 1);
             }
   
-            code.lines.forEach((line, index) => {
+            code.lines.forEach((line, index, array) => {
   
                 // Clone the line
                 line = JSON.parse(JSON.stringify(line));
-  
+
                 // Assign scope
-                line.segments.forEach(segment => {
+                line.segments.forEach((segment, index, array) => {
                     segment.scope = JSON.parse(JSON.stringify(currentScope));
   
                     if (/parameter/.test(segment.type)) {
                         segment.value = segment.defaultValue;
                     }
+
+                    if (index === array.length - 1) {
+                        lastSegment = segment;
+                    }
                 });
-                
+
                 // Add semi-colon
-                if (!/parameter/.test(this.selectedSegment.type) && !this.selectedSegment.returns
-                    && code.type !== 'control') {
+                if (!/parameter/.test(this.selectedSegment.type) && index === array.length - 1 && lastSegment.value !== '}') {
                     line.segments.push({ value: ';', type: 'semi-colon', scope: currentScope });
                 } else {
                     // TODO Refactor
