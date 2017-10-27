@@ -3,6 +3,7 @@
 <link rel="import" href="../../../bower_components/polymer/lib/mixins/gesture-event-listeners.html">
 <link rel="import" href="../../../bower_components/kwc-color-picker/kwc-color-picker.html">
 <link rel="import" href="../../../bower_components/iron-resizable-behavior/iron-resizable-behavior.html">
+<link rel="import" href="../../../bower_components/iron-icon/iron-icon.html">
 <link rel="import" href="../../../bower_components/web-animations-js/web-animations-next-lite.min.html">
 <link rel="import" href="../../scripts/canvas.html">
 <link rel="import" href="../../scripts/prism.html">
@@ -54,8 +55,8 @@
                     background: #2b3035;
                 }
             }
-            ::slotted(div.drawer-tab),
-            ::slotted(a) {
+            div.drawer-tab ::slotted(div.drawer-tab),
+            div.drawer-tab ::slotted(a) {
                 text-align: left;
                 padding-left: 16px;
                 width: 100%;
@@ -66,11 +67,11 @@
                 color: #fff;
                 cursor: pointer;
             }
-            ::slotted(a:link),
-            ::slotted(a:visited),
-            ::slotted(a:hover),
-            ::slotted(a:focus),
-            ::slotted(a:active) {
+            div.drawer-tab ::slotted(a:link),
+            div.drawer-tab ::slotted(a:visited),
+            div.drawer-tab ::slotted(a:hover),
+            div.drawer-tab ::slotted(a:focus),
+            div.drawer-tab ::slotted(a:active) {
                 display: block;
                 text-decoration: none;
                 color: #fff;
@@ -334,6 +335,7 @@
                 font-weight: 400;
                 cursor: pointer;
                 border: 1px solid #13171b;
+                box-sizing: border-box;
                 padding: 10px 10px 8px;
                 margin: 0 8px 16px 0;
             }
@@ -382,7 +384,9 @@
             <div class="close-drawer" on-tap="_closeDrawer">
                 <iron-icon icon="tapcode:close"></iron-icon>
             </div>
-            <slot name="drawer"></slot>
+            <div class="drawer-tab">
+                <slot name="drawer"></slot>
+            </div>
         </app-drawer>
         <div class="workspace vertical layout">
             <div class="code-and-canvas">
