@@ -8,6 +8,7 @@
                     this.set('state.code.lines', action.data.lines);
                     break;
                 case 'SET_CHALLENGE':
+                    this.set('state.challenge.name', action.data.name);
                     this.set('state.challenge.tasks', action.data.tasks);
                     break;
             }

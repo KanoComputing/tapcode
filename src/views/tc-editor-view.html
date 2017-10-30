@@ -33,7 +33,7 @@
             <div class="drawer-tab" slot="drawer" on-tap="_startNew">New</div>
             <div class="drawer-tab" slot="drawer" on-tap="_openSave">Save</div>
             <div class="drawer-tab" slot="drawer" on-tap="_goToChallenge">Start a challenge</div>
-            <a href="https://kano.me/" slot="drawer" class="drawer-tab" target="_blank">More from Kano</a>
+            <a href="https://kano.me/" slot="drawer" class="drawer-tab" target="_blank" on-tap="_shopLinkTapped">More from Kano</a>
         </tc-ide>
     </template>
 
@@ -46,12 +46,11 @@
   
         constructor () {
             super();
-            Polymer.RenderStatus.afterNextRender(this, () => {
-            });
         }
         
         _startNew () {
             this.$.ide.clearCode();
+            this._trackEvent('clicked in menu - new');
         }
 
         _goToChallenge () {
@@ -62,6 +61,7 @@
                     detail: 'challenge'
                 })
             );
+            this._trackEvent('clicked in menu - challenge');
         }
       }
       customElements.define(TcEditorView.is, TcEditorView);

@@ -188,6 +188,7 @@
         }
         
         connectedCallback () {
+            super.connectedCallback();
             this.selectedLineIndex = 0;
             this.selectedSegmentIndex = 0;
             this.moveCursorToEnd = this.moveCursorToEnd.bind(this);
@@ -195,6 +196,7 @@
         }
         
         disconnectedCallback () {
+            super.disconnectedCallback();
             Polymer.Gestures.removeListener(this, 'tap', this.moveCursorToEnd);
         }
         
@@ -551,6 +553,7 @@
             let copyFrom = this._doesLineCloseBlock(this.selectedLineIndex) ? this.selectedLineIndex - 1 : this.selectedLineIndex;
             this._insertLine(copyFrom, this.selectedLineIndex);
             this._updateSelection();
+            this._trackEvent('clicked on line number');
         }
   
         // This is not simply insert an empty line in, but insert a line with indentation and
@@ -744,6 +747,10 @@
             this.instanceCounter[name]++;
             return `${name}-${this.instanceCounter[name]}`;
         }
+        
+        fire () {
+            
+        }
   
         _getLineSegments (lineIndex=this.selectedLineIndex) {
             return this.get(`lines.${lineIndex}.segments`);
@@ -760,6 +767,18 @@
 
         _setCurrentSegmentValue (value) {
             this.set(`lines.${this.selectedLineIndex}.segments.${this.selectedSegmentIndex}.value`, value);
+        }
+        
+        _trackEvent (name) {
+            this.dispatchEvent(
+                new CustomEvent('tracking-event', {
+                    bubbles: true,
+                    composed: true,
+                    detail: {
+                        name: name
+                    }
+                })
+            );
         }
     }
 

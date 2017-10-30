@@ -19,6 +19,15 @@
         <link href="https://fonts.googleapis.com/css?family=Space+Mono:400,700" rel="stylesheet">
         <link rel="manifest" href="./manifest.json">
         
+        <!-- build:env -->
+        <script>
+            window.Kano = window.Kano || {};
+            window.Kano.Tapcode = window.Kano.Tapcode || {};
+            window.Kano.Tapcode.config = window.Kano.Tapcode.config || {};
+            window.Kano.Tapcode.config.ENV = 'staging';
+        </script>
+        <!-- endbuild-->
+        
         <!-- build:es5adapter -->
         <!-- endbuild -->
         

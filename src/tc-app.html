@@ -11,9 +11,10 @@
 <!-- Kano dependency -->
 <link rel="import" href="../bower_components/flow-down/flow-down.html">
 <!-- App dependency -->
-<link rel="import" href="./elements/tc-icons.html">
 <link rel="import" href="./views/tc-editor-view.html">
 <link rel="import" href="./views/tc-challenge-view.html">
+<link rel="import" href="./elements/tc-icons.html">
+<link rel="import" href="./mixins/tapcode-tracking-mixin.html">
 <!-- Load the app shell content -->
 <link rel="import" href="./stores/app-store.html">
 <link rel="import" href="./actions/code.html">
@@ -158,7 +159,8 @@
     </template>
 
     <script>
-      class TcApp extends Kano.Tapcode.AppStore.StateProvider(Polymer.GestureEventListeners(Polymer.Element)) {
+        class TcApp extends Kano.Tapcode.AppStore.StateProvider(
+                Kano.Tapcode.TrackingMixin(Polymer.GestureEventListeners(Polymer.Element))) {
             static get is() { 
                 return 'tc-app';
             }
@@ -184,7 +186,8 @@
                     shareUrlReady: {
                         type: Boolean,
                         value: false
-                    }
+                    },
+                    config: Object
                 }
             }
             
@@ -196,6 +199,12 @@
   
             constructor () {
                 super();
+            }
+            
+            connectedCallback () {
+                super.connectedCallback();
+                this.config = (Kano && Kano.Tapcode && Kano.Tapcode.Config) || {};
+                this._initializeTracking();
             }
             
             _routePageChanged () {
@@ -239,6 +248,15 @@
                     challenge = this.subroute.path.substr(1) || 'random_squares';
                     this._loadChallenge(challenge);
                 }
+                this.dispatchEvent(
+                    new CustomEvent('track-page-view', {
+                        bubbles: true,
+                        composed: true,
+                        detail: {
+                            path: window.location.pathname
+                        }
+                    })
+                );
             }
             
             _openSave () {
@@ -291,7 +309,8 @@
                         Kano.Tapcode.AppStore.dispatch({
                             type: 'SET_CHALLENGE',
                             data: {
-                                tasks: this.flattenTasks(data.steps)
+                                tasks: this.flattenTasks(data.steps),
+                                name: name
                             }
                         });
                     })
@@ -319,8 +338,16 @@
 
             copyLink (e) {
                 e.preventDefault();
-                let type = e.currentTarget.getAttribute('data-target');
-                let urlToCopy = type === 'save' ? this.saveUrl : this.shareUrl;
+                let type = e.currentTarget.getAttribute('data-target'),
+                    urlToCopy,
+                    eventName;
+                if (type === 'save') {
+                    urlToCopy = this.saveUrl;
+                    eventName = 'selected save url';
+                } else {
+                    urlToCopy = this.shareUrl;
+                    eventName = 'selected share url';
+                }
                 if (navigator.share) {
                     navigator.share({
                         title: 'My Tapcode creation',
@@ -335,6 +362,19 @@
                 inp.setSelectionRange(0, 999999);
                 inp.contentEditable = true;
                 document.execCommand('copy');
+                this._trackEvent(eventName);
+            }
+            
+            _trackEvent (name) {
+                this.dispatchEvent(
+                    new CustomEvent('tracking-event', {
+                        bubbles: true,
+                        composed: true,
+                        detail: {
+                            name: name
+                        }
+                    })
+                );
             }
 
       }

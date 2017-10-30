@@ -1,0 +1,127 @@
+<link rel="import" href="../../bower_components/polymer/lib/utils/boot.html">
+<link rel="import" href="../../bower_components/polymer/lib/utils/mixin.html">
+<link rel="import" href="./kano-tracking-mixin.html">
+
+<script>
+(function (Kano) {
+    Kano.Tapcode = Kano.Tapcode || {};
+    Kano.Tapcode.TrackingMixin = Polymer.dedupingMixin((superClass) => {
+    
+        return class extends Kano.Mixins.Tracking.GeneralBehavior(superClass) {
+
+            constructor () {
+                super();
+            }
+        
+            static get properties() {
+                return {
+                    path: {
+                        type: String,
+                        value: ''
+                    },
+                    preserveSavedSession: {
+                        type: Boolean,
+                        value: true
+                    }
+                }
+            }
+
+            connectedCallback () {
+                super.connectedCallback();
+                this._dispatchEvent({
+                    name: 'ide_opened',
+                    data: {}
+                });
+                this._trackPageView = this._trackPageView.bind(this);
+                this._trackChallengeEvent = this._trackChallengeEvent.bind(this);
+                this.addEventListener('track-page-view', this._trackPageView);
+                this.addEventListener('track-challenge-event', this._trackChallengeEvent);
+            }
+
+            _getObjectProperty (obj, str) {
+                /** Convert indices to properties */
+                str = str.replace(/\[(\w+)\]/g, '.$1');
+                /** Strip out leading dots */
+                str = str.replace(/^\./, '');
+                let arr = str.split('.');
+                arr.forEach((item, index) => {
+                    let prop = arr[index];
+                    if (prop in obj) {
+                        obj = obj[prop];
+                    } else {
+                        return;
+                    }
+                });
+                return obj;
+            }
+
+            _trackChallengeAttempt (challengeAttempts, challenge) {
+                let idString = this.browserId + Date.now().toString(),
+                    hashedId = md5(idString);
+                challengeAttempts[challenge.id] = challengeAttempts[challenge.id] || [];
+                challengeAttempts[challenge.id].push({
+                    id: hashedId,
+                    start: Date.now(),
+                    end: null
+                });
+                this._dispatchEvent({
+                    name: 'challenge_attempted',
+                    data: {
+                        challenge_attempt_id: hashedId,
+                        challenge_name: challenge.name
+                    }
+                });
+                localStorage.setItem('KANO-TRACKING-CHALLENGE-ATTEMPTS', JSON.stringify(challengeAttempts));
+            }
+
+            _trackChallengeCompletion (challengeAttempts, challenge) {
+                let lastIndex = challengeAttempts[challenge.id].length - 1,
+                    lastAttempt = challengeAttempts[challenge.id][lastIndex],
+                    end = Date.now(),
+                    duration = (end - lastAttempt.start) / 1000;
+                challengeAttempts[challenge.id][lastIndex].end = end;
+                this._dispatchEvent({
+                    name: 'challenge_completed',
+                    data: {
+                        challenge_attempt_id: lastAttempt.id,
+                        challenge_name: challenge.name,
+                        time_in_challenge: duration.toFixed(2)
+                    }
+                });
+                localStorage.setItem('KANO-TRACKING-CHALLENGE-ATTEMPTS', JSON.stringify(challengeAttempts));
+            }
+
+            _trackChallengeEvent (e) {
+                let storedAttempts = localStorage.getItem('KANO-TRACKING-CHALLENGE-ATTEMPTS'),
+                    challengeAttempts = {},
+                    eventType = e.detail.type,
+                    challenge = e.detail.data;
+                if (storedAttempts) {
+                    challengeAttempts = JSON.parse(storedAttempts);
+                }
+                if (eventType === 'attempt') {
+                    this._trackChallengeAttempt(challengeAttempts, challenge);
+                }
+                if (eventType === 'complete') {
+                    this._trackChallengeCompletion(challengeAttempts, challenge);
+                }
+            }
+
+            _trackPageView (e) {
+                let previous = this.path,
+                    payload = {
+                        name: 'viewed_page'
+                    };
+                this.path = e.detail.path;
+                if (previous) {
+                    payload.data = {
+                        previous_page_path: previous
+                    }
+                }
+                this._dispatchEvent(payload);
+            }
+
+        }
+    });
+})(window.Kano = window.Kano || {});
+</script>

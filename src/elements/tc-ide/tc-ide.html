@@ -370,7 +370,7 @@
             </div>
             <img id="kano-logo" src="assets/kano-logo.svg">
             <div class="clear-and-refresh horizontal layout center-center">
-                <div id="refresh-tap-area" class="layout horizontal center-center to-right" on-tap="runCode">
+                <div id="refresh-tap-area" class="layout horizontal center-center to-right" on-tap="_refreshTapped">
                     <iron-icon id="menu-icon" icon="tapcode:refresh"></iron-icon>
                 </div>
                 <div id="fullscreen-tap-area" class="layout horizontal center-center to-bottom" on-tap="_toggleFullscreen">
@@ -380,7 +380,7 @@
             </div>
         </div>
 
-        <app-drawer id="drawer" class="vertical layout" align="start">
+        <app-drawer id="drawer" class="vertical layout" align="start" opened="{{drawerOpened}}">
             <div class="close-drawer" on-tap="_closeDrawer">
                 <iron-icon icon="tapcode:close"></iron-icon>
             </div>
@@ -506,6 +506,10 @@
                     type: String,
                     value: 'Portrait'
                 },
+                drawerOpened: {
+                    type: Boolean,
+                    observer: '_onDrawerOpenedChanged'
+                },
                 canvasEngine: Object
             }
         }
@@ -514,17 +518,18 @@
             super();
             Polymer.RenderStatus.afterNextRender(this, () => {
                 this.processApiStatements(Kano.Tapcode.api);
-                this._toggleFullscreen = this._toggleFullscreen.bind(this);
             });
         }
         
         connectedCallback () {
+            super.connectedCallback();
             this._onResize = this._onResize.bind(this);
             this._onResize();
             window.addEventListener('resize', this._onResize);
         }
         
         disconnectedCallback () {
+            super.disconnectedCallback();
             window.removeEventListener('resize', this._onResize);
         }
         
@@ -549,6 +554,11 @@
         
         _closeDrawer () {
             this.$.drawer.close();
+        }
+        
+        _refreshTapped () {
+            this.runCode();
+            this._trackEvent('restarted code');
         }
 
         runCode () {
@@ -686,13 +696,13 @@
         }
   
         _moveLeft (e) {
-            e.preventDefault();
             this.$.editor.moveCursor(-1);
+            this._trackEvent('clicked on softkey arrow');
         }
   
         _moveRight (e) {
-            e.preventDefault();
             this.$.editor.moveCursor(1);
+            this._trackEvent('clicked on softkey arrow');
         }
 
         _toggleOperator () {
@@ -790,6 +800,23 @@
                 this.canvasEngine.cursorX = Math.round(size / 2);
                 this.canvasEngine.cursorY = Math.round(size / 2);
             }
+        }
+        
+        _onDrawerOpenedChanged (opened) {
+            let eventName = opened ? 'opened side menu' : 'closed side menu';
+            this._trackEvent(eventName);
+        }
+        
+        _trackEvent (name) {
+            this.dispatchEvent(
+                new CustomEvent('tracking-event', {
+                    bubbles: true,
+                    composed: true,
+                    detail: {
+                        name: name
+                    }
+                })
+            );
         }
 
       }
