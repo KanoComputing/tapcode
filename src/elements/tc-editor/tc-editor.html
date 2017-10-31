@@ -393,11 +393,12 @@
   
         processInput (newValue) {
             let needOverwrite;
-            if (!this.selectedSegment) {
+            if (!this.selectedSegment || (!/parameter/.test(this.selectedSegment.type) && !this.selectedSegment.returns)) {
                 return;
             }
             // Cursor sits on existing code -> replace exisiting code
             if (this.selectedSegment.returns) {
+                console.log('still returns')
                 this.deleteScope(this.selectedSegment.scope[this.selectedSegment.scope.length - 1]);
                 this.splice(`lines.${this.selectedLineIndex}.segments`, this.selectedSegmentIndex, 0, {
                     type: 'parameter',
@@ -767,6 +768,7 @@
 
         _setCurrentSegmentValue (value) {
             this.set(`lines.${this.selectedLineIndex}.segments.${this.selectedSegmentIndex}.value`, value);
+            this._updateSelection();
         }
         
         _trackEvent (name) {

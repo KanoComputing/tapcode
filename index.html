@@ -40,7 +40,7 @@
         <!-- build:config -->
         <link rel="import" href="./src/config/development.html">
         <!-- endbuild -->
-        <link rel="import" href="./src/tc-app.html">
+        <!-- <link rel="import" href="./src/tc-app.html"> -->
         <style>
             html, body {
                 height: 100%;
@@ -57,19 +57,141 @@
                 height: 100%;
                 box-sizing: border-box;
             }
+            #splash {
+                position: absolute;
+                top: 0px;
+                bottom: 0px;
+                left: 0px;
+                right: 0px;
+                height: 100%;
+                width: 100%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex-direction: column;
+                background-color: #292f35;
+                z-index: 101;
+                transition: opacity 440ms;
+                opacity: 1;
+            }
+            img#kano-logo {
+                display: block;
+                height: 70px;
+                padding: 8px;
+                margin: 0 auto;
+                transform: scale(0.8);
+                opacity: 0;
+            }
+            .animate-in {
+                animation: animateIn 280ms ease-in-out forwards;
+            }
+            .animate-out {
+                animation: animateOut 280ms ease-in-out forwards;
+            }
+            @keyframes animateIn {
+                0% {transform: scale(0); opacity: 0;}
+                56% {transform: scale(1); opacity: 1;}
+                100% {transform: scale(0.8); opacity: 1;}
+            }
+            
+            @keyframes animateOut {
+                0% {transform: scale(0.8); opacity: 1;}
+                44% {transform: scale(1); opacity: 1;}
+                100% {transform: scale(0); opacity: 0;}
+            }
+            
         </style>
     </head>
     <body>
-        <tc-app></tc-app>
+        <div id="splash">
+            <img id="kano-logo" src="assets/kano-logo.svg">
+            <audio id="sound-on" preload="auto">
+                <source src="assets/soundOn.m4a" type="audio/mp4"/>
+                <source src="assets/soundOn.ogg" type="audio/ogg"/>
+            </audio>
+            <audio id="sound-off" preload="auto">
+                <source src="assets/soundOff.m4a" type="audio/mp4"/>
+                <source src="assets/soundOff.ogg" type="audio/ogg"/>
+            </audio>
+        </div>
+        <tc-app id="app"></tc-app>
+        
         <script type="text/javascript">
-            var lastTouchEnd = 0;
-            document.addEventListener('touchend', function (event) {
-                var now = (new Date()).getTime();
-                if (now - lastTouchEnd <= 300) {
-                    event.preventDefault();
+                var lastTouchEnd = 0;
+                document.addEventListener('touchend', function (event) {
+                    var now = (new Date()).getTime();
+                    if (now - lastTouchEnd <= 300) {
+                        event.preventDefault();
+                    }
+                    lastTouchEnd = now;
+                }, false);
+                
+                var splash = document.getElementById('splash'),
+                    logo = document.getElementById('kano-logo'),
+                    soundOn = document.getElementById('sound-on'),
+                    soundOff = document.getElementById('sound-off'),
+                    app = document.getElementById('app'),
+                    appReady,
+                    timeUp;
+
+                //0ms in start animating in
+                //1200ms in start animating out
+                //1480ms animating out done, editor starts fading in
+                //1960ms editor faded in, remove opening screen from the DOM
+                
+                window.onload = function () {
+                    console.log('onload');
+                    logo.classList.add('animate-in');
+                    soundOn.play();
+                    lazyLoadApp();
+                    
+                    setTimeout(function () {
+                        timeUp = true;
+                        tryLoad();
+                    }, 1200);
+                };
+                
+                function tryLoad () {
+                    if (appReady && timeUp) {
+                        showEditor();
+                    }
                 }
-                lastTouchEnd = now;
-            }, false);
+                
+                function lazyLoadApp () {
+                    console.log('start lazy load');
+                    var appImport = document.createElement('link');
+                    appImport.rel = 'import';
+                    appImport.href = '/src/tc-app.html';
+                    appImport.id = 'appImport';
+                    app.addEventListener('firstpageloaded', onFirstPageLoaded);
+                    document.head.appendChild(appImport);
+                }
+                
+                function onFirstPageLoaded () {
+                    console.log("ALL LOADED")
+                    appReady = true;
+                    tryLoad();
+                    app.removeEventListener('firstpageloaded', onFirstPageLoaded);
+                }
+                
+                function showEditor () {
+                    logo.classList.remove('animate-in');
+                    logo.classList.add('animate-out');
+                    soundOff.play();
+
+                    setTimeout(function () {
+                        document.getElementById('splash').style.opacity = '0';
+                    }, 280);
+
+                    setTimeout(function () {
+                        while (splash.firstChild) {
+                            splash.removeChild(splash.firstChild);
+                        }
+                        splash.parentNode.removeChild(splash);
+                        app.loading = false;
+                    }, 760);
+                }
+
         </script>
     </body>
 </html>

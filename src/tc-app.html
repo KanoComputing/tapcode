@@ -11,8 +11,6 @@
 <!-- Kano dependency -->
 <link rel="import" href="../bower_components/flow-down/flow-down.html">
 <!-- App dependency -->
-<link rel="import" href="./views/tc-editor-view.html">
-<link rel="import" href="./views/tc-challenge-view.html">
 <link rel="import" href="./elements/tc-icons.html">
 <link rel="import" href="./mixins/tapcode-tracking-mixin.html">
 <!-- Load the app shell content -->
@@ -140,21 +138,20 @@
             </div>
         </paper-dialog>
         
-            <iron-lazy-pages
-                id="pager"
-                on-open-save="_openSave"
-                on-change-view="changeView"
-                attr-for-selected="data-route"
-                selected="{{page}}"
-                loading="{{loading}}"
-                hide-immediately>
-                <template is="dom-if" data-route="editor" restamp>
-                    <tc-editor-view id="editor"></tc-editor-view>
-                </template>
-                <template is="dom-if" data-route="challenge" restamp>
-                    <tc-challenge-view id="challenge"></tc-challenge-view>
-                </template>
-            </iron-lazy-pages>
+        <iron-lazy-pages
+            id="pager"
+            on-open-save="_openSave"
+            on-change-view="changeView"
+            attr-for-selected="data-route"
+            selected="{{page}}"
+            hide-immediately>
+            <template is="dom-if" data-route="editor" data-path="./views/tc-editor-view.html" restamp>
+                <tc-editor-view id="editor"></tc-editor-view>
+            </template>
+            <template is="dom-if" data-route="challenge" data-path="./views/tc-challenge-view.html" restamp>
+                <tc-challenge-view id="challenge"></tc-challenge-view>
+            </template>
+        </iron-lazy-pages>
         
     </template>
 
@@ -187,7 +184,14 @@
                         type: Boolean,
                         value: false
                     },
-                    config: Object
+                    loading: {
+                        type: Boolean,
+                        value: true,
+                        observer: '_onLoadingChanged'
+                    },
+                    config: Object,
+                    challenge: Object,
+                    challengeImported: Boolean
                 }
             }
             
@@ -209,9 +213,12 @@
             
             _routePageChanged () {
                 const page = this.routeData.page;
-                let creationId;
+                let challenge,
+                    creationId;
                 if (page === 'challenge') {
                     this.page = 'challenge';
+                    challenge = this.subroute.path.substr(1) || 'random_squares';
+                    this._loadChallenge(challenge);
                 } else if (page === 'share' && /^[23456789abdegjkmnpqrvwxyz]{8}$/.test(this.subroute.path.substr(1))) {
                     this.page = 'editor';
                     creationId = this.subroute.path.substr(1);
@@ -224,6 +231,10 @@
                                     lines: JSON.parse(savedCode.attachment)
                                 }
                             });
+                            let view = this.shadowRoot.querySelector('#editor');
+                            view.presentation = true;
+                            this._signalReady();
+                            
                     });
                 } else if (/^[23456789abdegjkmnpqrvwxyz]{8}$/.test(page)) {
                     this.page = 'editor';
@@ -237,17 +248,18 @@
                                     lines: JSON.parse(savedCode.attachment)
                                 }
                             });
+                            this._signalReady();
                     });
                 } else {
                     this.page = 'editor';
+                    this._signalReady();
                 }
             }
             _pageChanged (page) {
-                let challenge;
-                if (this.page === 'challenge') {
-                    challenge = this.subroute.path.substr(1) || 'random_squares';
-                    this._loadChallenge(challenge);
+                if (!page) {
+                    return;
                 }
+                
                 this.dispatchEvent(
                     new CustomEvent('track-page-view', {
                         bubbles: true,
@@ -275,13 +287,15 @@
                     this.saveUrl = Kano.Tapcode.Config.ROOT_URL.substr(8) + '/' + r.id;
                     this.shareUrl = Kano.Tapcode.Config.ROOT_URL.substr(8) + '/share/' + r.id;
                     this.shareUrlReady = true;
-                });
+                })
             }
             
             
             changeView (e) {
                 if (e.detail === 'challenge') {
-                    this._redirectToChallenge();
+                    window.history.pushState(null, null, '/challenge/random_squares');
+                    this.page = 'challenge';
+                    this._loadChallenge('random_squares');
                 } else {
                     this.loadEditor();
                 }
@@ -291,31 +305,46 @@
                 window.history.replaceState(null, null, '');
             }
             
-            _redirectToChallenge () {
-                this.page = 'challenge';
-                window.history.pushState(null, null, '/challenge/random_squares');
-            }
             
             loadEditor () {
                 this.page = 'editor';
                 this.setUrlToRoot();
             }
             
+            _setChallenge () {
+                if (!this.loading && this.challengeImported && this.challenge) {
+                    
+                    Kano.Tapcode.AppStore.dispatch({
+                        type: 'SET_CHALLENGE',
+                        data: {
+                            tasks: this.flattenTasks(this.challenge.steps),
+                            name: name
+                        }
+                    });
+                }
+            }
+            
+            _onLoadingChanged (loading) {
+                if (!loading) {
+                    this._setChallenge();
+                }
+            }
+            
             _loadChallenge (name) {
+                console.log('load challenge try', name)
                 let view = this.shadowRoot.querySelector('#challenge');
                 fetch(`./data/challenges/${name}/${name}.json`)
                     .then(r => r.json())
-                    .then(data => {
-                        Kano.Tapcode.AppStore.dispatch({
-                            type: 'SET_CHALLENGE',
-                            data: {
-                                tasks: this.flattenTasks(data.steps),
-                                name: name
-                            }
-                        });
+                    .then(challenge => {
+                        this.challenge = challenge;
+                        this._signalReady();
+                        this.challengeImported = true;
+                        this._setChallenge();
                     })
                     .catch(() => {
+                        console.log('cathed')
                         this.loadEditor();
+                        this._signalReady();
                     });
             }
             
@@ -363,6 +392,18 @@
                 inp.contentEditable = true;
                 document.execCommand('copy');
                 this._trackEvent(eventName);
+            }
+            
+            _signalReady () {
+                // Make sure that the parent is listening to the event
+                Polymer.RenderStatus.afterNextRender(this, () => {
+                    this.dispatchEvent(
+                        new CustomEvent('firstpageloaded', {
+                            bubbles: true,
+                            composed: true
+                        })
+                    );
+                });
             }
             
             _trackEvent (name) {

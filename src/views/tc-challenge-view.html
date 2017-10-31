@@ -22,7 +22,7 @@
             }
         </style>
         
-        <tc-ide id="ide" on-change="_lineChanged" code="[[code]]" no-delete>
+        <tc-ide id="ide" on-change="_lineChanged" code="[[code]]">
             <div class="drawer-tab" slot="drawer" on-tap="_openSave">Save</div>
             <div class="drawer-tab" slot="drawer" on-tap="_goToPlayground">Playground</div>
             <a href="https://kano.me/" slot="drawer" class="drawer-tab" target="_blank" on-tap="_shopLinkTapped">More from Kano</a>
@@ -109,6 +109,9 @@
             }
     
             _onTaskChanged (task) {
+                if (!task) {
+                    return;
+                }
                 this.$.ide.scrollLineToView(task.insert)
                     .then(() => {
                         if (task.validation && task.validation['add-code']) {

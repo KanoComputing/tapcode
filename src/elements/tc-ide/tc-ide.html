@@ -1,7 +1,6 @@
 <link rel="import" href="../../../bower_components/polymer/polymer-element.html">
 <link rel="import" href="../../../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
 <link rel="import" href="../../../bower_components/polymer/lib/mixins/gesture-event-listeners.html">
-<link rel="import" href="../../../bower_components/kwc-color-picker/kwc-color-picker.html">
 <link rel="import" href="../../../bower_components/iron-resizable-behavior/iron-resizable-behavior.html">
 <link rel="import" href="../../../bower_components/iron-icon/iron-icon.html">
 <link rel="import" href="../../../bower_components/web-animations-js/web-animations-next-lite.min.html">
@@ -35,8 +34,8 @@
             }
             img#kano-logo {
                 display: block;
-                height: 32px;
-                padding: 8px;
+                height: 40px;
+                padding: 4px;
                 margin: 0 auto;
             }
             .clear-and-refresh {
@@ -347,6 +346,17 @@
             .comma:after {
                 content: '\00a0';
             }
+            
+            .presentation-cta {
+                text-align: center;
+                color: black;
+                background: #fff;
+                padding: 16px 24px;
+                position: absolute;
+                bottom: 0;
+                left: 0;
+                width: 100%;
+            }
     
             [disabled] {
                 opacity: 0.5;
@@ -373,7 +383,7 @@
                 <div id="refresh-tap-area" class="layout horizontal center-center to-right" on-tap="_refreshTapped">
                     <iron-icon id="menu-icon" icon="tapcode:refresh"></iron-icon>
                 </div>
-                <div id="fullscreen-tap-area" class="layout horizontal center-center to-bottom" on-tap="_toggleFullscreen">
+                <div id="fullscreen-tap-area" class="layout horizontal center-center to-bottom" on-tap="_onFullscreenTapped">
                     <span>show code</span>
                     <iron-icon icon$="[[_computeFullscreenIcon(fullscreen)]]"></iron-icon>
                 </div>
@@ -388,6 +398,7 @@
                 <slot name="drawer"></slot>
             </div>
         </app-drawer>
+
         <div class="workspace vertical layout">
             <div class="code-and-canvas">
                 <div class="left-and-right-arrow to-right horizontal layout">
@@ -437,6 +448,10 @@
                     </template>
                 </div>
             </div>
+        </div>
+        
+        <div class="presentation-cta" on-tap="_onPresentationCtaTapped" hidden$="[[!presentation]]">
+            Ready to code your own? 
         </div>
     </template>
 
@@ -498,10 +513,6 @@
                     type: Array,
                     value: () => []
                 },
-                noDelete: {
-                    type: Boolean,
-                    value: false
-                },
                 viewport: {
                     type: String,
                     value: 'Portrait'
@@ -509,6 +520,11 @@
                 drawerOpened: {
                     type: Boolean,
                     observer: '_onDrawerOpenedChanged'
+                },
+                presentation: {
+                    type: Boolean,
+                    value: false,
+                    observer: '_onPresentationChanged'
                 },
                 canvasEngine: Object
             }
@@ -526,6 +542,9 @@
             this._onResize = this._onResize.bind(this);
             this._onResize();
             window.addEventListener('resize', this._onResize);
+            Polymer.RenderStatus.afterNextRender(this, () => {
+                Polymer.importHref('../../../bower_components/kwc-color-picker/kwc-color-picker.html')
+            });
         }
         
         disconnectedCallback () {
@@ -533,11 +552,20 @@
             window.removeEventListener('resize', this._onResize);
         }
         
-        _toggleFullscreen () {
+        _onFullscreenTapped () {
+            this.toggleFullscreen();
+        }
+        
+        toggleFullscreen (force) {
             let canvas = this.$.canvas,
                 canvasRect,
                 canvasToCentered;
-            this.fullscreen = !this.fullscreen;
+
+            if (typeof force !== 'undefined') {
+                this.fullscreen = force;
+            } else {
+                this.fullscreen = !this.fullscreen;
+            }
             
             if (this.fullscreen) {
                 canvasRect = canvas.getBoundingClientRect();
@@ -545,6 +573,7 @@
                 canvas.style.transform = `translate(0, ${canvasToCentered}px)`;
             } else {
                 canvas.style.transform = `translate(0, 0)`;
+                this.presentation = false;
             }
         }  
                     
@@ -658,7 +687,9 @@
         }
   
         _isEqual (selected, instance) {
-            this.$['color-input'].notifyResize();
+            if (selected === 'number') {
+                this.$['color-input'].notifyResize();
+            }
             return selected === instance;
         }
 
@@ -817,6 +848,20 @@
                     }
                 })
             );
+        }
+        
+        _onPresentationChanged (presentation) {
+            this.toggleFullscreen(Boolean(presentation));
+        }
+        
+        _onPresentationCtaTapped () {
+            this.dispatchEvent(
+                new CustomEvent('presentation-cta-tapped', {
+                    bubbles: true,
+                    composed: true
+                })
+            );
+            this.presentation = false;
         }
 
       }
