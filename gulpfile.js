@@ -9,6 +9,7 @@ const htmlReplace = require('gulp-html-replace');
 const htmlAutoprefixer = require('gulp-autoprefixer-html');
 const strip = require('gulp-strip-comments');
 const uglify = require('gulp-uglify-es').default;
+const version = require('./package.json').version;
 
 const del = require('del');
 const mergeStream = require('merge-stream');
@@ -24,6 +25,17 @@ function waitFor(stream) {
         stream.on('end', resolve);
         stream.on('error', reject);
     });
+}
+
+function getEnvVars () {
+    let code = '';
+
+    code += 'window.Kano = {};';
+    code += 'window.Kano.Tapcode = {};';
+    code += 'window.Kano.Tapcode.config = {};';
+    code += `window.Kano.Tapcode.config.VERSION = '${version}';`;
+
+    return code;
 }
 
 function build() {
@@ -43,6 +55,9 @@ function build() {
             .pipe(gulpIf(/\.(css|html)$/, htmlAutoprefixer()))
             .pipe(gulpIf(/\.(css|html)$/, cssSlam()))
             .pipe(gulpIf(/\.html$/, htmlReplace({
+                env: `<script type="text/javascript">
+                        ${getEnvVars()}
+                    </script>`,
                 config: `<link rel="import" href="/src/config/${env}.html">`,
                 es5adapter: '<script src="./bower_components/webcomponentsjs/custom-elements-es5-adapter.js"></script>'
             })))
@@ -58,19 +73,20 @@ function build() {
             .pipe(gulpIf(/\.js$/, 
                 babel({
                     ignore: [
-                        'bower_components/webcomponentsjs/custom-elements-es5-adapter.js'
+                        'bower_components/webcomponentsjs/custom-elements-es5-adapter.js',
+                        'bower_components/js-md5/js/md5.min.js'
                     ],
                     presets: ['es2015'],
                     plugins: ['transform-remove-strict-mode']
                 }))
             )
-            .pipe(gulpIf(/\.(html|css|js)$/, strip()))
             .pipe(gulpIf(/\.js$/, uglify()))
             .pipe(gulpIf(/\.(css|html)$/, htmlAutoprefixer({
                 recognizeSelfClosing: true,
                 xmlMode: true
             })))
             .pipe(gulpIf(/\.(css|html)$/, cssSlam()))
+            .pipe(gulpIf(/\.(html|css|js)$/, strip()))
             .pipe(gulpIf(/\.html$/, htmlMinifier({
                 removeComments: true,
                 collapseWhitespace: true

@@ -29,11 +29,11 @@
                 display: none !important;
             }
         </style>
-        <tc-ide id="ide" code="[[code]]" no-delete>
+        <tc-ide id="ide" code="[[code]]" presentation="[[presentation]]" on-presentation-cta-tapped="_goToChallenge">
             <div class="drawer-tab" slot="drawer" on-tap="_startNew">New</div>
             <div class="drawer-tab" slot="drawer" on-tap="_openSave">Save</div>
             <div class="drawer-tab" slot="drawer" on-tap="_goToChallenge">Start a challenge</div>
-            <a href="https://kano.me/" slot="drawer" class="drawer-tab" target="_blank">More from Kano</a>
+            <a href="https://kano.me/" slot="drawer" class="drawer-tab" target="_blank" on-tap="_shopLinkTapped">More from Kano</a>
         </tc-ide>
     </template>
 
@@ -46,12 +46,58 @@
   
         constructor () {
             super();
-            Polymer.RenderStatus.afterNextRender(this, () => {
+            this._presentationChanged = this._presentationChanged.bind(this);
+        }
+        
+        static get properties() {
+            return {
+                presentation: {
+                    type: Boolean,
+                    linkState: 'challenge.presentation'
+                }
+            }
+        }
+        
+        connectedCallback () {
+            super.connectedCallback();
+            if (!this.$.ide) {
+                return;
+            }
+            this.$.ide.addEventListener('presentation-changed', this._presentationChanged);
+        }
+
+        disconnectedCallback () {
+            super.disconnectedCallback();
+            if (!this.$.ide) {
+                return;
+            }
+            this.$.ide.removeEventListener('presentation-changed', this._presentationChanged);
+            
+            this.dispatch({
+                type: 'SET_CODE',
+                data: {
+                    lines: JSON.parse(JSON.stringify(Kano.Tapcode.Config.INITIAL_STATE.code.lines))
+                }
+            });
+            
+            this.dispatch({
+                type: 'SET_CHALLENGE',
+                data: {
+                    tasks: []
+                }
             });
         }
         
         _startNew () {
             this.$.ide.clearCode();
+            this._trackEvent('clicked in menu - new');
+        }
+        
+        _presentationChanged (e) {
+            this.dispatch({
+                type: 'SET_PRESENTATION',
+                value: e.detail.value
+            });
         }
 
         _goToChallenge () {
@@ -62,6 +108,7 @@
                     detail: 'challenge'
                 })
             );
+            this._trackEvent('clicked in menu - challenge');
         }
       }
       customElements.define(TcEditorView.is, TcEditorView);

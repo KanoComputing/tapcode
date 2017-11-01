@@ -188,6 +188,7 @@
         }
         
         connectedCallback () {
+            super.connectedCallback();
             this.selectedLineIndex = 0;
             this.selectedSegmentIndex = 0;
             this.moveCursorToEnd = this.moveCursorToEnd.bind(this);
@@ -195,6 +196,7 @@
         }
         
         disconnectedCallback () {
+            super.disconnectedCallback();
             Polymer.Gestures.removeListener(this, 'tap', this.moveCursorToEnd);
         }
         
@@ -221,34 +223,34 @@
                 } else {
                     this.scrollLineToView(lineNumber);
                 }
-            }, 40)
+            }, Kano.Tapcode.Config.DEBUG ? 0 : 40);
         }; 
   
         addComment (lineNumber, comment, cursorPosition) {
-                this._insertLine(0);
-                this.set(`lines.${lineNumber}.comment`, true);
-                
-                if (cursorPosition) {
-                    this.selectedLineIndex = cursorPosition.line;
-                    this.selectedSegmentIndex = cursorPosition.segment;
-                    this.moveCursor();
-                } else {
-                    this.selectedLineIndex++;
+            this._insertLine(lineNumber);
+            this.set(`lines.${lineNumber}.comment`, true);
+            
+            if (cursorPosition) {
+                this.selectedLineIndex = cursorPosition.line;
+                this.selectedSegmentIndex = cursorPosition.segment;
+                this.moveCursor();
+            } else {
+                this.selectedLineIndex++;
+            }
+            
+            comment = '// ' + comment;
+            let segs = this.lines[lineNumber].segments;
+            let commentInsert = segs.length - 1;
+            
+            this.set(`lines.${lineNumber}.segments.${commentInsert}`,
+                {
+                    type: 'comment',
+                    value: '',
+                    scope: ['global']
                 }
-                
-                comment = '// ' + comment;
-                let segs = this.lines[lineNumber].segments;
-                let commentInsert = segs.length - 1;
-                
-                this.set(`lines.${lineNumber}.segments.${commentInsert}`,
-                    {
-                        type: 'comment',
-                        value: '',
-                        scope: ['global']
-                    }
-                );
-                let commentArray = comment.split('');
-                this.typeComment(commentArray, lineNumber, commentInsert);
+            );
+            let commentArray = comment.split('');
+            this.typeComment(commentArray, lineNumber, commentInsert);
         }
   
         addCode (code) {
@@ -391,11 +393,12 @@
   
         processInput (newValue) {
             let needOverwrite;
-            if (!this.selectedSegment) {
+            if (!this.selectedSegment || (!/parameter/.test(this.selectedSegment.type) && !this.selectedSegment.returns)) {
                 return;
             }
             // Cursor sits on existing code -> replace exisiting code
             if (this.selectedSegment.returns) {
+                console.log('still returns')
                 this.deleteScope(this.selectedSegment.scope[this.selectedSegment.scope.length - 1]);
                 this.splice(`lines.${this.selectedLineIndex}.segments`, this.selectedSegmentIndex, 0, {
                     type: 'parameter',
@@ -551,6 +554,7 @@
             let copyFrom = this._doesLineCloseBlock(this.selectedLineIndex) ? this.selectedLineIndex - 1 : this.selectedLineIndex;
             this._insertLine(copyFrom, this.selectedLineIndex);
             this._updateSelection();
+            this._trackEvent('clicked on line number');
         }
   
         // This is not simply insert an empty line in, but insert a line with indentation and
@@ -760,6 +764,19 @@
 
         _setCurrentSegmentValue (value) {
             this.set(`lines.${this.selectedLineIndex}.segments.${this.selectedSegmentIndex}.value`, value);
+            this._updateSelection();
+        }
+        
+        _trackEvent (name) {
+            this.dispatchEvent(
+                new CustomEvent('tracking-event', {
+                    bubbles: true,
+                    composed: true,
+                    detail: {
+                        name: name
+                    }
+                })
+            );
         }
     }
 

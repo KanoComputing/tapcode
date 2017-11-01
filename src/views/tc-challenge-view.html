@@ -22,10 +22,10 @@
             }
         </style>
         
-        <tc-ide id="ide" on-change="_lineChanged" code="[[code]]" no-delete>
+        <tc-ide id="ide" on-change="_lineChanged" code="[[code]]">
             <div class="drawer-tab" slot="drawer" on-tap="_openSave">Save</div>
             <div class="drawer-tab" slot="drawer" on-tap="_goToPlayground">Playground</div>
-            <a href="https://kano.me/" slot="drawer" class="drawer-tab" target="_blank">More from Kano</a>
+            <a href="https://kano.me/" slot="drawer" class="drawer-tab" target="_blank" on-tap="_shopLinkTapped">More from Kano</a>
         </tc-ide>
     </template>
 
@@ -38,6 +38,11 @@
       
             static get properties() {
                 return {
+                    challenge: {
+                        type: Object,
+                        linkState: 'challenge.name',
+                        observer: '_onChallengeChanged'
+                    },
                     tasks: {
                         type: Array,
                         linkState: 'challenge.tasks'
@@ -71,6 +76,25 @@
                     this._addValidator('param-value', 'matchParamValue');
                 });
             }
+            
+            _onChallengeChanged (challengeName) {
+                if (!challengeName) {
+                    return;
+                }
+                
+                this.dispatchEvent(
+                    new CustomEvent('track-challenge-event', {
+                        bubbles: true,
+                        composed: true,
+                        detail: {
+                            type: 'attempt',
+                            data: {
+                                name: challengeName
+                            }
+                        }
+                    })
+                );
+            }
     
             _lineChanged (e) {
                 if (!this.task || !this.task.validation) {
@@ -80,11 +104,14 @@
             }
     
             computeTask (taskIndex) {
-                this.taskIndex = typeof this.taskIndex === 'undefined' ? 0 : this.taskIndex; 
-                return this.tasks[taskIndex];
+                this.taskIndex = typeof this.taskIndex === 'undefined' ? 0 : this.taskIndex;
+                return this.tasks[this.taskIndex];
             }
     
             _onTaskChanged (task) {
+                if (!task) {
+                    return;
+                }
                 this.$.ide.scrollLineToView(task.insert)
                     .then(() => {
                         if (task.validation && task.validation['add-code']) {
@@ -99,12 +126,34 @@
              * Goes through all the defined validations and check them
              */
             _checkEvent (validation, detail) {
+                let trackingData;
+
                 Object.keys(validation).forEach((type) => {
                     if (type !== detail.type) {
-                    } else {
-                        if (this._validateEvent(validation[type], type, detail)) {
+                        return;
+                    }
+
+                    if (this._validateEvent(validation[type], type, detail)) {
+                        trackingData = {
+                            id: this.challenge.id,
+                            name: this.challenge.name
+                        };
+
+                        if (this.taskIndex === this.tasks.length - 1) {
+                        } else {
                             this.nextStep();
                         }
+                        
+                        this.dispatchEvent(
+                            new CustomEvent('track-challenge-event', {
+                                bubbles: true,
+                                composed: true,
+                                detail: {
+                                    type: 'complete',
+                                    data: trackingData
+                                }
+                            })
+                        );
                     }
                 });
             }
@@ -166,6 +215,7 @@
                         detail: 'editor'
                     })
                 );
+                this._trackEvent('clicked in menu - playground');
             }
             
         }

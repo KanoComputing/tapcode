@@ -6,9 +6,9 @@
     ((Kano) => {
         Kano.Tapcode = Kano.Tapcode || {};
         
-        Kano.Tapcode.ViewMixin = Polymer.dedupingMixin((parent) => {
+        Kano.Tapcode.ViewMixin = Polymer.dedupingMixin((superClass) => {
         
-            return class extends Kano.Tapcode.AppStore.StateReceiver(parent) {
+            return class extends Kano.Tapcode.AppStore.StateReceiver(superClass) {
                 constructor () {
                     super();
                     this._onCodeChanged = this._onCodeChanged.bind(this);
@@ -72,10 +72,14 @@
                 }
                 
                 _onFullscreenChanged (e) {
+                    let opened = e.detail.value,
+                        eventName = opened ? 'turned on fullscreen' : 'turned off fullscreen';
                     this.dispatch({
                         type: 'SET_FULLSCREEN',
-                        value: e.detail.value
+                        value: opened
                     });
+                    
+                    this._trackEvent(eventName);
                 }
                 
                 _openSave () {
@@ -86,6 +90,7 @@
                             composed: true
                         })
                     );
+                    this._trackEvent('clicked in menu - save');
                 }
                 
                 _launchShare () {
@@ -105,6 +110,24 @@
                         });
                     });
                 }
+                
+                _shopLinkTapped () {
+                    this._trackEvent('clicked in menu - shop link');
+                }
+                
+                _trackEvent (name) {
+                    this.dispatchEvent(
+                        new CustomEvent('tracking-event', {
+                            bubbles: true,
+                            composed: true,
+                            detail: {
+                                name: name
+                            }
+                        })
+                    );
+                }
+                
+                
             }
         })
     })(window.Kano = window.Kano || {});
