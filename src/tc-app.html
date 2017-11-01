@@ -313,7 +313,6 @@
             
             _setChallenge () {
                 if (!this.loading && this.challengeImported && this.challenge) {
-                    
                     Kano.Tapcode.AppStore.dispatch({
                         type: 'SET_CHALLENGE',
                         data: {
@@ -331,7 +330,6 @@
             }
             
             _loadChallenge (name) {
-                console.log('load challenge try', name)
                 let view = this.shadowRoot.querySelector('#challenge');
                 fetch(`./data/challenges/${name}/${name}.json`)
                     .then(r => r.json())
@@ -342,7 +340,6 @@
                         this._setChallenge();
                     })
                     .catch(() => {
-                        console.log('cathed')
                         this.loadEditor();
                         this._signalReady();
                     });

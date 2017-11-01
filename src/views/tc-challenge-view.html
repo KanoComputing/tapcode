@@ -104,8 +104,8 @@
             }
     
             computeTask (taskIndex) {
-                this.taskIndex = typeof this.taskIndex === 'undefined' ? 0 : this.taskIndex; 
-                return this.tasks[taskIndex];
+                this.taskIndex = typeof this.taskIndex === 'undefined' ? 0 : this.taskIndex;
+                return this.tasks[this.taskIndex];
             }
     
             _onTaskChanged (task) {

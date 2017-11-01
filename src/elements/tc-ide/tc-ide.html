@@ -348,14 +348,15 @@
             }
             
             .presentation-cta {
-                text-align: center;
-                color: black;
-                background: #fff;
-                padding: 16px 24px;
                 position: absolute;
                 bottom: 0;
                 left: 0;
                 width: 100%;
+                box-sizing: border-box;
+                text-align: center;
+                color: black;
+                background: #fff;
+                padding: 16px 24px;
             }
     
             [disabled] {
@@ -450,9 +451,7 @@
             </div>
         </div>
         
-        <div class="presentation-cta" on-tap="_onPresentationCtaTapped" hidden$="[[!presentation]]">
-            Ready to code your own? 
-        </div>
+        <div class="presentation-cta" on-tap="_onPresentationCtaTapped" hidden$="[[!presentation]]">Ready to code your own?</div>
     </template>
 
     <script>

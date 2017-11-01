@@ -23,8 +23,8 @@
         <script>
             window.Kano = window.Kano || {};
             window.Kano.Tapcode = window.Kano.Tapcode || {};
-            window.Kano.Tapcode.config = window.Kano.Tapcode.config || {};
-            window.Kano.Tapcode.config.ENV = 'staging';
+            window.Kano.Tapcode.Config = window.Kano.Tapcode.Config || {};
+            window.Kano.Tapcode.Config.ENV = 'staging';
         </script>
         <!-- endbuild-->
         
@@ -140,8 +140,14 @@
                 //1960ms editor faded in, remove opening screen from the DOM
                 
                 window.onload = function () {
-                    console.log('onload');
+                    if (Kano.Tapcode.Config.DEBUG) {
+                        timeUp = true;
+                        lazyLoadApp();
+                        tryLoad();
+                        return;
+                    }
                     logo.classList.add('animate-in');
+                    soundOn.volume = 0.5;
                     soundOn.play();
                     lazyLoadApp();
                     
@@ -158,7 +164,6 @@
                 }
                 
                 function lazyLoadApp () {
-                    console.log('start lazy load');
                     var appImport = document.createElement('link');
                     appImport.rel = 'import';
                     appImport.href = '/src/tc-app.html';
@@ -168,7 +173,6 @@
                 }
                 
                 function onFirstPageLoaded () {
-                    console.log("ALL LOADED")
                     appReady = true;
                     tryLoad();
                     app.removeEventListener('firstpageloaded', onFirstPageLoaded);
@@ -177,6 +181,7 @@
                 function showEditor () {
                     logo.classList.remove('animate-in');
                     logo.classList.add('animate-out');
+                    soundOff.volume = 0.5;
                     soundOff.play();
 
                     setTimeout(function () {

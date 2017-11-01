@@ -223,34 +223,34 @@
                 } else {
                     this.scrollLineToView(lineNumber);
                 }
-            }, 40)
+            }, Kano.Tapcode.Config.DEBUG ? 0 : 40);
         }; 
   
         addComment (lineNumber, comment, cursorPosition) {
-                this._insertLine(0);
-                this.set(`lines.${lineNumber}.comment`, true);
-                
-                if (cursorPosition) {
-                    this.selectedLineIndex = cursorPosition.line;
-                    this.selectedSegmentIndex = cursorPosition.segment;
-                    this.moveCursor();
-                } else {
-                    this.selectedLineIndex++;
+            this._insertLine(lineNumber);
+            this.set(`lines.${lineNumber}.comment`, true);
+            
+            if (cursorPosition) {
+                this.selectedLineIndex = cursorPosition.line;
+                this.selectedSegmentIndex = cursorPosition.segment;
+                this.moveCursor();
+            } else {
+                this.selectedLineIndex++;
+            }
+            
+            comment = '// ' + comment;
+            let segs = this.lines[lineNumber].segments;
+            let commentInsert = segs.length - 1;
+            
+            this.set(`lines.${lineNumber}.segments.${commentInsert}`,
+                {
+                    type: 'comment',
+                    value: '',
+                    scope: ['global']
                 }
-                
-                comment = '// ' + comment;
-                let segs = this.lines[lineNumber].segments;
-                let commentInsert = segs.length - 1;
-                
-                this.set(`lines.${lineNumber}.segments.${commentInsert}`,
-                    {
-                        type: 'comment',
-                        value: '',
-                        scope: ['global']
-                    }
-                );
-                let commentArray = comment.split('');
-                this.typeComment(commentArray, lineNumber, commentInsert);
+            );
+            let commentArray = comment.split('');
+            this.typeComment(commentArray, lineNumber, commentInsert);
         }
   
         addCode (code) {
@@ -747,10 +747,6 @@
             this.instanceCounter[name] = this.instanceCounter[name] || 0;
             this.instanceCounter[name]++;
             return `${name}-${this.instanceCounter[name]}`;
-        }
-        
-        fire () {
-            
         }
   
         _getLineSegments (lineIndex=this.selectedLineIndex) {

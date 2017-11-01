@@ -73,19 +73,20 @@ function build() {
             .pipe(gulpIf(/\.js$/, 
                 babel({
                     ignore: [
-                        'bower_components/webcomponentsjs/custom-elements-es5-adapter.js'
+                        'bower_components/webcomponentsjs/custom-elements-es5-adapter.js',
+                        'bower_components/js-md5/js/md5.min.js'
                     ],
                     presets: ['es2015'],
                     plugins: ['transform-remove-strict-mode']
                 }))
             )
-            .pipe(gulpIf(/\.(html|css|js)$/, strip()))
             .pipe(gulpIf(/\.js$/, uglify()))
             .pipe(gulpIf(/\.(css|html)$/, htmlAutoprefixer({
                 recognizeSelfClosing: true,
                 xmlMode: true
             })))
             .pipe(gulpIf(/\.(css|html)$/, cssSlam()))
+            .pipe(gulpIf(/\.(html|css|js)$/, strip()))
             .pipe(gulpIf(/\.html$/, htmlMinifier({
                 removeComments: true,
                 collapseWhitespace: true
