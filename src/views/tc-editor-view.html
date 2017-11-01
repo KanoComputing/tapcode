@@ -29,7 +29,7 @@
                 display: none !important;
             }
         </style>
-        <tc-ide id="ide" code="[[code]]" presentation="[[presentation]]" on-presentation-cta-tapped="_goToChallenge">
+        <tc-ide id="ide" code="[[code]]" presentation="{{presentation}}" on-presentation-cta-tapped="_goToChallenge">
             <div class="drawer-tab" slot="drawer" on-tap="_startNew">New</div>
             <div class="drawer-tab" slot="drawer" on-tap="_openSave">Save</div>
             <div class="drawer-tab" slot="drawer" on-tap="_goToChallenge">Start a challenge</div>
@@ -53,7 +53,8 @@
             return {
                 presentation: {
                     type: Boolean,
-                    linkState: 'challenge.presentation'
+                    linkState: 'challenge.presentation',
+                    observer: '_onPresentationChanged'
                 }
             }
         }
@@ -90,6 +91,7 @@
         
         _startNew () {
             this.$.ide.clearCode();
+            this.setBackUrl();
             this._trackEvent('clicked in menu - new');
         }
         
@@ -109,6 +111,17 @@
                 })
             );
             this._trackEvent('clicked in menu - challenge');
+        }
+
+        _onPresentationChanged (newValue, oldValue) {
+            // Rewrite URL if coming from presentation
+            if (oldValue && !newValue) {
+                this.setBackUrl();
+            }
+        }
+
+        setBackUrl () {
+            window.history.pushState(null, null, '/');
         }
       }
       customElements.define(TcEditorView.is, TcEditorView);

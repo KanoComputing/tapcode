@@ -451,7 +451,7 @@
             </div>
         </div>
         
-        <div class="presentation-cta" on-tap="_onPresentationCtaTapped" hidden$="[[!presentation]]">Ready to code your own?</div>
+        <div class="presentation-cta" on-tap="_onPresentationCtaTapped" hidden$="[[_hidePresentationCta(presentation, fullscreen)]]">Ready to code your own?</div>
     </template>
 
     <script>
@@ -523,6 +523,7 @@
                 presentation: {
                     type: Boolean,
                     value: false,
+                    notify: true,
                     observer: '_onPresentationChanged'
                 },
                 canvasEngine: Object
@@ -572,7 +573,6 @@
                 canvas.style.transform = `translate(0, ${canvasToCentered}px)`;
             } else {
                 canvas.style.transform = `translate(0, 0)`;
-                this.presentation = false;
             }
         }  
                     
@@ -653,6 +653,7 @@
             if (this.whitelist.length > 0 && this.whitelist.indexOf(e.model.statement.name) === -1) {
                 return;
             }
+            this.presentation = false;
             this.$.editor.addCode(e.model.statement);
         }
   
@@ -850,17 +851,23 @@
         }
         
         _onPresentationChanged (presentation) {
-            this.toggleFullscreen(Boolean(presentation));
+            if (presentation) {
+                this.toggleFullscreen(true);
+            }
         }
         
         _onPresentationCtaTapped () {
+            this.presentation = false;
             this.dispatchEvent(
                 new CustomEvent('presentation-cta-tapped', {
                     bubbles: true,
                     composed: true
                 })
             );
-            this.presentation = false;
+        }
+
+        _hidePresentationCta (presentation, fullscreen) {
+            return !presentation || !fullscreen;
         }
 
       }
