@@ -441,7 +441,7 @@
                             <template id="line-repeater" is="dom-repeat" items="{{statement.lines}}" as="line">
                                 <div class="horizontal layout">
                                     <template id="segment-repeater" is="dom-repeat" items="{{line.segments}}" as="segment">
-                                        <div class$="[[_computeSegmentClass(segment.type)]]">[[segment.value]]</div>
+                                        <div class$="[[_computeSegmentClass(segment.type, segment.dataType)]]">[[segment.value]]</div>
                                     </template>
                                 </div>
                             </template>
@@ -787,7 +787,10 @@
             return activeTab === instance ? 'toolbox-tab selected' : 'toolbox-tab';
         }
 
-        _computeSegmentClass (type) {
+        _computeSegmentClass (type, dataType) {
+            if (type === 'parameter') {
+                type = `parameter-${dataType}`;
+            }
             return `segment ${type}`;
         }
         

@@ -129,7 +129,7 @@
                                                     items="{{line.segments}}"
                                                     as="segment"
                                                     index-as="segmentIndex"><div id$="[[_computeEditableId(lineIndex, segmentIndex)]]"
-                                                                                 class$="[[_computeSegmentClass(segment.type, segment.end, segment.breaking,
+                                                                                 class$="[[_computeSegmentClass(segment.type, segment.dataType, segment.end, segment.breaking,
                                                                                           selectedLineIndex, selectedSegmentIndex, lineIndex, segmentIndex, segment.value, lines.*)]]"
                                                                                   style$="[[_setMaxWidth(lineIndex, segmentIndex)]]"
                                                                                   on-tap="_selectSegment">[[segment.value]]</div><div class="break">
@@ -202,22 +202,17 @@
         
         moveCursorToEnd (e) {
             e.stopPropagation();
-            this.selectedLineIndex = Math.max(this.lines.length - 1, 0);
-            this.moveCursorToEditable();
-        }
-        
-        moveCursorToEditable () {
-            this.selectedSegmentIndex = 0;
-            if (this.selectedSegment && !this.selectedSegment.editable) {
-                this.moveCursor();
+            if (!this.lines || !this.lines.length) {
+                return;
             }
+            this.selectedLineIndex = this.lines.length - 1;
+            this.selectedSegmentIndex = 0;
         }
   
         typeComment (comment, lineNumber, segmentNumber) {
             setTimeout(() => {
                 this.set(`lines.${lineNumber}.segments.${segmentNumber}.value`,
                         this.get(`lines.${lineNumber}.segments.${segmentNumber}.value`) + comment.shift());
-                this.notifyPath('lines');
                 if (comment.length > 0) { 
                     this.typeComment(comment, lineNumber, segmentNumber);
                 } else {
@@ -269,7 +264,7 @@
             }
   
             // Cursor sits at end of line -> insert new line
-            if (this.selectedSegment.type === 'lineEnd') {
+            if (this.isType('lineEnd')) {
                 this._insertLine(this.selectedLineIndex + 1);
                 this.moveCursor();
                 newLinesNeeded--;
@@ -289,7 +284,7 @@
                 line.segments.forEach((segment, index, array) => {
                     segment.scope = JSON.parse(JSON.stringify(currentScope));
   
-                    if (/parameter/.test(segment.type)) {
+                    if (segment.type === 'parameter') {
                         segment.value = segment.defaultValue;
                     }
 
@@ -299,11 +294,10 @@
                 });
 
                 // Add semi-colon
-                if (!/parameter/.test(this.selectedSegment.type) && index === array.length - 1 && lastSegment.value !== '}') {
+                if (!this.isType('parameter') && index === array.length - 1 && lastSegment.value !== '}') {
                     line.segments.push({ value: ';', type: 'semi-colon', scope: currentScope });
                 } else {
-                    // TODO Refactor
-                    if (line.segments[line.segments.length - 1].type === 'insertPoint') {
+                    if (this.isType('insertPoint', line.segments[line.segments.length - 1])) {
                         line.segments[line.segments.length - 2].end = true;
                     } else {
                         line.segments[line.segments.length - 1].end = true;
@@ -311,12 +305,12 @@
                 }
   
                 // Mark end of line
-                if (line.segments[line.segments.length - 1].type !== 'insertPoint'
-                        && !/parameter/.test(this.selectedSegment.type)) {
+                if (!this.isType('insertPoint', line.segments[line.segments.length - 1])
+                        && !this.isType('parameter')) {
                     line.segments.push({ type: 'lineEnd', scope: currentScope });
                 }
   
-                insertPoint = this.selectedSegment.type === 'control' ? this.selectedSegmentIndex - 2 : this.selectedSegmentIndex;
+                insertPoint = this.isType('control') ? this.selectedSegmentIndex - 2 : this.selectedSegmentIndex;
                 this.splice(`lines.${this.selectedLineIndex + index}.segments`, insertPoint, 1, ...line.segments);
                 
             });
@@ -328,7 +322,7 @@
             this.notifyChange('add-code', detail);
             if (code.type === 'control') {
                 this.moveLine();
-                this.moveCursorToEditable();
+                this.selectedSegmentIndex = 0;
             } else {
                 this.moveCursor();
             }
@@ -392,12 +386,11 @@
   
         processInput (newValue) {
             let needOverwrite;
-            if (!this.selectedSegment || (!/parameter/.test(this.selectedSegment.type) && !this.selectedSegment.returns)) {
+            if (!this.selectedSegment || (!this.isType('parameter') && !this.selectedSegment.returns)) {
                 return;
             }
             // Cursor sits on existing code -> replace exisiting code
             if (this.selectedSegment.returns) {
-                console.log('still returns')
                 this.deleteScope(this.selectedSegment.scope[this.selectedSegment.scope.length - 1]);
                 this.splice(`lines.${this.selectedLineIndex}.segments`, this.selectedSegmentIndex, 0, {
                     type: 'parameter',
@@ -479,6 +472,7 @@
             }
             
             if (linesToDelete.length === 0) {
+                console.log('okok')
                 this.splice(`lines.${this.selectedLineIndex}.segments`, this.selectedSegmentIndex, 0, { type: 'insertPoint', scope: scopeArray, editable: true });
             } else {
                 for (var k = linesToDelete.length - 1; k >= 0; k--) {
@@ -529,7 +523,7 @@
   
         _selectSegment (e) {
             e.stopPropagation();
-            if (this.selectedSegment.type === 'parameter') {
+            if (this.isType('parameter')) {
                 this.concludeEdit();
             }
             // Update current selection
@@ -573,7 +567,7 @@
             }
   
             for (var j = lineCopy.segments.length - 1; j >= 0; j--) {
-                if (lineCopy.segments[j].type !== 'indentation') {
+                if (!this.isType('indentation', lineCopy.segments[j])) {
                     lineCopy.segments.splice(j, 1);
                 }
             }
@@ -588,13 +582,13 @@
             }
 
             // If the selected segment is not editable, move the cursor.
-            if (!this.selectedSegment.editable) {
+            if (!this.selectedSegment.editable && !this.isType('insertPoint') && !this.isType('lineEnd')) {
                 this.moveCursor();
                 return;
             }
 
             this.editingStarted = false;
-            if (!this.selectedSegment || (!this.selectedSegment.editable && this.selectedSegment.type !== 'lineEnd')) {
+            if (!this.selectedSegment || (!this.selectedSegment.editable && !this.isType('lineEnd'))) {
                 return;
             }
             this.dispatchEvent(
@@ -690,12 +684,12 @@
             return `l-${lineIndex}`;
         }
         
-        _computeSegmentClass (type, end, breaking, selectedLineIndex, selectedSegmentIndex, lineIndex, segmentIndex) {
+        _computeSegmentClass (type, dataType, end, breaking, selectedLineIndex, selectedSegmentIndex, lineIndex, segmentIndex) {
                 let classString = '';
                 let lineWidth,
                     segmentModel,
                     line;
-            
+
                 if (this.shadowRoot.querySelector(`#l0-s0`)) {
             
                     let segmentEl = this.shadowRoot.querySelector(`#l0-s0`);
@@ -703,15 +697,20 @@
                         lineWidth = line.getBoundingClientRect().width;
                         segmentModel = this.shadowRoot.querySelector('#segment-repeater').modelForElement(segmentEl);
                 }
-                
+
+                // Give a separate class for different datatypes
+                if (type === 'parameter') {
+                    type = `parameter-${dataType}`;
+                }
+
                 if (breaking) {
                     classString += 'sweet ';
                 }
-                
+
                 if (end) {
                     classString += 'end ';
                 }
-            
+
                 if (selectedLineIndex === lineIndex && selectedSegmentIndex === segmentIndex) {
                         classString += `segment ${type} highlight`;
                 } else {
@@ -719,7 +718,6 @@
                 }
 
                 return classString;
-            
         }
         
         computeLineNumberClass (line, lineIndex) {
@@ -773,6 +771,13 @@
             this._updateSelection();
         }
         
+        isType(type, segment) {
+            if (!segment) {
+                segment = this.selectedSegment;
+            }
+            return segment.type === type;
+        }
+
         _trackEvent (name) {
             this.dispatchEvent(
                 new CustomEvent('tracking-event', {
