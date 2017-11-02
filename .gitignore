@@ -1,3 +1,7 @@
+# Build
+npm-debug.log
+.terraform
+
 # OSX
 **.DS_Store
 

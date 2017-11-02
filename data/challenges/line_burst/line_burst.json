@@ -1,0 +1,110 @@
+{
+    "steps": [
+        {
+            "instructions": [
+                {
+                    "text": "Create an animation loop",
+                    "insert": 0,
+                    "validation":
+                        {
+                            "add-code": {
+                                "name": "animate"
+                            }
+                        }
+                },
+                {
+                    "text": "Inside the loop, set the stroke style.",
+                    "insert": 2,
+                    "validation":
+                        {
+                            "add-code": {
+                                "name": "stroke",
+                                "scope": ["global", "animate-1"]
+                            }
+                        }
+                },
+                {
+                    "text": "Set the stroke size to random.",
+                    "insert": 3,
+                    "validation":
+                        {
+                            "add-code": {
+                                "name": "random",
+                                "scope": ["global", "animate-1", "stroke-1"]
+                            }
+                        }
+                },
+                {
+                    "text": "Set the opacity of your drawing.",
+                    "insert": 5,
+                    "cursorPosition": {"line": 6, "segment": 0},
+                    "validation":
+                        {
+                            "add-code": {
+                                "name": "opacity",
+                                "scope": ["global", "animate-1"]
+                            }
+                        }
+                },
+                {
+                    "text": "Move the drawing pen to a random point.",
+                    "insert": 7,
+                    "cursorPosition": {"line": 8, "segment": 0},
+                    "validation":
+                        {
+                            "add-code": {
+                                "name": "moveToRandom",
+                                "scope": ["global", "animate-1"]
+                            }
+                        }
+                },
+                {
+                    "text": "Draw a line with lineTo",
+                    "insert": 9,
+                    "validation":
+                        {
+                            "add-code": {
+                                "name": "lineTo",
+                                "scope": ["global", "animate-1"]
+                            }
+                        }
+                },
+                {
+                    "text": "Nice. Move the lines to the middle. Change to 250.",
+                    "insert": 10,
+                    "cursorPosition": {"line":11, "segment": 2},
+                    "validation":
+                        {
+                            "param-value": {
+                                "id": "lineTo-1-0",
+                                "value": 250
+                            }
+                        }
+                },
+                {
+                    "text": "Set Y to 250 too.",
+                    "insert": 11,
+                    "cursorPosition": {"line":12, "segment": 3},
+                    "validation":
+                        {
+                            "param-value": {
+                                "id": "lineTo-1-1",
+                                "value": 250
+                            }
+                        }
+                },
+                {
+                    "text": "Cool!",
+                    "insert": 13,
+                    "validation":
+                        {
+                            "add-code": {
+                                "name": "stroke",
+                                "scope": ["global", "animate-1"]
+                            }
+                        }
+                }
+            ]
+        }
+    ]
+}

@@ -36,6 +36,7 @@
     "gulp-autoprefixer-html": "^1.0.1",
     "gulp-babel": "^7.0.0",
     "gulp-clean": "^0.3.2",
+    "gulp-crisper": "^1.1.0",
     "gulp-html-minifier": "^0.1.8",
     "gulp-html-replace": "^1.6.2",
     "gulp-if": "^2.0.2",
