@@ -217,7 +217,7 @@
                     creationId;
                 if (page === 'challenge') {
                     this.page = 'challenge';
-                    challenge = this.subroute.path.substr(1) || 'random_squares';
+                    challenge = this.subroute.path.substr(1) || 'line_burst';
                     this._loadChallenge(challenge);
                 } else if (page === 'share' && /^[23456789abdegjkmnpqrvwxyz]{8}$/.test(this.subroute.path.substr(1))) {
                     this.page = 'editor';
@@ -293,9 +293,9 @@
             
             changeView (e) {
                 if (e.detail === 'challenge') {
-                    window.history.pushState(null, null, '/challenge/random_squares');
+                    window.history.pushState(null, null, '/challenge/line_burst');
                     this.page = 'challenge';
-                    this._loadChallenge('random_squares');
+                    this._loadChallenge('line_burst');
                 } else {
                     this.loadEditor();
                 }
