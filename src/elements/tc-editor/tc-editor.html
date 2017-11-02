@@ -580,12 +580,19 @@
             lineCopy.segments.push({ type: 'insertPoint', scope: currentScope, editable: true });  
             this.splice('lines', to, 0, lineCopy);
         }
-  
+
         _updateSelection () {
             this.selectedSegment = this._getLineSegments()[this.selectedSegmentIndex];
             if (!this.selectedSegment) {
                 return;
             }
+
+            // If the selected segment is not editable, move the cursor.
+            if (!this.selectedSegment.editable) {
+                this.moveCursor();
+                return;
+            }
+
             this.editingStarted = false;
             if (!this.selectedSegment || (!this.selectedSegment.editable && this.selectedSegment.type !== 'lineEnd')) {
                 return;

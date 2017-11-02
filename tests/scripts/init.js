@@ -2,7 +2,8 @@
 
 window.__findElement__ = function (root, selectors) {
     function findElement(selectors) {
-        var currentElement = root, i;
+        var currentElement = root,
+            i;
         if (currentElement.shadowRoot) {
             currentElement = currentElement.shadowRoot;
         }

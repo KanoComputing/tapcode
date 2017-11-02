@@ -10,7 +10,7 @@ const DEFAULT_TIMEOUT = process.env.EXTERNAL_SERVER ? 20000 : 10000,
     INIT_SCRIPT = fs.readFileSync(path.join(__dirname, '../../scripts/init.js')).toString(),
     ELEMENTS_SELECTORS = {};
 
-ELEMENTS_SELECTORS['editor'] = ['tap-code-editor-view', '#editor'];
+ELEMENTS_SELECTORS['editor'] = ['#editor'];
 
 
 function buildDriver(capabilities) {
@@ -65,24 +65,29 @@ class CustomWorld {
             });
     }
 
-    waitForRootElement (timeout=10000) {
+    waitForRootElement (timeout) {
         return this.driver.wait(() => {
-            return this.driver.executeScript(`return document.querySelector('tap-code-app').shadowRoot;`)
+            return this.driver.executeScript(`return document.querySelector('tc-app') && document.querySelector('tc-app').shadowRoot;`)
                 .then(rootElement => {
                     return rootElement;
                 })
-        }, timeout, 'App didn\'t load');
+        }, 10000, 'App didn\'t load');
     }
 
     getRootElement () {
-        return this.driver.executeScript(`return document.querySelector('tap-code-app').shadowRoot;`)
+        return this.driver.executeScript(`return document.querySelector('tc-app').shadowRoot;`)
             .then(rootElement => {
                 return rootElement;
             });
     }
 
     findElement (root, selectors) {
-        return this.driver.executeScript('return window.__findElement__(arguments[0], arguments[1])', root, selectors);
+        return this.driver.wait(() => {
+            return this.driver.executeScript('return window.__findElement__(arguments[0], arguments[1])', root, selectors)
+                .then(el => {
+                    return el;
+                })
+        }, 5000, `Element not found with selectors: ${selectors}`);
     }
 
     findElements (root, selector) {
@@ -122,11 +127,11 @@ class CustomWorld {
             setTimeout(resolve, duration);
         });
     }
-
 }
 
-defineSupportCode(({setWorldConstructor}) => {
+defineSupportCode(({setWorldConstructor, setDefaultTimeout}) => {
     setWorldConstructor(CustomWorld);
+    setDefaultTimeout(60 * 1000);
 });
 
 module.exports = CustomWorld;

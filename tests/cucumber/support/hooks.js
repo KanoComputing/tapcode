@@ -8,7 +8,7 @@ let {defineSupportCode} = require('cucumber'),
     prepareCoverage = require('../../coverage'),
     coverageEnv = !!process.env.COVERAGE;
 
-const SRC = './app';
+const SRC = './';
 
 function generateCoverageReport() {
     return World.driver.executeScript('return window.__coverage__')
@@ -24,7 +24,7 @@ defineSupportCode(({BeforeAll, AfterAll, Before, After}) => {
     // Instumentalise code if in coverage mode
     let prepare = coverageEnv ? prepareCoverage(SRC) : Promise.resolve(SRC);
 
-    // Start a server to deliver app files
+    // Start a server to deliver src files
     BeforeAll(function (e, callback) {
         prepare.then(loc => {
             World.createDriver();

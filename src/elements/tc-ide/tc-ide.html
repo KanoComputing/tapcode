@@ -687,8 +687,9 @@
         }
   
         _isEqual (selected, instance) {
-            if (selected === 'number') {
-                this.$['color-input'].notifyResize();
+            if (selected === 'color') {
+                this.shadowRoot.querySelector('#color-input').notifyResize();
+                this.shadowRoot.querySelector('#color-input').value = '#3caa36';
             }
             return selected === instance;
         }

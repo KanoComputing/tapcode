@@ -3,7 +3,7 @@
         {
             "instructions": [
                 {
-                    "text": "Hello there. First, we want to use a block that will repeat our code in a fast loop. It's called 'function animate'. Can you find it?",
+                    "text": "Create an animation loop",
                     "insert": 0,
                     "validation":
                         {
@@ -13,111 +13,8 @@
                         }
                 },
                 {
-                    "text": "Now inside the animate block we want to use a command that will point to somewhere in the canvas before we start drawing. It's called 'moveBy'",
-                    "insert": 1,
-                    "validation":
-                        {
-                            "add-code": {
-                                "name": "moveBy",
-                                "scope": ["global", "animate-1"]
-                            }
-                        }
-                },
-                {
-                    "text": "Cool. Now let's make it move random. Change the first parameter to random",
+                    "text": "Inside the loop, set the stroke style.",
                     "insert": 2,
-                    "validation":
-                        {
-                            "add-code": {
-                                "name": "random",
-                                "scope": ["global", "animate-1", "moveBy-1"],
-                                "paramIndex": 0
-                            }
-                        }
-                },
-                {
-                    "text": "Change the first parameter of random to -25",
-                    "insert": 3,
-                    "validation":
-                        {
-                            "param-value": {
-                                "id": "random-1-0",
-                                "value": -25
-                            }
-                        }
-                },
-                {
-                    "text": "Change the second parameter of random to 25",
-                    "insert": 4,
-                    "validation":
-                        {
-                            "param-value": {
-                                "id": "random-1-1",
-                                "value": 25
-                            }
-                        }
-                },
-                {
-                    "text": "Now put a random block on the second parameter of moveBy",
-                    "insert": 5,
-                    "validation":
-                        {
-                            "add-code": {
-                                "name": "random",
-                                "scope": ["global", "animate-1", "moveBy-1"],
-                                "paramIndex": 1
-                            }
-                        }
-                },
-                {
-                    "text": "Nice. Change the first parameter of this second random block to -25",
-                    "insert": 6,
-                    "validation":
-                        {
-                            "param-value": {
-                                "id": "random-2-0",
-                                "value": -25
-                            }
-                        }
-                },
-                {
-                    "text": "Change the second parameter to 25",
-                    "insert": 7,
-                    "validation":
-                        {
-                            "param-value": {
-                                "id": "random-2-1",
-                                "value": 25
-                            }
-                        }
-                },
-                {
-                    "text": "Looking good. Now it's time to draw. For that, we first want to set the color. Find the fillColor command.",
-                    "insert": 10,
-                    "cursorPosition": {"line": 11, "segment": 0},
-                    "validation":
-                        {
-                            "add-code": {
-                                "name": "fillColor",
-                                "scope": ["global", "animate-1"]
-                            }
-                        }
-                },
-                {
-                    "text": "Set the color to randomColor",
-                    "insert": 11,
-                    "validation":
-                        {
-                            "add-code": {
-                                "name": "randomColor",
-                                "paramIndex": 0,
-                                "scope": ["global", "animate-1", "fillColor-1"]
-                            }
-                        }
-                },
-                {
-                    "text": "We also want to have different colours for the borders of the circles",
-                    "insert": 13,
                     "validation":
                         {
                             "add-code": {
@@ -127,31 +24,85 @@
                         }
                 },
                 {
-                    "text": "Set the second parameter to randomColor",
-                    "insert": 14,
+                    "text": "Set the stroke size to random.",
+                    "insert": 3,
                     "validation":
                         {
                             "add-code": {
-                                "name": "randomColor",
-                                "paramIndex": 1,
+                                "name": "random",
                                 "scope": ["global", "animate-1", "stroke-1"]
                             }
                         }
                 },
                 {
-                    "text": "Looking good. Now it's time to draw. Use the 'circle' command.",
-                    "insert": 16,
+                    "text": "Set the opacity of your drawing.",
+                    "insert": 5,
+                    "cursorPosition": {"line": 6, "segment": 0},
                     "validation":
                         {
                             "add-code": {
-                                "name": "circle",
+                                "name": "opacity",
                                 "scope": ["global", "animate-1"]
                             }
                         }
                 },
                 {
-                    "text": "Bravo bravo bravo clap-clap",
-                    "insert": 18
+                    "text": "Move the drawing pen to a random point.",
+                    "insert": 7,
+                    "cursorPosition": {"line": 8, "segment": 0},
+                    "validation":
+                        {
+                            "add-code": {
+                                "name": "moveToRandom",
+                                "scope": ["global", "animate-1"]
+                            }
+                        }
+                },
+                {
+                    "text": "Draw a line with lineTo",
+                    "insert": 9,
+                    "validation":
+                        {
+                            "add-code": {
+                                "name": "lineTo",
+                                "scope": ["global", "animate-1"]
+                            }
+                        }
+                },
+                {
+                    "text": "Nice. Move the lines to the middle. Change to 250.",
+                    "insert": 10,
+                    "cursorPosition": {"line":11, "segment": 2},
+                    "validation":
+                        {
+                            "param-value": {
+                                "id": "lineTo-1-0",
+                                "value": 250
+                            }
+                        }
+                },
+                {
+                    "text": "Set Y to 250 too.",
+                    "insert": 11,
+                    "cursorPosition": {"line":12, "segment": 3},
+                    "validation":
+                        {
+                            "param-value": {
+                                "id": "lineTo-1-1",
+                                "value": 250
+                            }
+                        }
+                },
+                {
+                    "text": "Cool!",
+                    "insert": 13,
+                    "validation":
+                        {
+                            "add-code": {
+                                "name": "stroke",
+                                "scope": ["global", "animate-1"]
+                            }
+                        }
                 }
             ]
         }
