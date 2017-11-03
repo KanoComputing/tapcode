@@ -470,9 +470,8 @@
                     linesToDelete.push(i);
                 }
             }
-            
+
             if (linesToDelete.length === 0) {
-                console.log('okok')
                 this.splice(`lines.${this.selectedLineIndex}.segments`, this.selectedSegmentIndex, 0, { type: 'insertPoint', scope: scopeArray, editable: true });
             } else {
                 for (var k = linesToDelete.length - 1; k >= 0; k--) {
@@ -484,7 +483,7 @@
                 }
             }
         }
-        
+
         scrollLineToView (lineIndex) {
             let target = this.shadowRoot.querySelector(`#l-${lineIndex}`),
                 toScroll = target ? target.offsetTop : this.clientHeight;
@@ -494,7 +493,7 @@
                 });
             });
         }
-        
+
         _scrollTo (targetOffset, increment) {
             return new Promise(resolve => {
                 function scroll (targetOffset, increment) {
@@ -549,23 +548,23 @@
             this._updateSelection();
             this._trackEvent('clicked on line number');
         }
-  
+
         // This is not simply insert an empty line in, but insert a line with indentation and
         // then put in an insert point with the current scope
-  
+
         _insertLine (from, to) {
             let lineIndex = from,
                 lineCopy = JSON.parse(JSON.stringify(this.lines[lineIndex])),
                 allScope = lineCopy.segments.map(segment => segment.scope),
                 currentScope = [].concat.apply([], allScope);
-                
+
             // Deduplicating the array
             currentScope = [...new Set(currentScope)];
-            
+
             if (typeof to === 'undefined') {
                 to = from;
             }
-  
+
             for (var j = lineCopy.segments.length - 1; j >= 0; j--) {
                 if (!this.isType('indentation', lineCopy.segments[j])) {
                     lineCopy.segments.splice(j, 1);
@@ -603,7 +602,7 @@
                 this.editedValue = this.selectedSegment.value;
             }
         }
-  
+
         _onLinesChanged () {
             
             Polymer.RenderStatus.afterNextRender(this, () => {
@@ -618,12 +617,12 @@
                 );
             });
         }
-  
+
         /***************
         * Markup helpers
         ****************/
-  
-        
+
+
         _breakLine (lineIndex) {
             let i = 0;
             if (this.lines.length === 0) {
