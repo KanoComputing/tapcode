@@ -3,22 +3,48 @@
     <head>
         <meta charset="utf-8">
         <base href="/">
-        <meta name="viewport" content="width=device-width, minimum-scale=1, initial-scale=1, user-scalable=no">
-        <meta name="apple-mobile-web-app-capable" content="yes">
 
         <title>Tapcode</title>
 
         <meta name="description" content="Tapcode">
-        
-        <meta name="twitter:card" content="summary">
-        <meta name="twitter:site" content="@TeamKano">
-        <meta property="og:type" content="website">
-        <meta property="og:site_name" content="Tapcode">
-        <meta name="theme-color" content="#292f35">
+        <meta name="viewport" content="width=device-width, minimum-scale=1, initial-scale=1, user-scalable=no">
 
+        <!-- Icons -->
+        <link rel="icon" type="image/png" sizes="32x32" href="assets/favicons/favicon-32x32.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="assets/favicons/favicon-16x16.png">
+        <link rel="shortcut icon" href="assets/favicons/favicon.ico">
+        <link rel="apple-touch-icon" sizes="180x180" href="assets/favicons/apple-touch-icon.png">
+        <link rel="mask-icon" href="assets/favicons/safari-pinned-tab.svg" color="#ff6900">
+
+        <!-- Custom font -->
         <link href="https://fonts.googleapis.com/css?family=Space+Mono:400,700" rel="stylesheet">
+
+        <!-- Web-app support -->
         <link rel="manifest" href="./manifest.json">
-        
+        <meta name="msapplication-config" content="./browserconfig.xml">
+        <meta name="theme-color" content="#292f35">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-status-bar-style" content="black">
+        <link rel="apple-touch-startup-image" href="/assets/kano-logo.png">
+
+        <!-- For Google -->
+        <meta name="description" content="A creative coding tool from Kano"/>
+        <meta name="keywords" content="Tapcode Kano Computing Creative Coding"/>
+        <meta name="application-name" content="Tapcode"/>
+
+        <!-- For Facebook -->
+        <meta property="og:title" content="Tapcode"/>
+        <meta property="og:type" content="website"/>
+        <meta property="og:image" content="assets/favicons/apple-touch-icon.png"/>
+        <meta property="og:url" content="https://tapcode.kano.me"/>
+        <meta property="og:description" content="A creative coding tool from Kano"/>
+
+        <!-- For Twitter -->
+        <meta name="twitter:title" content="Tapcode"/>
+        <meta name="twitter:description" content="A creative coding tool from Kano"/>
+        <meta name="twitter:image" content="assets/favicons/apple-touch-icon.png"/>
+        <meta name="twitter:card" content="summary"/>
+
         <!-- build:env -->
         <script>
             window.Kano = window.Kano || {};
@@ -27,7 +53,6 @@
             window.Kano.Tapcode.Config.ENV = 'staging';
         </script>
         <!-- endbuild-->
-        
         <!-- build:es5adapter -->
         <!-- endbuild -->
         
@@ -40,7 +65,6 @@
         <!-- build:config -->
         <link rel="import" href="./src/config/development.html">
         <!-- endbuild -->
-        <!-- <link rel="import" href="./src/tc-app.html"> -->
         <style>
             html, body {
                 height: 100%;
@@ -133,11 +157,6 @@
                     app = document.getElementById('app'),
                     appReady,
                     timeUp;
-
-                //0ms in start animating in
-                //1200ms in start animating out
-                //1480ms animating out done, editor starts fading in
-                //1960ms editor faded in, remove opening screen from the DOM
                 
                 window.onload = function () {
                     if (Kano.Tapcode.Config.DEBUG) {
