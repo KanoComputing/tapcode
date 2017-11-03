@@ -346,8 +346,8 @@
             .comma:after {
                 content: '\00a0';
             }
-            
-            .presentation-cta {
+
+            button.presentation-cta {
                 position: absolute;
                 bottom: 32px;
                 left: calc(50% - 148px);
@@ -358,18 +358,27 @@
                 font-family: 'Space Mono', monospace;
                 cursor: pointer;
                 font-size: 14px;
-                font-weight: 700;
+                font-weight: 400;
                 line-height: normal;
                 text-transform: uppercase;
                 border: 0;
-                padding: 16px 0;
+                padding: 8px 0;
             }
-    
+
+            button.presentation-cta:hover,
+            button.presentation-cta:active {
+                background: rgba(255, 255, 255, 0.5);
+            }
+
+            button.presentation-cta:focus {
+                outline: 0;
+            }
+
             [disabled] {
                 opacity: 0.5;
                 pointer-events: none;
             }
-            
+
             @keyframes highlight {
                 0% { fill: rgba(255, 255, 255, 1); }
                 100% { fill: rgba(255, 255, 255, 0.5); }
@@ -457,7 +466,7 @@
             </div>
         </div>
         
-        <div class="presentation-cta" on-tap="_onPresentationCtaTapped" hidden$="[[_hidePresentationCta(presentation, fullscreen)]]">Ready to code your own?</div>
+        <button type="button" class="presentation-cta" on-tap="_onPresentationCtaTapped" hidden$="[[_hidePresentationCta(presentation, fullscreen)]]">Ready to code your own?</button>
     </template>
 
     <script>
