@@ -6,7 +6,7 @@
             {
                 name: 'moveTo',
                 type: 'drawing',
-                template: 'methodCall',
+                template: 'method',
                 parameters: [
                     {
                         name: 'x',
@@ -27,7 +27,7 @@
             {
                 name: 'moveBy',
                 type: 'drawing',
-                template: 'methodCall',
+                template: 'method',
                 parameters: [
                     {
                         name: 'x',
@@ -48,7 +48,7 @@
             {
                 name: 'moveToRandom',
                 type: 'drawing',
-                template: 'methodCall',
+                template: 'method',
                 method: function () {
                     this.cursorX = Math.random() * 1000;
                     this.cursorY = Math.random() * 1000;
@@ -57,7 +57,7 @@
             {
                 name: 'line',
                 type: 'drawing',
-                template: 'methodCall',
+                template: 'method',
                 parameters: [
                     {
                         name: 'startX',
@@ -90,7 +90,7 @@
             {
                 name: 'lineTo',
                 type: 'drawing',
-                template: 'methodCall',
+                template: 'method',
                 parameters: [
                     {
                         name: 'toX',
@@ -113,7 +113,7 @@
             {
                 name: 'circle',
                 type: 'drawing',
-                template: 'methodCall',
+                template: 'method',
                 parameters: [
                     {
                         name: 'radius',
@@ -132,7 +132,7 @@
             {
                 name: 'square',
                 type: 'drawing',
-                template: 'methodCall',
+                template: 'method',
                 parameters: [
                     {
                         name: 'size',
@@ -151,7 +151,7 @@
             {
                 name: 'background',
                 type: 'style',
-                template: 'methodCall',
+                template: 'method',
                 parameters: [
                     {
                         name: 'color',
@@ -169,7 +169,7 @@
             {
                 name: 'fillColor',
                 type: 'style',
-                template: 'methodCall',
+                template: 'method',
                 parameters: [
                     {
                         name: 'color',
@@ -184,7 +184,7 @@
             {
                 name: 'opacity',
                 type: 'style',
-                template: 'methodCall',
+                template: 'method',
                 parameters: [
                     {
                         name: 'value',
@@ -199,7 +199,7 @@
             {
                 name: 'stroke',
                 type: 'style',
-                template: 'methodCall',
+                template: 'method',
                 parameters: [
                     {
                        name: 'thickness',
@@ -220,7 +220,7 @@
             {
                 name: 'random',
                 returns: 'number',
-                template: 'methodCall',
+                template: 'method',
                 parameters: [
                     {
                         name: 'from',
@@ -240,7 +240,7 @@
             {
                 name: 'randomColor',
                 returns: 'color',
-                template: 'methodCall',
+                template: 'method',
                 method: function () {
                     return this.colorPalette[Math.floor(Math.random() * this.colorPalette.length)];   
                 }
@@ -248,13 +248,12 @@
             {
                 name: 'animate',
                 type: 'control',
-                template: 'animate',
-                body: ``
+                template: 'block'
             },
             {
                 name: 'repeat',
                 type: 'control',
-                template: 'repeat',
+                template: 'methodWithCallback',
                 parameters: [
                     {
                         name: 'repetitions',

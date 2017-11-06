@@ -427,7 +427,7 @@
                     </button>
                 </div>
                 <canvas id="canvas" width="1000" height="1000"></canvas>
-                <tc-editor id="editor" class="to-left" on-edit-request="_onEditRequest" edited-value="{{editedValue}}" on-run-code="runCode" lines="{{code}}"></tc-editor>
+                <tc-editor id="editor" class="to-left" on-edit-request="_onEditRequest" edited-value="{{selected.value}}" on-run-code="runCode" lines="{{code}}"></tc-editor>
             </div>
 
             <div id="toolbox" class="flex vertical layout to-bottom">
@@ -553,6 +553,12 @@
             });
         }
         
+        static get observers() {
+            return [
+                '_onCodeChanged(code.*)'
+            ];
+        }
+
         connectedCallback () {
             super.connectedCallback();
             this._onResize = this._onResize.bind(this);
@@ -603,6 +609,15 @@
         _refreshTapped () {
             this.runCode();
             this._trackEvent('restarted code');
+        }
+
+        _onCodeChanged () {
+            if (!this.$.editor.readEnabled) {
+                return;
+            }
+            this._debouncer = Polymer.Debouncer.debounce(this._debouncer, Polymer.Async.timeOut.after(20), () => {
+                this.runCode();
+            });
         }
 
         runCode () {
@@ -674,8 +689,10 @@
         }
   
         _processInput (e) {
+            //refactor
             if (e.detail === 'done') {
-                this.$.editor.concludeEdit();
+                this.$.editor.finishEdit();
+                this.$.editor.moveCursor();
             } else {
                 this.$.editor.processInput(e.detail);
             }
@@ -770,15 +787,7 @@
         }
 
         spliceValue () {
-            //TODO refactor
-            let ed = this.$.editor;
-            let currentValue = ed._getCurrentSegmentValue();
-            if (currentValue.length > 1) {
-                ed._setCurrentSegmentValue(currentValue.slice(0, -1));
-                this.editedValue = currentValue.slice(0, -1);
-            } else {
-                ed._getCurrentSegmentValue(0);
-            }
+            this.$.editor.spliceValue();
         }
 
         _needNumberControl (activeTab, showNumberControl) {
@@ -786,6 +795,9 @@
         }
 
         _onEditedValueChanged (value) {
+            if (typeof value === 'undefined') {
+                return;
+            }
             this.showNumberControl = value === '-' || !isNaN(parseFloat(value));
             if (!isNaN(parseFloat(value))) {
                 this.showNumberControl = true;
