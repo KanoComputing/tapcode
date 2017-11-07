@@ -1,4 +1,5 @@
 {
+    "name": "Line Burst",
     "steps": [
         {
             "instructions": [
@@ -37,7 +38,7 @@
                 {
                     "text": "Set the opacity of your drawing.",
                     "insert": 5,
-                    "cursorPosition": {"line": 6, "segment": 0},
+                    "cursorPosition": {"line": 6, "segment": 1},
                     "validation":
                         {
                             "add-code": {
@@ -49,7 +50,7 @@
                 {
                     "text": "Move the drawing pen to a random point.",
                     "insert": 7,
-                    "cursorPosition": {"line": 8, "segment": 0},
+                    "cursorPosition": {"line": 8, "segment": 1},
                     "validation":
                         {
                             "add-code": {
@@ -72,7 +73,7 @@
                 {
                     "text": "Nice. Move the lines to the middle. Change to 250.",
                     "insert": 10,
-                    "cursorPosition": {"line":11, "segment": 2},
+                    "cursorPosition": {"line":11, "segment": 3},
                     "validation":
                         {
                             "param-value": {
@@ -84,7 +85,7 @@
                 {
                     "text": "Set Y to 250 too.",
                     "insert": 11,
-                    "cursorPosition": {"line":12, "segment": 3},
+                    "cursorPosition": {"line":12, "segment": 5},
                     "validation":
                         {
                             "param-value": {
