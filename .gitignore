@@ -1,6 +1,7 @@
 # Build
 npm-debug.log
 .terraform
+terraform.tfstate.backup
 
 # OSX
 **.DS_Store
