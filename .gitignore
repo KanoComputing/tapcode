@@ -1,5 +1,6 @@
 # Build
 npm-debug.log
+terraform.tfstate.backup
 .terraform
 
 # OSX
@@ -13,4 +14,3 @@ bower_components
 node_modules
 .tmp
 www
-

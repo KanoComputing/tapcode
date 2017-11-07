@@ -29,7 +29,7 @@
                 display: none !important;
             }
         </style>
-        <tc-ide id="ide" code="[[code]]" presentation="{{presentation}}" on-presentation-cta-tapped="_goToChallenge">
+        <tc-ide id="ide" code="[[code]]" presentation="{{presentation}}" on-presentation-cta-tapped="_goToChallenge" drawer-opened="{{drawerOpened}}">
             <div class="drawer-tab" slot="drawer" on-tap="_startNew">New</div>
             <div class="drawer-tab" slot="drawer" on-tap="_openSave">Save</div>
             <div class="drawer-tab" slot="drawer" on-tap="_goToChallenge">Start a challenge</div>
@@ -90,9 +90,9 @@
         }
         
         _startNew () {
+            this.eventRegister = 'new';
             this.$.ide.clearCode();
             this.setBackUrl();
-            this._trackEvent('clicked in menu - new');
         }
         
         _presentationChanged (e) {
@@ -103,6 +103,9 @@
         }
 
         _goToChallenge () {
+            this.eventRegister = 'challenge';
+            // Trigger the close event for tracking
+            this.$.ide._closeDrawer();
             this.dispatchEvent(
                 new CustomEvent('change-view', {
                     bubbles: true,
@@ -110,7 +113,6 @@
                     detail: 'challenge'
                 })
             );
-            this._trackEvent('clicked in menu - challenge');
         }
 
         _onPresentationChanged (newValue, oldValue) {

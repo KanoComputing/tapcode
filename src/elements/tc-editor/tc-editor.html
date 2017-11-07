@@ -175,9 +175,9 @@
                         return {};
                     }
                 },
-                readEnabled: {
+                isAnimating: {
                     type: Boolean,
-                    value: true
+                    value: false
                 }
             }
         }
@@ -219,7 +219,7 @@
         typeComment (comment, lineNumber, segmentNumber) {
             let segmentValuePath = `lines.${lineNumber}.segments.${segmentNumber}.value`;
             setTimeout(() => {
-                this.readEnabled = false;
+                this.isAnimating = true;
                 this.set(segmentValuePath, this.get(segmentValuePath) + comment.shift());
 
                 // Recursive call to animate typing
@@ -227,7 +227,7 @@
                     this.typeComment(comment, lineNumber, segmentNumber);
                 } else {
                     this.scrollLineToView(lineNumber);
-                    this.readEnabled = true;
+                    this.isAnimating = false;
                 }
 
             // Shorter animation length for development
@@ -246,6 +246,7 @@
             } else {
                 this.set('cursor.line', this.cursor.line + 1);
             }
+            this._updateSelection();
             
             comment = '// ' + comment;
             let segs = this.lines[lineNumber].segments;
@@ -577,12 +578,12 @@
         }
   
         _onLineNumberTapped (e) {
-            let copyFrom
+            let copyFrom;
             this.set('cursor.line', e.model.lineIndex);
-            copyfrom = this._doesLineCloseBlock(this.cursor.line) ? this.cursor.line - 1 : this.cursor.line;
+            copyFrom = this._doesLineCloseBlock(this.cursor.line) ? this.cursor.line - 1 : this.cursor.line;
             this._insertLine(copyFrom, this.cursor.line);
             this._updateSelection();
-            this._trackEvent('clicked on line number');
+            this._trackEvent('ui_line_number_clicked');
         }
 
         // This is not simply insert an empty line in, but insert a line with indentation and

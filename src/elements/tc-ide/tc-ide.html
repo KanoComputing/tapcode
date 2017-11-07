@@ -534,7 +534,7 @@
                 },
                 drawerOpened: {
                     type: Boolean,
-                    observer: '_onDrawerOpenedChanged'
+                    notify: true
                 },
                 presentation: {
                     type: Boolean,
@@ -608,11 +608,11 @@
         
         _refreshTapped () {
             this.runCode();
-            this._trackEvent('restarted code');
+            this._trackEvent('ui_restarted_code');
         }
 
         _onCodeChanged () {
-            if (!this.$.editor.readEnabled) {
+            if (!this.$.editor.isAnimating) {
                 return;
             }
             this._debouncer = Polymer.Debouncer.debounce(this._debouncer, Polymer.Async.timeOut.after(20), () => {
@@ -762,12 +762,12 @@
   
         _moveLeft (e) {
             this.$.editor.moveCursor(-1);
-            this._trackEvent('clicked on softkey arrow');
+            this._trackEvent('ui_softkey_arrow_clicked');
         }
   
         _moveRight (e) {
             this.$.editor.moveCursor(1);
-            this._trackEvent('clicked on softkey arrow');
+            this._trackEvent('ui_softkey_arrow_clicked');
         }
 
         _toggleOperator () {
@@ -863,11 +863,6 @@
                 this.canvasEngine.cursorX = Math.round(size / 2);
                 this.canvasEngine.cursorY = Math.round(size / 2);
             }
-        }
-        
-        _onDrawerOpenedChanged (opened) {
-            let eventName = opened ? 'opened side menu' : 'closed side menu';
-            this._trackEvent(eventName);
         }
         
         _trackEvent (name) {
