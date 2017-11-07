@@ -34,7 +34,8 @@
                     "max_age_seconds": 86400
                 },
                 "website": {
-                    "index_document": "index.html"
+                    "index_document": "index.html",
+                    "error_document": "index.html"
                 }
             }
         },
