@@ -427,7 +427,7 @@
                     </button>
                 </div>
                 <canvas id="canvas" width="1000" height="1000"></canvas>
-                <tc-editor id="editor" class="to-left" on-edit-request="_onEditRequest" edited-value="{{selected.value}}" on-run-code="runCode" lines="{{code}}"></tc-editor>
+                <tc-editor id="editor" class="to-left" on-selected-changed="_onEditedValueChanged" on-run-code="runCode" lines="{{code}}"></tc-editor>
             </div>
 
             <div id="toolbox" class="flex vertical layout to-bottom">
@@ -515,10 +515,6 @@
                 showNumberControl: {
                     type: Boolean,
                     value: false
-                },
-                editedValue: {
-                    type: String,
-                    observer: '_onEditedValueChanged'
                 },
                 needNumberDelete: {
                     type: Boolean,
@@ -669,15 +665,37 @@
             });
         }  
   
-        _onEditRequest (e) {
-            let dataType = e.detail.dataType || e.detail.returns;
-            if (dataType) {
-                this.inputType = this.activeTab = dataType;
+        _onEditedValueChanged (e) {
+            let dataType,
+                value;
+
+            if (e.detail.path === 'selected.value') {
+                this._updateKeyControls(e.detail.value);
             } else {
-                this.inputType = 'newCode';
-                this.activeTab = 'drawing';
+                dataType = (e.detail.value && e.detail.value.dataType)
+                        || (e.detail.value && e.detail.value.returns),
+                value = e.detail.value && e.detail.value.value;
+
+                if (dataType) {
+                    this.inputType = this.activeTab = dataType;
+                } else {
+                    this.inputType = 'newCode';
+                    this.activeTab = 'drawing';
+                }
+                this._updateKeyControls(value);
+                this.$['menu-item-repeater'].render();
             }
-            this.$['menu-item-repeater'].render();
+        }
+
+        _updateKeyControls (value) {
+            if (typeof value !== 'undefined') {
+                this.showNumberControl = value === '-' || !isNaN(parseFloat(value));
+                if (!isNaN(parseFloat(value))) {
+                    this.showNumberControl = true;
+                    this.needNumberDelete = value.length > 0;
+                    this.operator = value < 0 ? '+' : '-'
+                }
+            }
         }
   
         _addStatement (e) {
@@ -792,19 +810,6 @@
 
         _needNumberControl (activeTab, showNumberControl) {
             return activeTab === 'number' && showNumberControl;
-        }
-
-        _onEditedValueChanged (value) {
-            if (typeof value === 'undefined') {
-                return;
-            }
-            this.showNumberControl = value === '-' || !isNaN(parseFloat(value));
-            if (!isNaN(parseFloat(value))) {
-                this.showNumberControl = true;
-                this.needNumberDelete = value.length > 0;
-                // this.needOperator = value !== '0';
-                this.operator = value < 0 ? '+' : '-' 
-            }
         }
 
         _needCodeTray (inputType, activeTab) {

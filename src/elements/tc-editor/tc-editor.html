@@ -191,7 +191,7 @@
         constructor() {
             super();
         }
-        
+
         connectedCallback () {
             super.connectedCallback();
             this.set('cursor', {
@@ -438,7 +438,6 @@
 
             this.editing = true;
             this.notifyChange('param-value', { currentSegment: this.selected });
-            
         }
 
         spliceValue () {
@@ -612,23 +611,12 @@
         }
 
         _updateSelection () {
-            this.selected = this._getLineSegments()[this.cursor.segment];
+            this.set('selected', this._getLineSegments()[this.cursor.segment]);
 
             if (!this.selected) {
                 return;
             }
             this.editing = false;
-
-            if (!this.selected || (!this.selected.editable && this.selected.type !== 'lineEnd')) {
-                return;
-            }
-            this.dispatchEvent(
-                new CustomEvent('edit-request', {
-                    bubbles: true,
-                    composed: true,
-                    detail: this.selected
-                })
-            );
         }
 
         _onLinesChanged () {
@@ -783,14 +771,24 @@
             }
             return this.get(`lines.${this.cursor.line}.segments.${this.cursor.segment}.value`);
         }
-  
+
+        _setCurrentSegmentValue (value) {
+            if (!this.cursor) {
+                return;
+            }
+            this.set(`lines.${this.cursor.line}.segments.${this.cursor.segment}.value`, value);
+            this.set('selected.value', value);
+            this.notifyPath('selected.value');
+        }
+
         _getLineSegments (lineIndex = this.cursor && this.cursor.line) {
             if (!this.cursor) {
                 return;
             }
             return this.get(`lines.${lineIndex}.segments`);
         }
-  
+
+
         _doesLineCloseBlock (index) {
             let endingTokens = this.lines[index].segments.filter(s => s.value === '}');
             return Boolean(endingTokens.length);
@@ -798,13 +796,6 @@
         
         _getSegment (lineIndex, segmentIndex) {
             return this.get(`lines.${lineIndex}.segments.${segmentIndex}`);
-        }
-
-        _setCurrentSegmentValue (value) {
-            if (!this.cursor) {
-                return;
-            }
-            this.set(`lines.${this.cursor.line}.segments.${this.cursor.segment}.value`, value);
         }
 
         _getPrimaryScope (segment = this.selected) {
