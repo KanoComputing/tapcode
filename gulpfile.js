@@ -30,10 +30,10 @@ function waitFor(stream) {
 function getEnvVars () {
     let code = '';
 
-    code += 'window.Kano = {};';
-    code += 'window.Kano.Tapcode = {};';
-    code += 'window.Kano.Tapcode.config = {};';
-    code += `window.Kano.Tapcode.config.VERSION = '${version}';`;
+    code += 'window.Kano = window.Kano || {};';
+    code += 'window.Kano.Tapcode = window.Kano.Tapcode || {};';
+    code += 'window.Kano.Tapcode.Config = window.Kano.Tapcode.Config || {};';
+    code += `window.Kano.Tapcode.Config.VERSION = '${version}';`;
 
     return code;
 }
@@ -55,9 +55,7 @@ function build() {
             .pipe(gulpIf(/\.(css|html)$/, htmlAutoprefixer()))
             .pipe(gulpIf(/\.(css|html)$/, cssSlam()))
             .pipe(gulpIf(/\.html$/, htmlReplace({
-                env: `<script type="text/javascript">
-                        ${getEnvVars()}
-                    </script>`,
+                env: `<script type="text/javascript">${getEnvVars()}</script>`,
                 config: `<link rel="import" href="/src/config/${env}.html">`,
                 es5adapter: '<script src="./bower_components/webcomponentsjs/custom-elements-es5-adapter.js"></script>'
             })))

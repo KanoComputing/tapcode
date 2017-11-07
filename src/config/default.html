@@ -1,21 +1,22 @@
 <script>
     ((Kano) => {
         Kano.Tapcode = Kano.Tapcode || {};
-        Kano.Tapcode.Config = {
-            INITIAL_STATE: {
-                code: {
-                    lines: [{ segments: [{ type: 'insertPoint', scope: ['global'], editable: true }] }]
-                },
-                challenge: {
-                    tasks: []
-                },
-                fullscreen: false,
-                presentation: false
-            }
+        Kano.Tapcode.Config = Kano.Tapcode.Config || {};
+        Kano.Tapcode.Config.INITIAL_STATE = {
+            code: {
+                lines: [{ segments: [{ type: 'insertPoint', scope: ['global'], editable: true }] }]
+            },
+            challenge: {
+                tasks: []
+            },
+            fullscreen: false,
+            presentation: false
         }
         Kano.Tapcode.Config.APP_ID = 'tapcode';
         Kano.Tapcode.Config.TRACKING = {
             SCHEMA: 'tapcode'
         }
+        Kano.Tapcode.Config.DEBUG = true;
+        Kano.Tapcode.Config.GEO_API = 'https://kano-geoip-api.herokuapp.com/country/';
     })(window.Kano = window.Kano || {});
 </script>
