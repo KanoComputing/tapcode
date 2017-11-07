@@ -136,12 +136,12 @@
             <div id="save-dialog-content" class="no-padding flex vertical layout center" hidden$="[[!shareUrlReady]]">
                 <div class="save-dialog-panel vertical layout center-center no-padding">
                     <h4 class="flex-none">Keep this URL safe to<br>come back to your creation later</h4>
-                    <input type="text" id="save-url" class="url-slug flex-none" value$="[[saveUrl]]" on-tap="copyLink">
+                    <input type="text" id="save-url" class="url-slug flex-none" data-target="save" value$="[[saveUrl]]" on-tap="copyLink">
                     <button type="button" class="copy-btn flex-none" data-target="save" on-tap="copyLink">copy</button>
                 </div>
                 <div class="save-dialog-panel vertical layout center-center no-padding">
                     <h4 class="flex-none">You're on your way to becoming<br>a master coder. Tell the world!</h4>
-                    <input type="text" id="share-url" class="url-slug flex-none" value$="[[shareUrl]]">
+                    <input type="text" id="share-url" class="url-slug flex-none" data-target="share" value$="[[shareUrl]]" on-tap="copyLink">
                     <button type="button" class="copy-btn flex-none" data-target="share" on-tap="copyLink">copy</button>
                 </div>
                 <button type="button" class="share-dialog-btn" dialog-confirm>Got it</button>
@@ -167,7 +167,7 @@
 
     <script>
         class TcApp extends Kano.Tapcode.AppStore.StateProvider(
-                Kano.Tapcode.TrackingMixin(Polymer.GestureEventListeners(Polymer.Element))) {
+                Kano.Tapcode.Tracking(Polymer.GestureEventListeners(Polymer.Element))) {
             static get is() { 
                 return 'tc-app';
             }
@@ -217,8 +217,6 @@
             
             connectedCallback () {
                 super.connectedCallback();
-                this.config = (Kano && Kano.Tapcode && Kano.Tapcode.Config) || {};
-                this._initializeTracking();
             }
             
             _routePageChanged () {
@@ -327,7 +325,7 @@
                         type: 'SET_CHALLENGE',
                         data: {
                             tasks: this.flattenTasks(this.challenge.steps),
-                            name: name
+                            name: this.challenge.name
                         }
                     });
                 }
@@ -376,13 +374,13 @@
                 e.preventDefault();
                 let type = e.currentTarget.getAttribute('data-target'),
                     urlToCopy,
-                    eventName;
+                    urlType;
                 if (type === 'save') {
                     urlToCopy = this.saveUrl;
-                    eventName = 'selected save url';
+                    urlType = 'save_url';
                 } else {
                     urlToCopy = this.shareUrl;
-                    eventName = 'selected share url';
+                    urlType = 'share_url';
                 }
                 if (navigator.share) {
                     navigator.share({
@@ -398,7 +396,7 @@
                 inp.setSelectionRange(0, 999999);
                 inp.contentEditable = true;
                 document.execCommand('copy');
-                this._trackEvent(eventName);
+                this._trackEvent('save_url_selected', { data: urlType });
             }
             
             _signalReady () {
@@ -413,13 +411,14 @@
                 });
             }
             
-            _trackEvent (name) {
+            _trackEvent (name, data) {
                 this.dispatchEvent(
                     new CustomEvent('tracking-event', {
                         bubbles: true,
                         composed: true,
                         detail: {
-                            name: name
+                            name,
+                            data
                         }
                     })
                 );

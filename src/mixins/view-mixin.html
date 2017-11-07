@@ -25,6 +25,14 @@
                             type: Boolean,
                             linkState: 'fullscreen',
                             reflectToAttribute: true
+                        },
+                        drawerOpened: {
+                            type: Boolean,
+                            observer: '_onDrawerOpenedChanged'
+                        },
+                        eventRegister: {
+                            type: String,
+                            value: null
                         }
                     }
                 }
@@ -72,17 +80,16 @@
                 }
                 
                 _onFullscreenChanged (e) {
-                    let opened = e.detail.value,
-                        eventName = opened ? 'turned on fullscreen' : 'turned off fullscreen';
+                    let opened = e.detail.value;
                     this.dispatch({
                         type: 'SET_FULLSCREEN',
                         value: opened
                     });
-                    
-                    this._trackEvent(eventName);
+                    this._trackEvent('fullscreen_toggled', { state: opened });
                 }
                 
                 _openSave () {
+                    this.eventRegister = 'save';
                     this.$.ide._closeDrawer();
                     this.dispatchEvent(
                         new CustomEvent('open-save', {
@@ -90,7 +97,6 @@
                             composed: true
                         })
                     );
-                    this._trackEvent('clicked in menu - save');
                 }
                 
                 _launchShare () {
@@ -111,17 +117,29 @@
                     });
                 }
                 
-                _shopLinkTapped () {
-                    this._trackEvent('clicked in menu - shop link');
+                _onDrawerOpenedChanged (opened) {
+                    let item;
+                    if (!opened) {
+                        item = this.eventRegister
+                    }
+                    let eventName = opened ? 'menu_opened' : 'menu_closed';
+                    this._trackEvent(eventName, { item_clicked: this.eventRegister });
+                    this.eventRegister = null;
                 }
                 
-                _trackEvent (name) {
+                _shopLinkTapped () {
+                    this.eventRegister = 'shop_link';
+                    this.$.ide._closeDrawer();
+                }
+                
+                _trackEvent (name, data) {
                     this.dispatchEvent(
                         new CustomEvent('tracking-event', {
                             bubbles: true,
                             composed: true,
                             detail: {
-                                name: name
+                                name,
+                                data
                             }
                         })
                     );

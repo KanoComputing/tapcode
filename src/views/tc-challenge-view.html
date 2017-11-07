@@ -22,7 +22,7 @@
             }
         </style>
         
-        <tc-ide id="ide" on-change="_lineChanged" code="[[code]]">
+        <tc-ide id="ide" on-change="_lineChanged" code="[[code]]" drawer-opened="{{drawerOpened}}">
             <div class="drawer-tab" slot="drawer" on-tap="_openSave">Save</div>
             <div class="drawer-tab" slot="drawer" on-tap="_goToPlayground">Playground</div>
             <a href="https://kano.me/" slot="drawer" class="drawer-tab" target="_blank" on-tap="_shopLinkTapped">More from Kano</a>
@@ -38,18 +38,14 @@
       
             static get properties() {
                 return {
-                    challenge: {
-                        type: Object,
+                    challengeName: {
+                        type: String,
                         linkState: 'challenge.name',
-                        observer: '_onChallengeChanged'
+                        observer: '_onChallengeSet'
                     },
                     tasks: {
                         type: Array,
                         linkState: 'challenge.tasks'
-                    },
-                    stepIndex: {
-                        type: Number,
-                        value: 0
                     },
                     task: {
                         type: Object,
@@ -77,7 +73,7 @@
                 });
             }
             
-            _onChallengeChanged (challengeName) {
+            _onChallengeSet (challengeName) {
                 if (!challengeName) {
                     return;
                 }
@@ -135,31 +131,42 @@
 
                     if (this._validateEvent(validation[type], type, detail)) {
                         trackingData = {
-                            id: this.challenge.id,
-                            name: this.challenge.name
+                            name: this.challengeName
                         };
-
-                        if (this.taskIndex === this.tasks.length - 1) {
-                        } else {
-                            this.nextStep();
-                        }
-                        
                         this.dispatchEvent(
                             new CustomEvent('track-challenge-event', {
                                 bubbles: true,
                                 composed: true,
                                 detail: {
-                                    type: 'complete',
-                                    data: trackingData
+                                    type: 'step_complete',
+                                    data: {
+                                        name: this.challengeName,
+                                        stepIndex: this.taskIndex
+                                    }
                                 }
                             })
                         );
+                        this.nextStep();
                     }
                 });
             }
     
             nextStep () {
                 this.taskIndex++;
+                if (this.taskIndex === this.tasks.length - 1) {
+                    this.dispatchEvent(
+                        new CustomEvent('track-challenge-event', {
+                            bubbles: true,
+                            composed: true,
+                            detail: {
+                                type: 'challenge_complete',
+                                data: {
+                                    name: this.challengeName
+                                }
+                            }
+                        })
+                    );
+                }
             }
     
             _validateEvent (validation, type, detail) {
@@ -208,6 +215,9 @@
             }
             
             _goToPlayground () {
+                this.eventRegister = 'playground';
+                // Trigger the close event for tracking
+                this.$.ide._closeDrawer();
                 this.dispatchEvent(
                     new CustomEvent('change-view', {
                         bubbles: true,
@@ -215,7 +225,6 @@
                         detail: 'editor'
                     })
                 );
-                this._trackEvent('clicked in menu - playground');
             }
             
         }
