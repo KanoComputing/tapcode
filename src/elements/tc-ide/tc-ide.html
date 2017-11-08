@@ -608,7 +608,7 @@
         }
 
         _onCodeChanged () {
-            if (!this.$.editor.isAnimating) {
+            if (this.$.editor.isAnimating) {
                 return;
             }
             this._debouncer = Polymer.Debouncer.debounce(this._debouncer, Polymer.Async.timeOut.after(20), () => {
@@ -671,10 +671,9 @@
 
             if (e.detail.path === 'selected.value') {
                 this._updateKeyControls(e.detail.value);
-            } else {
-                dataType = (e.detail.value && e.detail.value.dataType)
-                        || (e.detail.value && e.detail.value.returns),
-                value = e.detail.value && e.detail.value.value;
+            } else if (this.$.editor.selected) {
+                dataType = this.$.editor.selected.dataType,
+                value = this.$.editor.selected.value;
 
                 if (dataType) {
                     this.inputType = this.activeTab = dataType;
