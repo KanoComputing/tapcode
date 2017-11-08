@@ -788,7 +788,6 @@
             return this.get(`lines.${lineIndex}.segments`);
         }
 
-
         _doesLineCloseBlock (index) {
             let endingTokens = this.lines[index].segments.filter(s => s.value === '}');
             return Boolean(endingTokens.length);
