@@ -1,6 +1,7 @@
 <link rel="import" href="../../bower_components/polymer/polymer-element.html">
 <link rel="import" href="../../bower_components/app-layout/app-drawer/app-drawer.html">
 <link rel="import" href="../../bower_components/polymer/lib/mixins/gesture-event-listeners.html">
+<link rel="import" href="../../bower_components/kwc-beacon/kwc-beacon.html">
 <link rel="import" href="../elements/tc-ide/tc-ide.html">
 <link rel="import" href="../mixins/view-mixin.html">
 
@@ -22,11 +23,12 @@
             }
         </style>
         
-        <tc-ide id="ide" on-change="_lineChanged" code="[[code]]" drawer-opened="{{drawerOpened}}">
+        <tc-ide id="ide" on-change="_lineChanged" code="[[code]]" drawer-opened="{{drawerOpened}}" on-active-tab-changed="placeBeacon" on-fullscreen-changed="onFullscreenChanged">
             <div class="drawer-tab" slot="drawer" on-tap="_openSave">Save</div>
             <div class="drawer-tab" slot="drawer" on-tap="_goToPlayground">Playground</div>
             <a href="https://kano.me/" slot="drawer" class="drawer-tab" target="_blank" on-tap="_shopLinkTapped">More from Kano</a>
         </tc-ide>
+        <kwc-beacon id="beacon"></kwc-beacon>
     </template>
 
     <script>
@@ -72,7 +74,7 @@
                     this._addValidator('param-value', 'matchParamValue');
                 });
             }
-            
+
             _onChallengeSet (challengeName) {
                 if (!challengeName) {
                     return;
@@ -111,9 +113,22 @@
                 this.$.ide.scrollLineToView(task.insert)
                     .then(() => {
                         if (task.validation && task.validation['add-code']) {
-                            this.$.ide.set(`whitelist`, [task.validation['add-code'].name]);
-                        } else {
+                            let name = task.validation['add-code'].name;
+                            this.$.ide.set(`whitelist`, [name]);
+                            Kano.Tapcode.api.forEach(statement => {
+                                if (statement.name === name) {
+                                    this.target = statement;
+                                }
+                            });
+                            this.placeBeacon();
+                        } else if (task.validation && (task.validation['param-change'] || task.validation['param-value'])) {
                             this.$.ide.set(`whitelist`, []);
+                            this.target = {
+                                type: 'keypad'
+                            };
+                            this.placeBeacon();
+                        } else {
+                            this.set('target', null);
                         }
                         this.$.ide.addComment(task.insert, task.text, task.cursorPosition)
                     });
@@ -150,6 +165,41 @@
                     }
                 });
             }
+
+            placeBeacon () {
+                if (!this.$.ide || !this.target) {
+                    return;
+                }
+                setTimeout(()=> {
+                    if (!this.target.name) {
+                        if (this.$.ide.activeTab === 'number' || this.$.ide.activeTab === 'color' ) {
+                            this.$.beacon.set('offset', 0);
+                            this.$.beacon.set('target', null);
+                        } else {
+                            this.$.beacon.set('offset', 12);
+                            this.$.beacon.set('target', this.$.ide.shadowRoot.querySelector('#keypad'));
+                        }
+                    } else if (this.target.returns) {
+                        if (this.$.ide.activeTab === 'expressions') {
+                            this.$.beacon.set('offset', 0);
+                            this.$.beacon.set('target', this.$.ide.shadowRoot.querySelector(`#${this.target.name}`));
+                        } else {
+                            this.$.beacon.set('offset', 12);
+                            this.$.beacon.set('target', this.$.ide.shadowRoot.querySelector('#expression-tab'));
+                        }
+                    } else {
+                        if (this.$.ide.activeTab === this.target.type) {
+                            this.$.beacon.set('target', this.$.ide.shadowRoot.querySelector(`#${this.target.name}`));
+                            this.$.ide.scrollSnippetToView(this.target.name);
+                        } else if (this.target.type) {
+                            this.$.beacon.set('target', this.$.ide.shadowRoot.querySelector(`#${this.target.type}-tab`));
+                        } else {
+                            this.$.beacon.set('offset', 0);
+                            this.$.beacon.set('target', null);
+                        }
+                    }
+                }, 250);
+            }
     
             nextStep () {
                 this.taskIndex++;
@@ -166,6 +216,7 @@
                             }
                         })
                     );
+                    this.set('target', null);
                 }
             }
     
@@ -213,7 +264,7 @@
                 let instanceId = scope + '-' + paramIndex;
                 return validation.id === instanceId && validation.value === parseFloat(event.currentSegment.value);
             }
-            
+
             _goToPlayground () {
                 this.eventRegister = 'playground';
                 // Trigger the close event for tracking
@@ -226,7 +277,20 @@
                     })
                 );
             }
-            
+
+            onFullscreenChanged (e) {
+                let fullscreen = e.detail.value;
+                if (this.$.beacon.halt && !fullscreen) {
+
+                    // Wait for animation to finish
+                    setTimeout(() => {
+                        this.$.beacon.halt = fullscreen;
+                    }, 300);
+                } else {
+                    this.$.beacon.halt = fullscreen;
+                }
+            }
+
         }
         customElements.define(TcChallengeView.is, TcChallengeView);
     </script>
