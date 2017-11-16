@@ -96,14 +96,7 @@
                 },
                 {
                     "text": "Cool!",
-                    "insert": 13,
-                    "validation":
-                        {
-                            "add-code": {
-                                "name": "stroke",
-                                "scope": ["global", "animate-1"]
-                            }
-                        }
+                    "insert": 13
                 }
             ]
         }
