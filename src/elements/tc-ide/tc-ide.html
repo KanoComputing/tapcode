@@ -432,13 +432,13 @@
 
             <div id="toolbox" class="flex vertical layout to-bottom">
                 <div class="toolbox-bar layout horizontal center-center" hidden$="[[!_isEqual(inputType, 'newCode')]]">
-                    <div class$="[[_computeTabClass(activeTab, 'drawing')]]" data-value="drawing" on-tap="_selectMenuTab">Drawing</div>
-                    <div class$="[[_computeTabClass(activeTab, 'style')]]" data-value="style" on-tap="_selectMenuTab">Style</div>
-                    <div class$="[[_computeTabClass(activeTab, 'control')]]" data-value="control" on-tap="_selectMenuTab">Control</div>
+                    <div id="drawing-tab" class$="[[_computeTabClass(activeTab, 'drawing')]]" data-value="drawing" on-tap="_selectMenuTab">Drawing</div>
+                    <div id="style-tab" class$="[[_computeTabClass(activeTab, 'style')]]" data-value="style" on-tap="_selectMenuTab">Style</div>
+                    <div id="control-tab" class$="[[_computeTabClass(activeTab, 'control')]]" data-value="control" on-tap="_selectMenuTab">Control</div>
                 </div>
                 <div class="softkey-menu layout horizontal center-center" hidden$="[[_isEqual(inputType, 'newCode')]]">
-                    <div class$="[[_computeTabClass(activeTab, 'expressions')]]" data-value="expressions" on-tap="_selectMenuTab">code</div>
-                    <div class$="[[_computeTabClass(activeTab, inputType)]]" data-value$="[[inputType]]" on-tap="_selectMenuTab">[[inputType]]</div>
+                    <div id="expression-tab" class$="[[_computeTabClass(activeTab, 'expressions')]]" data-value="expressions" on-tap="_selectMenuTab">code</div>
+                    <div id="keypad" class$="[[_computeTabClass(activeTab, inputType)]]" data-value$="[[inputType]]" on-tap="_selectMenuTab">[[inputType]]</div>
                 </div>
                 <div class="softkey-menu layout horizontal center" hidden$="[[!_needNumberControl(activeTab, showNumberControl)]]">
                     <div class="flex horizontal layout center-center" on-tap="_toggleOperator">
@@ -452,8 +452,8 @@
                 <tc-keypad id="number-input" class="flex vertical layout" hidden$="[[!_isEqual(activeTab, 'number')]]" on-key-tapped="_processInput"></tc-keypad>
                 <kwc-color-picker id="color-input" class="flex" hidden$="[[!_isEqual(activeTab, 'color')]]" row-size="5" on-change="_processInput"></kwc-color-picker>
                 <div id="snippet-library" class="flex layout horizontal start start-aligned wrap" hidden$="[[!_needCodeTray(inputType,   activeTab)]]">
-                    <template id="menu-item-repeater" is="dom-repeat" items="{{statements}}" as="statement" filter="_filterMenuItem">
-                        <div class="toolbox-item horizontal layout" on-tap="_addStatement">
+                    <template id="menu-item-repeater" is="dom-repeat" items="{{statements}}" as="statement" filter="_filterMenuItem" index-as="statementIndex">
+                        <div id$="[[_computeStatementId(statement.name, statementIndex, activeTab)]]" class="toolbox-item horizontal layout" on-tap="_addStatement">
                             <template id="line-repeater" is="dom-repeat" items="{{statement.lines}}" as="line">
                                 <div class="horizontal layout">
                                     <template id="segment-repeater" is="dom-repeat" items="{{line.segments}}" as="segment">
@@ -498,7 +498,8 @@
                 },
                 activeTab: {
                     type: String,
-                    value: 'drawing'
+                    value: 'drawing',
+                    notify: true
                 },
                 inputType: {
                     type: String,
@@ -899,6 +900,44 @@
 
         _hidePresentationCta (presentation, fullscreen) {
             return !presentation || !fullscreen;
+        }
+
+        _computeStatementId (name) {
+            return name;
+        }
+
+        //TODO scrolling functionality could be shared with editor
+
+        scrollSnippetToView (name) {
+            let target = this.shadowRoot.querySelector(`#${name}`),
+                toScroll = target ? target.offsetTop : this.clientHeight;
+            return new Promise(resolve => {
+                this._scrollTo(toScroll, 5).then(()=> {
+                    resolve();
+                });
+            });
+        }
+
+        _scrollTo (targetOffset, increment) {
+            let div = this.$['snippet-library'];
+            return new Promise(resolve => {
+                function scroll (targetOffset, increment) {
+                    if (Math.abs(div.scrollTop - targetOffset) < increment * 2 ||
+                            (targetOffset > div.scrollTop && div.scrollHeight - div.scrollTop === div.clientHeight)) {
+                        div.scrollTop = targetOffset;
+                        resolve();
+                        return;
+                    }
+                    div.scrollTop = targetOffset > div.scrollTop ? div.scrollTop + increment : div.scrollTop - increment;
+
+                    Polymer.RenderStatus.afterNextRender(this, () => {
+                        scroll(targetOffset, increment);
+                    });
+                }
+                scroll = scroll.bind(this);
+                scroll(targetOffset, increment);
+            });
+            // Todo if diff is small or we scrolled all the way to the bottom
         }
 
       }
