@@ -396,7 +396,7 @@
                 inp.setSelectionRange(0, 999999);
                 inp.contentEditable = true;
                 document.execCommand('copy');
-                this._trackEvent('save_url_selected', { data: urlType });
+                this._trackEvent('save_url_selected', { url_type: urlType });
             }
             
             _signalReady () {
