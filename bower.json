@@ -32,7 +32,8 @@
     "iron-lazy-pages": "TimvdLippe/iron-lazy-pages#^2.1.1",
     "js-md5": "^2.10.0",
     "platform.js": "platform#^1.3.4",
-    "kwc-behaviours": "KanoComponents/kwc-behaviours"
+    "kwc-behaviours": "KanoComponents/kwc-behaviours",
+    "kwc-beacon": "KanoComponents/kwc-beacon"
   },
   "devDependencies": {
     "iron-component-page": "^3.0.1"
