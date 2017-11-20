@@ -40,7 +40,7 @@
             div.break {
                 display: none;
             }
-            .sweet + div.break {
+            .breaking + div.break {
                 display: block;
                 height: 0;
             }
@@ -127,7 +127,7 @@
             <template id="line-repeater" is="dom-repeat" items="[[lines]]" as="line" index-as="lineIndex">
                 <div class="line horizontal layout" on-tap="_selectLine">
                     <div class$="[[computeLineNumberClass(line, lineIndex, lines.*)]]" on-tap="_onLineNumberTapped">[[_getLineIndex(lineIndex)]]</div>
-                    <!-- NB: Whitespace in the markup is commented out to avoid unwanted space around inline-block elements -->
+                    <!-- NB: Whitespace is commented out to avoid unwanted space around inline-block elements -->
                     <div id$="[[_computeLineId(lineIndex)]]" class="line-segments"><!--
                      --><template id="segment-repeater" is="dom-repeat" items="{{line.segments}}" as="segment" index-as="segmentIndex"><!--
                          --><div id$="[[_computeEditableId(lineIndex, segmentIndex)]]"
@@ -621,7 +621,9 @@
 
         _onLinesChanged () {
             Polymer.RenderStatus.afterNextRender(this, () => {
-                this._breakLine(0);
+                for (var i = 0; i < this.lines.length; i++) {
+                    this._breakLine(i);
+                }
             });
         }
 
@@ -631,19 +633,12 @@
 
 
         _breakLine (lineIndex) {
-            let i = 0;
-            if (this.lines.length === 0) {
-                return;
-            }
             let line = this.shadowRoot.querySelector(`#l-${lineIndex}`);
-            if (!line) {
-                return;
-            }
+
             let segments = line.querySelectorAll('.segment');
 
             let textContent = line.textContent.replace(/\s/g,'');
 
-            // let arrayToProcess = JSON.parse(JSON.stringify([...this.lines[lineIndex].segments]));
             let arrayToProcess = [...this.lines[lineIndex].segments];
             arrayToProcess = arrayToProcess.map((s, index) => {
                 // Storing index to point to them later
@@ -659,29 +654,13 @@
                 return;
             }
 
-            // segments.forEach(s => {
-            //     s.style['flex-basis'] = '0px';
-            // });
-            if (textContent.split('').length < 26) {
-                // segments.forEach(s => {
-                //     s.style['flex-basis'] = '0px';
-                // });
-                segments.forEach(s => {
-                    this.toggleClasssegment
-                });
+            if (textContent.split('').length < 30) {
                 return;
             } else {
                 Polymer.RenderStatus.afterNextRender(this, () => {
-                        let seg = arrayToProcess[i];
-                        let segIndex = seg.id
-                        let el = this.shadowRoot.querySelector(`#l${lineIndex}-s${segIndex}`);
-                        let leftOffset = el.getBoundingClientRect().left - line.getBoundingClientRect().left;
-                        let spaceToFill = line.getBoundingClientRect().width - leftOffset;
-                        el.classList.add('sweet');
-                        // el.style['flex-basis'] = `${spaceToFill-2}px`;
-
-                        this.set(`lines.${lineIndex}.segments.${segIndex}.breaking`, true);
-                        i++;
+                    // FIXME: it only breaks the first comma, and only triggered by character number
+                    let seg = arrayToProcess[0];
+                    this.set(`lines.${lineIndex}.segments.${seg.id}.breaking`, true);
                 });
             }
         }
@@ -709,7 +688,7 @@
             }
 
             if (breaking) {
-                classString += 'sweet ';
+                classString += 'breaking ';
             }
 
             if (end) {
@@ -743,7 +722,8 @@
                 if (!segmentEl) {
                     return;
                 }
-                let maxWidth = segmentEl.parentElement.clientWidth - segmentEl.offsetLeft;
+                // FIXME take out need for hardcoded 8px
+                let maxWidth = segmentEl.parentElement.getBoundingClientRect().width - segmentEl.offsetLeft - 8;
                 return segmentEl.style['max-width'] = `${maxWidth}px`;
             });
         }
