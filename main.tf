@@ -21,7 +21,7 @@
     },
     "resource": {
         "aws_s3_bucket": {
-            "tapcode": {
+            "main": {
                 "bucket": "${var.domain_name}.kano.me",
                 "force_destroy": true,
                 "acl": "public-read",
@@ -40,12 +40,12 @@
             }
         },
         "aws_cloudfront_distribution": {
-            "tapcode": {
+            "main": {
                 "origin": {
-                    "domain_name": "${aws_s3_bucket.tapcode.bucket_domain_name}",
+                    "domain_name": "${aws_s3_bucket.main.bucket_domain_name}",
                     "origin_id": "${var.domain_name}"
                 },
-                "aliases": ["${aws_s3_bucket.tapcode.bucket}"],
+                "aliases": ["${aws_s3_bucket.main.bucket}"],
                 "enabled": true,
                 "is_ipv6_enabled": true,
                 "comment": "${var.domain_name} edge caching",
@@ -86,12 +86,12 @@
             }
         },
         "aws_route53_record": {
-            "tapcode": {
+            "main": {
                 "zone_id": "Z3CJAAJCKXZI0S",
                 "name": "${var.domain_name}",
                 "type": "CNAME",
                 "ttl": 300,
-                "records": ["${aws_cloudfront_distribution.tapcode.domain_name}"]
+                "records": ["${aws_cloudfront_distribution.main.domain_name}"]
             }
         },
         "aws_dynamodb_table": {
