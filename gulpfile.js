@@ -72,7 +72,7 @@ function build() {
                 babel({
                     ignore: [
                         'bower_components/webcomponentsjs/custom-elements-es5-adapter.js',
-                        'bower_components/js-md5/js/md5.min.js'
+                        'bower_components/js-md5/build/md5.min.js'
                     ],
                     presets: ['es2015'],
                     plugins: ['transform-remove-strict-mode']
