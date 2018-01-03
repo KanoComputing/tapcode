@@ -73,6 +73,7 @@
                 font-family: inherit;
                 font-size: 14px;
                 color: #fff;
+                text-align: center;
                 border: 0;
             }
             input.url-slug:focus {
@@ -144,7 +145,7 @@
                     <input type="text" id="share-url" class="url-slug flex-none" data-target="share" value$="[[shareUrl]]" on-tap="copyLink">
                     <button type="button" class="copy-btn flex-none" data-target="share" on-tap="copyLink">copy</button>
                 </div>
-                <button type="button" class="share-dialog-btn" dialog-confirm>Got it</button>
+                <button type="button" class="share-dialog-btn" dialog-confirm>Done</button>
             </div>
         </paper-dialog>
         
@@ -292,9 +293,13 @@
                     return r.json()
                 })
                 .then(r => {
-                    this.saveUrl = Kano.Tapcode.Config.ROOT_URL.substr(8) + '/' + r.id;
-                    this.shareUrl = Kano.Tapcode.Config.ROOT_URL.substr(8) + '/share/' + r.id;
-                    this.shareUrlReady = true;
+
+                    // We are short of space, so don't display the protocol with the URL
+                    Kano.Tapcode.Config.ROOT_URL.replace(/(:\/\/)(.*)/, (fullUrl, protocol, url) => {
+                        this.saveUrl = url + '/' + r.id;
+                        this.shareUrl = url + '/share/' + r.id;
+                        this.shareUrlReady = true;
+                    });
                 })
             }
             

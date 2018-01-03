@@ -1,6 +1,6 @@
 # Tapcode
 
-Taptype is a creative-code web-app with a mobile-first design. Users can code with a set array of code snippets to draw on a HMTL5 canvas directly beneath the code editor.
+Tapcode is a creative-code web-app with a mobile-first design. Users can code with a set array of code snippets to draw on a HMTL5 canvas directly beneath the code editor.
 ## Getting Started
 
 ### Prerequisites

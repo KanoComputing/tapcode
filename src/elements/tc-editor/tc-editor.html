@@ -127,7 +127,7 @@
             <template id="line-repeater" is="dom-repeat" items="[[lines]]" as="line" index-as="lineIndex">
                 <div class="line horizontal layout" on-tap="_selectLine">
                     <div class$="[[computeLineNumberClass(line, lineIndex, lines.*)]]" on-tap="_onLineNumberTapped">[[_getLineIndex(lineIndex)]]</div>
-                    <!-- NB: Whitespace is commented out to avoid unwanted space around inline-block elements -->
+                    <!-- NB: Whitespace is commented out to avoid gaps between inline-block elements -->
                     <div id$="[[_computeLineId(lineIndex)]]" class="line-segments"><!--
                      --><template id="segment-repeater" is="dom-repeat" items="{{line.segments}}" as="segment" index-as="segmentIndex"><!--
                          --><div id$="[[_computeEditableId(lineIndex, segmentIndex)]]"
