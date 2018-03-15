@@ -39,8 +39,8 @@
     "iron-component-page": "^3.0.1"
   },
   "resolutions": {
-    "polymer": "^2.0.0",
     "webcomponentsjs": "^v1.0.2",
-    "js-md5": "^0.7.2"
+    "js-md5": "^0.7.2",
+    "polymer": "^2.0.0"
   }
 }
