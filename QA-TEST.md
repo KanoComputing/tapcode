@@ -24,7 +24,7 @@ npm i
 Alternatively, you can use yarn:
 ```
 yarn
-``
+```
 
 ## Run the tests
 
@@ -77,3 +77,7 @@ We want to visualize layout issues on every new code pushed to the repo. Add an 
 
 If this command is executed, I expect a screenshot to be exported at the end of every test to the `screenshots` directory. But only if the env variable `SCREENSHOT` is set.
 `DEVICE="Galaxy S5" SCREENSHOT="true" npm run test`
+
+# 7. Stretch Goal (Optional)
+
+Add test coverage
